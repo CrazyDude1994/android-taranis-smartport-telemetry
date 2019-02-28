@@ -24,18 +24,15 @@
 
         <activity
                 android:name=".MapsActivity"
-                android:screenOrientation="portrait"
+                android:screenOrientation="landscape"
                 android:theme="@style/Theme.AppCompat.NoActionBar"
                 android:label="@string/title_activity_maps">
-        </activity>
-        <activity
-                android:name=".MainActivity"
-                android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
 
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+
         </activity>
     </application>
 

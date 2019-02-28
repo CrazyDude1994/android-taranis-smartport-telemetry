@@ -1,4 +1,8 @@
 <resources>
     <string name="app_name">Telemetry</string>
     <string name="title_activity_maps">Map</string>
+    <string name="connecting">Connecting…</string>
+    <string name="connect">Connect</string>
+    <string name="disconnect">Disconnect</string>
+    <string name="disconnecting">Disconnecting...</string>
 </resources>

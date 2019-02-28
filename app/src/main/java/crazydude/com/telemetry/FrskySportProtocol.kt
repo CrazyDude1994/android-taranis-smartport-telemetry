@@ -27,8 +27,17 @@ class FrSkySportProtocol(var dataListener: DataListener) {
 
         const val FC_SENSORS = 0x1B
 
+
+        const val VFAS_SENSOR = 0x0210
+        const val CELL_SENSOR = 0x0910
         const val FUEL_SENSOR = 0x0600
         const val GPS_SENSOR = 0x0800
+        const val CURRENT_SENSOR = 0x200
+        const val HEADING_SENSOR = 0x0840
+        const val RSSI_SENSOR = 0xf101
+        const val FLYMODE_SENSOR = 0x0400
+        const val GPS_STATE_SENSOR = 0x0410
+
 
         interface DataListener {
             fun onNewData(data: TelemetryData)
@@ -36,10 +45,21 @@ class FrSkySportProtocol(var dataListener: DataListener) {
 
         enum class TelemetryType {
             FUEL,
-            GPS
+            GPS,
+            VBAT,
+            CELL_VOLTAGE,
+            CURRENT,
+            HEADING,
+            RSSI,
+
+            FLYMODE,
+
+            GPS_STATE
         }
 
         data class TelemetryData(val telemetryType: TelemetryType, val data: Int)
+
+        private val TAG: String = "FrSky Protocol"
     }
 
     fun process(data: Int) {
@@ -76,15 +96,48 @@ class FrSkySportProtocol(var dataListener: DataListener) {
             val sensorType = byteBuffer.get()
             val packetType = byteBuffer.get()
             if (packetType.toInt() == DATA_START) {
-                Log.d("FrSky Protocol", "New packet:" + buffer.contentToString())
                 val dataType = byteBuffer.short
                 val rawData = byteBuffer.int
-                if (dataType == FUEL_SENSOR.toShort()) {
-                    Log.d("FrSky Protocol", "Fuel: $rawData")
-                    dataListener.onNewData(TelemetryData(Companion.TelemetryType.FUEL, rawData))
-                } else if (dataType == GPS_SENSOR.toShort()) {
-                    Log.d("FrSky Protocol", "GPS: $rawData")
-                    dataListener.onNewData(TelemetryData(Companion.TelemetryType.GPS, rawData))
+                when (dataType.toInt()) {
+                    FUEL_SENSOR -> {
+                        Log.d(TAG, "Fuel: $rawData")
+                        dataListener.onNewData(TelemetryData(Companion.TelemetryType.FUEL, rawData))
+                    }
+                    GPS_SENSOR -> {
+                        Log.d(TAG, "GPS: $rawData")
+                        dataListener.onNewData(TelemetryData(Companion.TelemetryType.GPS, rawData))
+                    }
+                    VFAS_SENSOR -> {
+                        Log.d(TAG, "VBAT: $rawData")
+                        dataListener.onNewData(TelemetryData(Companion.TelemetryType.VBAT, rawData))
+                    }
+                    CELL_SENSOR -> {
+                        Log.d(TAG, "Cell voltage: $rawData")
+                        dataListener.onNewData(TelemetryData(Companion.TelemetryType.CELL_VOLTAGE, rawData))
+                    }
+                    CURRENT_SENSOR -> {
+                        Log.d(TAG, "Current: $rawData")
+                        dataListener.onNewData(TelemetryData(Companion.TelemetryType.CURRENT, rawData))
+                    }
+                    HEADING_SENSOR -> {
+                        Log.d(TAG, "Heading: $rawData")
+                        dataListener.onNewData(TelemetryData(Companion.TelemetryType.HEADING, rawData))
+                    }
+                    RSSI_SENSOR -> {
+                        Log.d(TAG, "RSSI: $rawData")
+                        dataListener.onNewData(TelemetryData(Companion.TelemetryType.RSSI, rawData))
+                    }
+                    FLYMODE_SENSOR -> {
+                        Log.d(TAG, "Fly mode: $rawData")
+                        dataListener.onNewData(TelemetryData(Companion.TelemetryType.FLYMODE, rawData))
+                    }
+                    GPS_STATE_SENSOR -> {
+                        Log.d(TAG, "GPS State: $rawData")
+                        dataListener.onNewData(TelemetryData(Companion.TelemetryType.GPS_STATE, rawData))
+                    }
+                    else -> {
+                        Log.d(TAG, "Unknown packet" + buffer.contentToString())
+                    }
                 }
             }
         }

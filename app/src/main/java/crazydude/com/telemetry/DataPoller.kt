@@ -3,6 +3,7 @@ package crazydude.com.telemetry
 import android.bluetooth.BluetoothSocket
 import android.os.Handler
 import android.os.Looper
+import crazydude.com.telemetry.FrSkySportProtocol.Companion.TelemetryType.*
 import java.io.IOException
 
 class DataPoller(private val bluetoothSocket: BluetoothSocket, private val listener: Listener) :
@@ -27,10 +28,20 @@ class DataPoller(private val bluetoothSocket: BluetoothSocket, private val liste
                 while (!thread.isInterrupted && bluetoothSocket.isConnected) {
                     protocol.process(bluetoothSocket.inputStream.read())
                 }
-                bluetoothSocket.close()
             } catch (e: IOException) {
                 runOnMainThread(Runnable {
                     listener.onConnectionFailed()
+                })
+                return@Runnable
+            }
+            try {
+                bluetoothSocket.close()
+                runOnMainThread(Runnable {
+                    listener.onDisconnected()
+                })
+            } catch (e: IOException) {
+                runOnMainThread(Runnable {
+                    listener.onDisconnected()
                 })
             }
         })
@@ -39,12 +50,11 @@ class DataPoller(private val bluetoothSocket: BluetoothSocket, private val liste
     }
 
     override fun onNewData(data: FrSkySportProtocol.Companion.TelemetryData) {
-        if (data.telemetryType == FrSkySportProtocol.Companion.TelemetryType.FUEL) {
-            runOnMainThread(Runnable {
+        runOnMainThread(when (data.telemetryType) {
+            FUEL -> Runnable {
                 listener.onFuelData(data.data)
-            })
-        } else if (data.telemetryType == FrSkySportProtocol.Companion.TelemetryType.GPS) {
-            runOnMainThread(Runnable {
+            }
+            GPS -> Runnable {
                 var gpsData = (data.data and 0x3FFFFFFF) / 10000.0 / 60.0
                 if (data.data and 0x40000000 > 0) {
                     gpsData = -gpsData
@@ -61,8 +71,32 @@ class DataPoller(private val bluetoothSocket: BluetoothSocket, private val liste
                     newLatitude = false
                     listener.onGPSData(latitude, longitude)
                 }
-            })
-        }
+            }
+            VBAT -> Runnable {
+                listener.onVBATData(data.data / 100f)
+            }
+            CELL_VOLTAGE -> Runnable {
+                listener.onCellVoltageData(data.data / 100f)
+            }
+            CURRENT -> Runnable {
+                listener.onCurrentData(data.data / 10f)
+            }
+
+            HEADING -> Runnable {
+                listener.onHeadingData(data.data / 100f)
+            }
+            RSSI -> Runnable {
+                listener.onRSSIData(data.data)
+            }
+
+            FLYMODE -> Runnable {
+            }
+            GPS_STATE -> Runnable {
+                val satellites = data.data % 100
+                val isFix = data.data > 1000
+                listener.onGPSState(satellites, isFix)
+            }
+        })
     }
 
     private fun runOnMainThread(runnable: Runnable) {
@@ -81,5 +115,12 @@ class DataPoller(private val bluetoothSocket: BluetoothSocket, private val liste
         fun onFuelData(fuel: Int)
         fun onConnected()
         fun onGPSData(latitude: Double, longitude: Double)
+        fun onVBATData(voltage: Float)
+        fun onCellVoltageData(voltage: Float)
+        fun onCurrentData(current: Float)
+        fun onHeadingData(heading: Float)
+        fun onRSSIData(rssi: Int)
+        fun onDisconnected()
+        fun onGPSState(satellites: Int, gpsFix: Boolean)
     }
 }

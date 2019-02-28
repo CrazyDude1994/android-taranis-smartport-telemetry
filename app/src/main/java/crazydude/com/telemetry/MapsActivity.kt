@@ -1,62 +1,133 @@
 package crazydude.com.telemetry
 
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.os.Bundle
+import android.support.annotation.DrawableRes
+import android.support.v4.app.ActivityCompat
+import android.support.v4.content.ContextCompat
+import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
-import android.widget.RelativeLayout
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.*
 
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listener {
 
     companion object {
-        const val EXTRA_DEVICE_NAME = "extra_device_name"
+        private const val REQUEST_ENABLE_BT: Int = 0
+        private const val REQUEST_LOCATION_PERMISSION: Int = 1
     }
 
+
     private lateinit var map: GoogleMap
+    private lateinit var connectButton: Button
     private lateinit var dataPoller: DataPoller
 
-    private lateinit var marker: Marker
+    private var marker: Marker? = null
 
     private lateinit var fuel: TextView
+    private lateinit var satellites: TextView
     private lateinit var topLayout: RelativeLayout
     private var lastGPS = LatLng(0.0, 0.0)
-    private lateinit var polyLine : Polyline
+    private lateinit var polyLine: Polyline
+    private var hasGPSFix = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
+
+        fuel = findViewById(R.id.fuel)
+        satellites = findViewById(R.id.satellites)
+        topLayout = findViewById(R.id.top_layout)
+        connectButton = findViewById(R.id.connect_button)
+
+        if (checkCallingOrSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
+                REQUEST_LOCATION_PERMISSION
+            )
+            return
+        }
+
+        connectButton.setOnClickListener {
+            connect()
+        }
+
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
+    }
 
-        fuel = findViewById(R.id.fuel)
-        topLayout = findViewById(R.id.top_layout)
+    private fun connect() {
+        val adapter = BluetoothAdapter.getDefaultAdapter()
+        if (!adapter.isEnabled) {
+            val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
+        }
+        val devices = BluetoothAdapter.getDefaultAdapter().bondedDevices.toList()
+        AlertDialog.Builder(this).setAdapter(
+            ArrayAdapter<String>(
+                this,
+                android.R.layout.simple_list_item_1,
+                devices.map { it.name })
+        ) { _, i ->
+            connectToDevice(devices[i])
+        }.show()
+    }
 
-        val deviceName = intent.getStringExtra(EXTRA_DEVICE_NAME)
-        for (bondedDevice in BluetoothAdapter.getDefaultAdapter().bondedDevices) {
-            if (bondedDevice.name == deviceName) {
-                val socket =
-                    bondedDevice.createRfcommSocketToServiceRecord(bondedDevice.uuids[0].uuid)
-                dataPoller = DataPoller(socket, this)
-                break
+    private fun connectToDevice(device: BluetoothDevice) {
+        connectButton.text = getString(R.string.connecting)
+        connectButton.isEnabled = false
+        val socket = device.createRfcommSocketToServiceRecord(device.uuids[0].uuid)
+        dataPoller = DataPoller(socket, this)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_LOCATION_PERMISSION) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             }
         }
     }
 
+    override fun onGPSState(satellites: Int, gpsFix: Boolean) {
+        this.hasGPSFix = gpsFix
+        if (gpsFix && marker == null) {
+            marker = map.addMarker(MarkerOptions().icon(bitmapDescriptorFromVector(this, R.drawable.ic_plane)).position(lastGPS))
+        }
+        this.satellites.text = "Satellites: $satellites"
+    }
+
+    override fun onRSSIData(rssi: Int) {
+
+    }
 
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
         map.isMyLocationEnabled = true
-        map.setPadding(0, topLayout.height, 0, 0)
-        marker = map.addMarker(MarkerOptions().position(LatLng(0.0, 0.0)))
+        topLayout.measure(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT)
+        map.setPadding(0, topLayout.measuredHeight, 0, 0)
         polyLine = map.addPolyline(PolylineOptions())
+    }
+
+    private fun bitmapDescriptorFromVector(context: Context, @DrawableRes vectorDrawableResourceId: Int): BitmapDescriptor {
+        val vectorDrawable = ContextCompat.getDrawable(context, vectorDrawableResourceId)
+        vectorDrawable!!.setBounds(0, 0, vectorDrawable.intrinsicWidth, vectorDrawable.intrinsicHeight)
+        val bitmap =
+            Bitmap.createBitmap(vectorDrawable.intrinsicWidth, vectorDrawable.intrinsicHeight, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        vectorDrawable.draw(canvas)
+        return BitmapDescriptorFactory.fromBitmap(bitmap)
     }
 
     override fun onDestroy() {
@@ -64,9 +135,37 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
         dataPoller.disconnect()
     }
 
+    override fun onVBATData(voltage: Float) {
+
+    }
+
+    override fun onCurrentData(current: Float) {
+
+    }
+
+    override fun onHeadingData(heading: Float) {
+        marker?.let { it.rotation = heading }
+    }
+
+    override fun onCellVoltageData(voltage: Float) {
+    }
+
+    override fun onDisconnected() {
+        Toast.makeText(this, "Disconnected", Toast.LENGTH_SHORT).show()
+        connectButton.text = getString(R.string.connect)
+        connectButton.isEnabled = true
+        connectButton.setOnClickListener {
+            connect()
+        }
+    }
+
     override fun onConnectionFailed() {
         Toast.makeText(this, "Connection failed", Toast.LENGTH_SHORT).show()
-        finish()
+        connectButton.text = getString(R.string.connect)
+        connectButton.isEnabled = true
+        connectButton.setOnClickListener {
+            connect()
+        }
     }
 
     override fun onFuelData(fuel: Int) {
@@ -76,14 +175,23 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
     override fun onGPSData(latitude: Double, longitude: Double) {
         if (LatLng(latitude, longitude) != lastGPS) {
             lastGPS = LatLng(latitude, longitude)
-            marker.position = lastGPS
-            val points = polyLine.points
-            points.add(lastGPS)
-            polyLine.points = points
+            marker?.let { it.position = lastGPS }
+            if (hasGPSFix) {
+                val points = polyLine.points
+                points.add(lastGPS)
+                polyLine.points = points
+            }
         }
     }
 
     override fun onConnected() {
         Toast.makeText(this, "Connected!", Toast.LENGTH_SHORT).show()
+        connectButton.text = getString(R.string.disconnect)
+        connectButton.isEnabled = true
+        connectButton.setOnClickListener {
+            dataPoller.disconnect()
+            connectButton.isEnabled = false
+            connectButton.text = getString(R.string.disconnecting)
+        }
     }
 }
