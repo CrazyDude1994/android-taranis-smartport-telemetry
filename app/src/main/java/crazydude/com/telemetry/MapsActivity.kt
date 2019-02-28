@@ -36,7 +36,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
 
     private lateinit var fuel: TextView
     private lateinit var satellites: TextView
+    private lateinit var current: TextView
+    private lateinit var voltage: TextView
     private lateinit var topLayout: RelativeLayout
+
     private var lastGPS = LatLng(0.0, 0.0)
     private lateinit var polyLine: Polyline
     private var hasGPSFix = false
@@ -49,6 +52,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
         satellites = findViewById(R.id.satellites)
         topLayout = findViewById(R.id.top_layout)
         connectButton = findViewById(R.id.connect_button)
+        current = findViewById(R.id.current)
+        voltage = findViewById(R.id.voltage)
 
         if (checkCallingOrSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED) {
             ActivityCompat.requestPermissions(
@@ -105,7 +110,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
         if (gpsFix && marker == null) {
             marker = map.addMarker(MarkerOptions().icon(bitmapDescriptorFromVector(this, R.drawable.ic_plane)).position(lastGPS))
         }
-        this.satellites.text = "Satellites: $satellites"
+        this.satellites.text = satellites.toString()
     }
 
     override fun onRSSIData(rssi: Int) {
@@ -140,7 +145,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
     }
 
     override fun onCurrentData(current: Float) {
-
+        this.current.text = "$current A"
     }
 
     override fun onHeadingData(heading: Float) {
@@ -148,6 +153,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
     }
 
     override fun onCellVoltageData(voltage: Float) {
+        this.voltage.text = "$voltage V"
     }
 
     override fun onDisconnected() {
@@ -169,7 +175,17 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
     }
 
     override fun onFuelData(fuel: Int) {
-        this.fuel.text = "Fuel: $fuel"
+        when(fuel) {
+            in 91..100 -> R.drawable.ic_battery_full
+            in 81..90 -> R.drawable.ic_battery_90
+            in 61..80 -> R.drawable.ic_battery_80
+            in 51..60 -> R.drawable.ic_battery_60
+            in 31..50 -> R.drawable.ic_battery_50
+            in 21..30 -> R.drawable.ic_battery_30
+            in 0..20 -> R.drawable.ic_battery_alert
+            else -> R.drawable.ic_battery_unknown
+        }.let { this.fuel.setCompoundDrawablesWithIntrinsicBounds(getDrawable(it), null, null, null) }
+        this.fuel.text = "$fuel%"
     }
 
     override fun onGPSData(latitude: Double, longitude: Double) {

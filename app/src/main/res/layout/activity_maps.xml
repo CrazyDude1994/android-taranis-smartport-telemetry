@@ -18,32 +18,67 @@
             android:layout_height="wrap_content"
             android:background="#AA000000">
 
-        <TextView
-                android:id="@+id/fuel"
-                android:textColor="@android:color/white"
-                android:layout_margin="8dp"
-                android:text="Fuel: "
-                android:textSize="16sp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
-
-        <TextView
-                android:layout_below="@id/fuel"
-                android:id="@+id/satellites"
-                android:textColor="@android:color/white"
-                android:layout_margin="8dp"
-                android:text="Satellites: "
-                android:textSize="16sp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
-
         <Button
                 android:id="@+id/connect_button"
-                android:text="Connect"
-                android:layout_centerHorizontal="true"
+                android:text="@string/connect"
+                android:layout_centerVertical="true"
                 android:textColor="@android:color/white"
                 style="@style/Base.Widget.AppCompat.Button.Borderless"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"/>
+
+        <TextView
+                android:layout_toEndOf="@id/connect_button"
+                android:layout_centerVertical="true"
+                android:id="@+id/satellites"
+                android:textColor="@android:color/white"
+                android:layout_margin="4dp"
+                android:textStyle="bold"
+                android:drawableStart="@drawable/ic_satellite"
+                android:text="0"
+                android:drawablePadding="4dp"
+                android:textSize="16sp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+
+        <TextView
+                android:layout_centerVertical="true"
+                android:layout_toEndOf="@id/satellites"
+                android:id="@+id/fuel"
+                android:textColor="@android:color/white"
+                android:layout_margin="4dp"
+                android:text="0%"
+                android:drawableStart="@drawable/ic_battery_unknown"
+                android:textSize="16sp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+        <TextView
+                android:layout_centerVertical="true"
+                android:layout_toEndOf="@id/fuel"
+                android:id="@+id/current"
+                android:textColor="@android:color/white"
+                android:layout_margin="4dp"
+                android:text="0"
+                android:drawablePadding="4dp"
+                android:drawableStart="@drawable/ic_current"
+                android:textSize="16sp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+        <TextView
+                android:layout_centerVertical="true"
+                android:layout_toEndOf="@id/current"
+                android:id="@+id/voltage"
+                android:textColor="@android:color/white"
+                android:layout_margin="4dp"
+                android:text="0"
+                android:drawablePadding="4dp"
+                android:drawableStart="@drawable/ic_voltage"
+                android:textSize="16sp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
     </RelativeLayout>
 </android.support.design.widget.CoordinatorLayout>
