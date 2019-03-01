@@ -3,13 +3,15 @@ package crazydude.com.telemetry.ui
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.os.Bundle
-import android.os.Environment
+import android.os.IBinder
 import android.support.annotation.DrawableRes
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
@@ -21,12 +23,9 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
+import crazydude.com.telemetry.DataService
 import crazydude.com.telemetry.R
 import crazydude.com.telemetry.protocol.DataPoller
-import java.io.File
-import java.io.FileOutputStream
-import java.text.SimpleDateFormat
-import java.util.*
 
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listener {
@@ -38,7 +37,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
 
     private lateinit var map: GoogleMap
     private lateinit var connectButton: Button
-    private lateinit var dataPoller: DataPoller
 
     private var marker: Marker? = null
 
@@ -55,6 +53,23 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
     private var lastGPS = LatLng(0.0, 0.0)
     private lateinit var polyLine: Polyline
     private var hasGPSFix = false
+    private var dataService: DataService? = null
+
+    private val serviceConnection: ServiceConnection = object : ServiceConnection {
+        override fun onServiceDisconnected(p0: ComponentName?) {
+            onDisconnected()
+        }
+
+        override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
+            dataService = (p1 as DataService.DataBinder).getService()
+            dataService?.setDataListener(this@MapsActivity)
+            dataService?.let {
+                if (it.isConnected()) {
+                    switchToConnectedState()
+                }
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -81,13 +96,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
             return
         }
 
-        connectButton.setOnClickListener {
-            connect()
-        }
+        switchToDisconnectedState()
 
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
+
+        startDataService()
     }
 
     override fun onFlyModeData(
@@ -105,7 +120,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
         if (heading) {
             mode.text = mode.text.toString() + " | Heading"
         }
-        
+
         if (secondFlightMode == null) {
             when (firstFlightMode) {
                 DataPoller.Companion.FlyMode.ACRO -> {
@@ -121,7 +136,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
         } else {
             when (secondFlightMode) {
                 DataPoller.Companion.FlyMode.FAILSAFE -> {
-                    mode.text = mode.text.toString() + " | FAILSAFE"
+                    mode.text = mode.text.toString() + " | Failsafe"
                 }
                 DataPoller.Companion.FlyMode.RTH -> {
                     mode.text = mode.text.toString() + " | RTH"
@@ -157,14 +172,24 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
     }
 
     private fun connectToDevice(device: BluetoothDevice) {
-        connectButton.text = getString(R.string.connecting)
-        connectButton.isEnabled = false
-        val socket = device.createRfcommSocketToServiceRecord(device.uuids[0].uuid)
-        val name = SimpleDateFormat("yyyy-MM-dd HH-mm-ss").format(Date())
-        val dir = Environment.getExternalStoragePublicDirectory("TelemetryLogs")
-        dir.mkdirs()
-        val file = File(dir, "$name.log")
-        dataPoller = DataPoller(socket, this, FileOutputStream(file))
+        startDataService()
+        dataService?.let {
+            connectButton.text = getString(R.string.connecting)
+            connectButton.isEnabled = false
+            it.connect(device)
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        dataService?.setDataListener(null)
+        unbindService(serviceConnection)
+    }
+
+    private fun startDataService() {
+        val intent = Intent(this, DataService::class.java)
+        startService(intent)
+        bindService(intent, serviceConnection, 0)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -241,11 +266,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
         return BitmapDescriptorFactory.fromBitmap(bitmap)
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        dataPoller.disconnect()
-    }
-
     override fun onVBATData(voltage: Float) {
 
     }
@@ -264,10 +284,24 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
 
     override fun onDisconnected() {
         Toast.makeText(this, "Disconnected", Toast.LENGTH_SHORT).show()
+        switchToDisconnectedState()
+    }
+
+    private fun switchToDisconnectedState() {
         connectButton.text = getString(R.string.connect)
         connectButton.isEnabled = true
         connectButton.setOnClickListener {
             connect()
+        }
+    }
+
+    private fun switchToConnectedState() {
+        connectButton.text = getString(R.string.disconnect)
+        connectButton.isEnabled = true
+        connectButton.setOnClickListener {
+            connectButton.isEnabled = false
+            connectButton.text = getString(R.string.disconnecting)
+            dataService?.disconnect()
         }
     }
 
@@ -309,12 +343,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
 
     override fun onConnected() {
         Toast.makeText(this, "Connected!", Toast.LENGTH_SHORT).show()
-        connectButton.text = getString(R.string.disconnect)
-        connectButton.isEnabled = true
-        connectButton.setOnClickListener {
-            dataPoller.disconnect()
-            connectButton.isEnabled = false
-            connectButton.text = getString(R.string.disconnecting)
-        }
+        switchToConnectedState()
     }
 }
