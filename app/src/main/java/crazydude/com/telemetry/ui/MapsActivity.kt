@@ -49,6 +49,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
     private lateinit var speed: TextView
     private lateinit var distance: TextView
     private lateinit var altitude: TextView
+    private lateinit var mode: TextView
     private lateinit var topLayout: RelativeLayout
 
     private var lastGPS = LatLng(0.0, 0.0)
@@ -68,6 +69,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
         speed = findViewById(R.id.speed)
         distance = findViewById(R.id.distance)
         altitude = findViewById(R.id.altitude)
+        mode = findViewById(R.id.mode)
 
         if (checkCallingOrSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED
             || checkCallingOrSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
@@ -86,6 +88,55 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
+    }
+
+    override fun onFlyModeData(
+        armed: Boolean,
+        heading: Boolean,
+        firstFlightMode: DataPoller.Companion.FlyMode,
+        secondFlightMode: DataPoller.Companion.FlyMode?
+    ) {
+        if (armed) {
+            mode.text = "Armed"
+        } else {
+            mode.text = "Disarmed"
+        }
+
+        if (heading) {
+            mode.text = mode.text.toString() + " | Heading"
+        }
+        
+        if (secondFlightMode == null) {
+            when (firstFlightMode) {
+                DataPoller.Companion.FlyMode.ACRO -> {
+                    mode.text = mode.text.toString() + " | Acro"
+                }
+                DataPoller.Companion.FlyMode.HORIZON -> {
+                    mode.text = mode.text.toString() + " | Horizon"
+                }
+                DataPoller.Companion.FlyMode.ANGLE -> {
+                    mode.text = mode.text.toString() + " | Angle"
+                }
+            }
+        } else {
+            when (secondFlightMode) {
+                DataPoller.Companion.FlyMode.FAILSAFE -> {
+                    mode.text = mode.text.toString() + " | FAILSAFE"
+                }
+                DataPoller.Companion.FlyMode.RTH -> {
+                    mode.text = mode.text.toString() + " | RTH"
+                }
+                DataPoller.Companion.FlyMode.WAYPOINT -> {
+                    mode.text = mode.text.toString() + " | Waypoint"
+                }
+                DataPoller.Companion.FlyMode.MANUAL -> {
+                    mode.text = mode.text.toString() + " | Manual"
+                }
+                DataPoller.Companion.FlyMode.CRUISE -> {
+                    mode.text = mode.text.toString() + " | Cruise"
+                }
+            }
+        }
     }
 
     private fun connect() {

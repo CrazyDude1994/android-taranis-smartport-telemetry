@@ -1,7 +1,6 @@
 package crazydude.com.telemetry.protocol
 
 import android.bluetooth.BluetoothSocket
-import android.nfc.Tag
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -26,6 +25,10 @@ class DataPoller(
 
     companion object {
         private const val TAG = "DataPoller"
+
+        enum class FlyMode {
+            ACRO, HORIZON, ANGLE, FAILSAFE, RTH, WAYPOINT, MANUAL, CRUISE
+        }
     }
 
     init {
@@ -123,6 +126,41 @@ class DataPoller(
             }
 
             FLYMODE -> Runnable {
+                val modeA = data.data / 10000
+                val modeB = data.data / 1000 % 10
+                val modeC = data.data / 100 % 10
+                val modeD = data.data / 10 % 10
+                val modeE = data.data % 10
+
+                val firstFlightMode: FlyMode
+                val secondFlightMode: FlyMode?
+
+                if (modeD and 2 == 2) {
+                    firstFlightMode = Companion.FlyMode.HORIZON
+                } else if (modeD and 1 == 1) {
+                    firstFlightMode = Companion.FlyMode.ANGLE
+                } else {
+                    firstFlightMode = Companion.FlyMode.ACRO
+                }
+
+                val armed = modeE and 4 == 4
+                val heading = modeC and 1 == 1
+
+                if (modeA and 4 == 4) {
+                    secondFlightMode = Companion.FlyMode.FAILSAFE
+                } else if (modeB and 1 == 1) {
+                    secondFlightMode = Companion.FlyMode.RTH
+                } else if (modeD and 4 == 4) {
+                    secondFlightMode = Companion.FlyMode.MANUAL
+                } else if (modeB and 2 == 2) {
+                    secondFlightMode = Companion.FlyMode.WAYPOINT
+                } else if (modeB and 8 == 8) {
+                    secondFlightMode = Companion.FlyMode.CRUISE
+                } else {
+                    secondFlightMode = null
+                }
+
+                listener.onFlyModeData(armed, heading, firstFlightMode, secondFlightMode)
             }
             GPS_STATE -> Runnable {
                 val satellites = data.data % 100
@@ -197,5 +235,11 @@ class DataPoller(
         fun onRollData(rollAngle: Float)
         fun onPitchData(pitchAngle: Float)
         fun onGSpeedData(speed: Float)
+        fun onFlyModeData(
+            armed: Boolean,
+            heading: Boolean,
+            firstFlightMode: FlyMode,
+            secondFlightMode: FlyMode?
+        )
     }
 }
