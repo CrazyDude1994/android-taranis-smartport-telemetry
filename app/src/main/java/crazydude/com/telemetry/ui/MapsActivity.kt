@@ -1,5 +1,6 @@
 package crazydude.com.telemetry.ui
 
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.content.Context
@@ -15,6 +16,7 @@ import android.support.v4.content.ContextCompat
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.widget.*
+import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
@@ -34,7 +36,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
         private const val REQUEST_LOCATION_PERMISSION: Int = 1
     }
 
-
     private lateinit var map: GoogleMap
     private lateinit var connectButton: Button
     private lateinit var dataPoller: DataPoller
@@ -45,12 +46,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
     private lateinit var satellites: TextView
     private lateinit var current: TextView
     private lateinit var voltage: TextView
+    private lateinit var speed: TextView
+    private lateinit var distance: TextView
+    private lateinit var altitude: TextView
     private lateinit var topLayout: RelativeLayout
 
     private var lastGPS = LatLng(0.0, 0.0)
     private lateinit var polyLine: Polyline
     private var hasGPSFix = false
-    private var outputStream: FileOutputStream? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,6 +65,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
         connectButton = findViewById(R.id.connect_button)
         current = findViewById(R.id.current)
         voltage = findViewById(R.id.voltage)
+        speed = findViewById(R.id.speed)
+        distance = findViewById(R.id.distance)
+        altitude = findViewById(R.id.altitude)
 
         if (checkCallingOrSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED
             || checkCallingOrSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
@@ -123,7 +129,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
     }
 
     override fun onAltitudeData(altitude: Float) {
-
+        this.altitude.text = "$altitude m"
     }
 
     override fun onGPSAltitudeData(altitude: Float) {
@@ -131,7 +137,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
     }
 
     override fun onDistanceData(distance: Int) {
-
+        this.distance.text = "$distance m"
     }
 
     override fun onRollData(rollAngle: Float) {
@@ -143,7 +149,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
     }
 
     override fun onGSpeedData(speed: Float) {
-
+        this.speed.text = speed.toString()
     }
 
     override fun onGPSState(satellites: Int, gpsFix: Boolean) {
@@ -165,6 +171,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
 
     }
 
+    @SuppressLint("MissingPermission")
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
         map.isMyLocationEnabled = true
@@ -240,6 +247,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
         if (LatLng(latitude, longitude) != lastGPS) {
             lastGPS = LatLng(latitude, longitude)
             marker?.let { it.position = lastGPS }
+            map.moveCamera(CameraUpdateFactory.newLatLng(lastGPS))
             if (hasGPSFix) {
                 val points = polyLine.points
                 points.add(lastGPS)
