@@ -1,4 +1,4 @@
-package crazydude.com.telemetry
+package crazydude.com.telemetry.ui
 
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
@@ -18,6 +18,8 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
+import crazydude.com.telemetry.DataPoller
+import crazydude.com.telemetry.R
 
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listener {
@@ -108,7 +110,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
     override fun onGPSState(satellites: Int, gpsFix: Boolean) {
         this.hasGPSFix = gpsFix
         if (gpsFix && marker == null) {
-            marker = map.addMarker(MarkerOptions().icon(bitmapDescriptorFromVector(this, R.drawable.ic_plane)).position(lastGPS))
+            marker = map.addMarker(MarkerOptions().icon(bitmapDescriptorFromVector(this,
+                R.drawable.ic_plane
+            )).position(lastGPS))
         }
         this.satellites.text = satellites.toString()
     }

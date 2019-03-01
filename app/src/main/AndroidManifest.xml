@@ -23,7 +23,7 @@
                 android:value="@integer/google_play_services_version"/>
 
         <activity
-                android:name=".MapsActivity"
+                android:name=".ui.MapsActivity"
                 android:screenOrientation="landscape"
                 android:theme="@style/Theme.AppCompat.NoActionBar"
                 android:label="@string/title_activity_maps">

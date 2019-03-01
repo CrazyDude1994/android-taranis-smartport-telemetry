@@ -3,13 +3,15 @@ package crazydude.com.telemetry
 import android.bluetooth.BluetoothSocket
 import android.os.Handler
 import android.os.Looper
-import crazydude.com.telemetry.FrSkySportProtocol.Companion.TelemetryType.*
+import crazydude.com.telemetry.protocol.FrSkySportProtocol
+import crazydude.com.telemetry.protocol.FrSkySportProtocol.Companion.TelemetryType.*
 import java.io.IOException
 
 class DataPoller(private val bluetoothSocket: BluetoothSocket, private val listener: Listener) :
     FrSkySportProtocol.Companion.DataListener {
 
-    private val protocol: FrSkySportProtocol = FrSkySportProtocol(this)
+    private val protocol: FrSkySportProtocol =
+        FrSkySportProtocol(this)
     private lateinit var thread: Thread
     private var newLatitude = false
     private var newLongitude = false

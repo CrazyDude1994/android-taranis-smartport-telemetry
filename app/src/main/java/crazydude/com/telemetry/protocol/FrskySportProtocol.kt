@@ -1,4 +1,4 @@
-package crazydude.com.telemetry
+package crazydude.com.telemetry.protocol
 
 import android.util.Log
 import java.nio.ByteBuffer
@@ -7,7 +7,8 @@ import java.nio.ByteOrder
 
 class FrSkySportProtocol(var dataListener: DataListener) {
 
-    private var state: State = State.IDLE
+    private var state: State =
+        Companion.State.IDLE
     private var bufferIndex: Int = 0
     private var buffer: IntArray = IntArray(PACKET_SIZE)
     private var longitude: Float = 0f
@@ -101,39 +102,84 @@ class FrSkySportProtocol(var dataListener: DataListener) {
                 when (dataType.toInt()) {
                     FUEL_SENSOR -> {
                         Log.d(TAG, "Fuel: $rawData")
-                        dataListener.onNewData(TelemetryData(Companion.TelemetryType.FUEL, rawData))
+                        dataListener.onNewData(
+                            TelemetryData(
+                                Companion.TelemetryType.FUEL,
+                                rawData
+                            )
+                        )
                     }
                     GPS_SENSOR -> {
                         Log.d(TAG, "GPS: $rawData")
-                        dataListener.onNewData(TelemetryData(Companion.TelemetryType.GPS, rawData))
+                        dataListener.onNewData(
+                            TelemetryData(
+                                Companion.TelemetryType.GPS,
+                                rawData
+                            )
+                        )
                     }
                     VFAS_SENSOR -> {
                         Log.d(TAG, "VBAT: $rawData")
-                        dataListener.onNewData(TelemetryData(Companion.TelemetryType.VBAT, rawData))
+                        dataListener.onNewData(
+                            TelemetryData(
+                                Companion.TelemetryType.VBAT,
+                                rawData
+                            )
+                        )
                     }
                     CELL_SENSOR -> {
                         Log.d(TAG, "Cell voltage: $rawData")
-                        dataListener.onNewData(TelemetryData(Companion.TelemetryType.CELL_VOLTAGE, rawData))
+                        dataListener.onNewData(
+                            TelemetryData(
+                                Companion.TelemetryType.CELL_VOLTAGE,
+                                rawData
+                            )
+                        )
                     }
                     CURRENT_SENSOR -> {
                         Log.d(TAG, "Current: $rawData")
-                        dataListener.onNewData(TelemetryData(Companion.TelemetryType.CURRENT, rawData))
+                        dataListener.onNewData(
+                            TelemetryData(
+                                Companion.TelemetryType.CURRENT,
+                                rawData
+                            )
+                        )
                     }
                     HEADING_SENSOR -> {
                         Log.d(TAG, "Heading: $rawData")
-                        dataListener.onNewData(TelemetryData(Companion.TelemetryType.HEADING, rawData))
+                        dataListener.onNewData(
+                            TelemetryData(
+                                Companion.TelemetryType.HEADING,
+                                rawData
+                            )
+                        )
                     }
                     RSSI_SENSOR -> {
                         Log.d(TAG, "RSSI: $rawData")
-                        dataListener.onNewData(TelemetryData(Companion.TelemetryType.RSSI, rawData))
+                        dataListener.onNewData(
+                            TelemetryData(
+                                Companion.TelemetryType.RSSI,
+                                rawData
+                            )
+                        )
                     }
                     FLYMODE_SENSOR -> {
                         Log.d(TAG, "Fly mode: $rawData")
-                        dataListener.onNewData(TelemetryData(Companion.TelemetryType.FLYMODE, rawData))
+                        dataListener.onNewData(
+                            TelemetryData(
+                                Companion.TelemetryType.FLYMODE,
+                                rawData
+                            )
+                        )
                     }
                     GPS_STATE_SENSOR -> {
                         Log.d(TAG, "GPS State: $rawData")
-                        dataListener.onNewData(TelemetryData(Companion.TelemetryType.GPS_STATE, rawData))
+                        dataListener.onNewData(
+                            TelemetryData(
+                                Companion.TelemetryType.GPS_STATE,
+                                rawData
+                            )
+                        )
                     }
                     else -> {
                         Log.d(TAG, "Unknown packet" + buffer.contentToString())
