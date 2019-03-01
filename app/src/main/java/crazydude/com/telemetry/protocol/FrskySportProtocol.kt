@@ -3,16 +3,14 @@ package crazydude.com.telemetry.protocol
 import android.util.Log
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import kotlin.math.PI
 
 
 class FrSkySportProtocol(var dataListener: DataListener) {
 
-    private var state: State =
-        Companion.State.IDLE
+    private var state: State = Companion.State.IDLE
     private var bufferIndex: Int = 0
     private var buffer: IntArray = IntArray(PACKET_SIZE)
-    private var longitude: Float = 0f
-    private var latitude: Float = 0f
 
     companion object {
         enum class State {
@@ -31,6 +29,11 @@ class FrSkySportProtocol(var dataListener: DataListener) {
 
         const val VFAS_SENSOR = 0x0210
         const val CELL_SENSOR = 0x0910
+        const val VSPEED_SENSOR = 0x0110
+        const val GSPEED_SENSOR = 0x0830
+        const val ALT_SENSOR = 0x0100
+        const val GALT_SENSOR = 0x0820
+        const val DISTANCE_SENSOR = 0x0420
         const val FUEL_SENSOR = 0x0600
         const val GPS_SENSOR = 0x0800
         const val CURRENT_SENSOR = 0x200
@@ -38,6 +41,8 @@ class FrSkySportProtocol(var dataListener: DataListener) {
         const val RSSI_SENSOR = 0xf101
         const val FLYMODE_SENSOR = 0x0400
         const val GPS_STATE_SENSOR = 0x0410
+        const val PITCH_SENSOR = 0x0430
+        const val ROLL_SENSOR = 0x0440
 
 
         interface DataListener {
@@ -52,10 +57,18 @@ class FrSkySportProtocol(var dataListener: DataListener) {
             CURRENT,
             HEADING,
             RSSI,
-
             FLYMODE,
+            GPS_STATE,
+            VSPEED,
+            ALTITUDE,
+            GSPEED,
+            DISTANCE,
 
-            GPS_STATE
+            ROLL,
+
+            PITCH,
+
+            GALT
         }
 
         data class TelemetryData(val telemetryType: TelemetryType, val data: Int)
@@ -96,7 +109,7 @@ class FrSkySportProtocol(var dataListener: DataListener) {
             }).order(ByteOrder.LITTLE_ENDIAN)
             val sensorType = byteBuffer.get()
             val packetType = byteBuffer.get()
-            if (packetType.toInt() == DATA_START) {
+            if (sensorType.toInt() == FC_SENSORS && packetType.toInt() == DATA_START) {
                 val dataType = byteBuffer.short
                 val rawData = byteBuffer.int
                 when (dataType.toInt()) {
@@ -177,6 +190,69 @@ class FrSkySportProtocol(var dataListener: DataListener) {
                         dataListener.onNewData(
                             TelemetryData(
                                 Companion.TelemetryType.GPS_STATE,
+                                rawData
+                            )
+                        )
+                    }
+                    VSPEED_SENSOR -> {
+                        Log.d(TAG, "VSpeed: $rawData")
+                        dataListener.onNewData(
+                            TelemetryData(
+                                Companion.TelemetryType.VSPEED,
+                                rawData
+                            )
+                        )
+                    }
+                    GALT_SENSOR -> {
+                        Log.d(TAG, "GAlt: $rawData")
+                        dataListener.onNewData(
+                            TelemetryData(
+                                Companion.TelemetryType.GALT,
+                                rawData
+                            )
+                        )
+                    }
+                    GSPEED_SENSOR -> {
+                        Log.d(TAG, "GSpeed: $rawData")
+                        dataListener.onNewData(
+                            TelemetryData(
+                                Companion.TelemetryType.GSPEED,
+                                rawData
+                            )
+                        )
+                    }
+                    DISTANCE_SENSOR -> {
+                        Log.d(TAG, "Distance: $rawData")
+                        dataListener.onNewData(
+                            TelemetryData(
+                                Companion.TelemetryType.DISTANCE,
+                                rawData
+                            )
+                        )
+                    }
+                    ALT_SENSOR -> {
+                        Log.d(TAG, "Altitutde: $rawData")
+                        dataListener.onNewData(
+                            TelemetryData(
+                                Companion.TelemetryType.ALTITUDE,
+                                rawData
+                            )
+                        )
+                    }
+                    PITCH_SENSOR -> {
+                        Log.d(TAG, "Pitch: $rawData")
+                        dataListener.onNewData(
+                            TelemetryData(
+                                Companion.TelemetryType.PITCH,
+                                rawData
+                            )
+                        )
+                    }
+                    ROLL_SENSOR -> {
+                        Log.d(TAG, "Roll: $rawData")
+                        dataListener.onNewData(
+                            TelemetryData(
+                                Companion.TelemetryType.ROLL,
                                 rawData
                             )
                         )

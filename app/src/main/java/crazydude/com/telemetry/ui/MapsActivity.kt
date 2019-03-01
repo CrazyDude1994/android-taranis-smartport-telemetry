@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.os.Bundle
+import android.os.Environment
 import android.support.annotation.DrawableRes
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
@@ -18,8 +19,12 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
-import crazydude.com.telemetry.DataPoller
 import crazydude.com.telemetry.R
+import crazydude.com.telemetry.protocol.DataPoller
+import java.io.File
+import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.*
 
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listener {
@@ -45,6 +50,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
     private var lastGPS = LatLng(0.0, 0.0)
     private lateinit var polyLine: Polyline
     private var hasGPSFix = false
+    private var outputStream: FileOutputStream? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,10 +63,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
         current = findViewById(R.id.current)
         voltage = findViewById(R.id.voltage)
 
-        if (checkCallingOrSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED) {
+        if (checkCallingOrSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED
+            || checkCallingOrSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
             ActivityCompat.requestPermissions(
                 this,
-                arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
+                arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.WRITE_EXTERNAL_STORAGE),
                 REQUEST_LOCATION_PERMISSION
             )
             return
@@ -96,7 +103,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
         connectButton.text = getString(R.string.connecting)
         connectButton.isEnabled = false
         val socket = device.createRfcommSocketToServiceRecord(device.uuids[0].uuid)
-        dataPoller = DataPoller(socket, this)
+        val name = SimpleDateFormat("yyyy-MM-dd HH-mm-ss").format(Date())
+        val dir = Environment.getExternalStoragePublicDirectory("TelemetryLogs")
+        dir.mkdirs()
+        val file = File(dir, "$name.log")
+        dataPoller = DataPoller(socket, this, FileOutputStream(file))
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -107,12 +118,45 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
         }
     }
 
+    override fun onVSpeedData(vspeed: Float) {
+
+    }
+
+    override fun onAltitudeData(altitude: Float) {
+
+    }
+
+    override fun onGPSAltitudeData(altitude: Float) {
+
+    }
+
+    override fun onDistanceData(distance: Int) {
+
+    }
+
+    override fun onRollData(rollAngle: Float) {
+
+    }
+
+    override fun onPitchData(pitchAngle: Float) {
+
+    }
+
+    override fun onGSpeedData(speed: Float) {
+
+    }
+
     override fun onGPSState(satellites: Int, gpsFix: Boolean) {
         this.hasGPSFix = gpsFix
         if (gpsFix && marker == null) {
-            marker = map.addMarker(MarkerOptions().icon(bitmapDescriptorFromVector(this,
-                R.drawable.ic_plane
-            )).position(lastGPS))
+            marker = map.addMarker(
+                MarkerOptions().icon(
+                    bitmapDescriptorFromVector(
+                        this,
+                        R.drawable.ic_plane
+                    )
+                ).position(lastGPS)
+            )
         }
         this.satellites.text = satellites.toString()
     }
@@ -179,7 +223,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
     }
 
     override fun onFuelData(fuel: Int) {
-        when(fuel) {
+        when (fuel) {
             in 91..100 -> R.drawable.ic_battery_full
             in 81..90 -> R.drawable.ic_battery_90
             in 61..80 -> R.drawable.ic_battery_80

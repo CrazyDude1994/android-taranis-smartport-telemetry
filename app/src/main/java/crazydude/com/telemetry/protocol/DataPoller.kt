@@ -1,13 +1,19 @@
-package crazydude.com.telemetry
+package crazydude.com.telemetry.protocol
 
 import android.bluetooth.BluetoothSocket
+import android.nfc.Tag
 import android.os.Handler
 import android.os.Looper
-import crazydude.com.telemetry.protocol.FrSkySportProtocol
+import android.util.Log
 import crazydude.com.telemetry.protocol.FrSkySportProtocol.Companion.TelemetryType.*
+import java.io.FileOutputStream
 import java.io.IOException
 
-class DataPoller(private val bluetoothSocket: BluetoothSocket, private val listener: Listener) :
+class DataPoller(
+    private val bluetoothSocket: BluetoothSocket,
+    private val listener: Listener,
+    outputStream: FileOutputStream?
+) :
     FrSkySportProtocol.Companion.DataListener {
 
     private val protocol: FrSkySportProtocol =
@@ -17,6 +23,10 @@ class DataPoller(private val bluetoothSocket: BluetoothSocket, private val liste
     private var newLongitude = false
     private var latitude: Double = 0.0
     private var longitude: Double = 0.0
+
+    companion object {
+        private const val TAG = "DataPoller"
+    }
 
     init {
         thread = Thread(Runnable {
@@ -28,13 +38,25 @@ class DataPoller(private val bluetoothSocket: BluetoothSocket, private val liste
                     })
                 }
                 while (!thread.isInterrupted && bluetoothSocket.isConnected) {
-                    protocol.process(bluetoothSocket.inputStream.read())
+                    val data = bluetoothSocket.inputStream.read()
+                    outputStream?.write(data)
+                    protocol.process(data)
                 }
             } catch (e: IOException) {
+                try {
+                    outputStream?.close()
+                } catch (e: IOException) {
+                    // ignore
+                }
                 runOnMainThread(Runnable {
                     listener.onConnectionFailed()
                 })
                 return@Runnable
+            }
+            try {
+                outputStream?.close()
+            } catch (e: IOException) {
+                // ignore
             }
             try {
                 bluetoothSocket.close()
@@ -72,20 +94,29 @@ class DataPoller(private val bluetoothSocket: BluetoothSocket, private val liste
                     newLongitude = false
                     newLatitude = false
                     listener.onGPSData(latitude, longitude)
+                    Log.d(TAG, "Decoded GPS lat=$latitude long=$longitude")
                 }
             }
             VBAT -> Runnable {
-                listener.onVBATData(data.data / 100f)
+                val value = data.data / 100f
+                listener.onVBATData(value)
+                Log.d(TAG, "Decoded vbat $value")
             }
             CELL_VOLTAGE -> Runnable {
-                listener.onCellVoltageData(data.data / 100f)
+                val value = data.data / 100f
+                listener.onCellVoltageData(value)
+                Log.d(TAG, "Decoded cell voltage $value")
             }
             CURRENT -> Runnable {
-                listener.onCurrentData(data.data / 10f)
+                val value = data.data / 10f
+                listener.onCurrentData(value)
+                Log.d(TAG, "Decoded current $value")
             }
 
             HEADING -> Runnable {
-                listener.onHeadingData(data.data / 100f)
+                val value = data.data / 100f
+                listener.onHeadingData(value)
+                Log.d(TAG, "Decoded heading $value")
             }
             RSSI -> Runnable {
                 listener.onRSSIData(data.data)
@@ -97,6 +128,41 @@ class DataPoller(private val bluetoothSocket: BluetoothSocket, private val liste
                 val satellites = data.data % 100
                 val isFix = data.data > 1000
                 listener.onGPSState(satellites, isFix)
+                Log.d(TAG, "Decoded satellites $satellites isFix=$isFix")
+            }
+            VSPEED -> Runnable {
+                val value = data.data / 100f
+                listener.onVSpeedData(value)
+                Log.d(TAG, "Decoded vspeed $value")
+            }
+            ALTITUDE -> Runnable {
+                val value = data.data / 100f
+                listener.onAltitudeData(value)
+                Log.d(TAG, "Decoded altitutde $value")
+            }
+            GSPEED -> Runnable {
+                val value = data.data / 10f
+                listener.onGSpeedData(value)
+                Log.d(TAG, "Decoded GSpeed $value")
+            }
+            DISTANCE -> Runnable {
+                listener.onDistanceData(data.data)
+                Log.d(TAG, "Decoded distance ${data.data}")
+            }
+            ROLL -> Runnable {
+                val value = data.data / 10f
+                listener.onRollData(value)
+                Log.d(TAG, "Decoded roll $value")
+            }
+            GALT -> Runnable {
+                val value = data.data / 100f
+                listener.onGPSAltitudeData(value)
+                Log.d(TAG, "Decoded gps altitude $value")
+            }
+            PITCH -> Runnable {
+                val value = data.data / 10f
+                listener.onPitchData(value)
+                Log.d(TAG, "Decoded pitch $value")
             }
         })
     }
@@ -124,5 +190,12 @@ class DataPoller(private val bluetoothSocket: BluetoothSocket, private val liste
         fun onRSSIData(rssi: Int)
         fun onDisconnected()
         fun onGPSState(satellites: Int, gpsFix: Boolean)
+        fun onVSpeedData(vspeed: Float)
+        fun onAltitudeData(altitude: Float)
+        fun onGPSAltitudeData(altitude: Float)
+        fun onDistanceData(distance: Int)
+        fun onRollData(rollAngle: Float)
+        fun onPitchData(pitchAngle: Float)
+        fun onGSpeedData(speed: Float)
     }
 }
