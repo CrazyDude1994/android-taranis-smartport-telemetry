@@ -232,7 +232,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
     }
 
     override fun onGSpeedData(speed: Float) {
-        this.speed.text = speed.toString()
+        this.speed.text = "$speed km/h"
     }
 
     override fun onGPSState(satellites: Int, gpsFix: Boolean) {
