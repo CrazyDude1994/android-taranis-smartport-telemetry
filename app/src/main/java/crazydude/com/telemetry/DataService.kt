@@ -105,6 +105,9 @@ class DataService : Service(), DataPoller.Listener {
     }
 
     override fun onGPSData(latitude: Double, longitude: Double) {
+        if (hasGPSFix) {
+            points.add(LatLng(latitude, longitude))
+        }
         dataListener?.onGPSData(latitude, longitude)
     }
 
