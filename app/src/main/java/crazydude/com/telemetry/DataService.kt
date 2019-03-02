@@ -6,17 +6,22 @@ import android.content.Intent
 import android.os.Binder
 import android.os.Environment
 import android.os.IBinder
+import com.google.android.gms.maps.model.LatLng
 import crazydude.com.telemetry.protocol.DataPoller
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.collections.ArrayList
 
 class DataService : Service(), DataPoller.Listener {
 
     private var dataPoller: DataPoller? = null
     private var dataListener: DataPoller.Listener? = null
     private val dataBinder = DataBinder()
+    private var hasGPSFix = false
+    private var satellites = 0
+    val points: ArrayList<LatLng> = ArrayList()
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
@@ -40,6 +45,9 @@ class DataService : Service(), DataPoller.Listener {
 
     fun setDataListener(dataListener: DataPoller.Listener?) {
         this.dataListener = dataListener
+        if (dataListener != null) {
+            dataListener.onGPSState(satellites, hasGPSFix)
+        }
     }
 
     fun isConnected(): Boolean {
@@ -94,8 +102,11 @@ class DataService : Service(), DataPoller.Listener {
     }
 
     override fun onDisconnected() {
+        points.clear()
         dataListener?.onDisconnected()
         dataPoller = null
+        satellites = 0
+        hasGPSFix = false
     }
 
     override fun onGPSState(satellites: Int, gpsFix: Boolean) {
@@ -140,7 +151,10 @@ class DataService : Service(), DataPoller.Listener {
     }
 
     fun disconnect() {
+        points.clear()
         dataPoller?.disconnect()
         dataPoller = null
+        satellites = 0
+        hasGPSFix = false
     }
 }

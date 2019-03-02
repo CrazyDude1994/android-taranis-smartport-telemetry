@@ -66,6 +66,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
             dataService?.let {
                 if (it.isConnected()) {
                     switchToConnectedState()
+                    val points = polyLine.points
+                    points.addAll(it.points)
+                    polyLine.points = points
                 }
             }
         }
@@ -87,10 +90,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
         mode = findViewById(R.id.mode)
 
         if (checkCallingOrSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED
-            || checkCallingOrSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
+            || checkCallingOrSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED
+        ) {
             ActivityCompat.requestPermissions(
                 this,
-                arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                arrayOf(
+                    android.Manifest.permission.ACCESS_FINE_LOCATION,
+                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+                ),
                 REQUEST_LOCATION_PERMISSION
             )
             return
@@ -253,7 +260,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
         map.isMyLocationEnabled = true
         topLayout.measure(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT)
         map.setPadding(0, topLayout.measuredHeight, 0, 0)
-        polyLine = map.addPolyline(PolylineOptions())
+        val polylineOptions = PolylineOptions()
+        polyLine = map.addPolyline(polylineOptions)
     }
 
     private fun bitmapDescriptorFromVector(context: Context, @DrawableRes vectorDrawableResourceId: Int): BitmapDescriptor {
