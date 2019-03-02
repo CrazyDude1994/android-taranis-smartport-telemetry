@@ -19,10 +19,7 @@ import android.support.v4.content.ContextCompat
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.widget.*
-import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.*
 import com.google.android.gms.maps.model.*
 import crazydude.com.telemetry.DataService
 import crazydude.com.telemetry.R
@@ -254,6 +251,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
                     )
                 ).position(lastGPS)
             )
+            map.moveCamera(CameraUpdateFactory.newLatLngZoom(lastGPS, 15f))
         }
         this.satellites.text = satellites.toString()
     }
