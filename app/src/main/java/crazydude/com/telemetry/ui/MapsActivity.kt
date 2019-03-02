@@ -13,6 +13,7 @@ import android.graphics.Canvas
 import android.os.Bundle
 import android.os.IBinder
 import android.support.annotation.DrawableRes
+import android.support.design.widget.FloatingActionButton
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AlertDialog
@@ -48,9 +49,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
     private lateinit var distance: TextView
     private lateinit var altitude: TextView
     private lateinit var mode: TextView
+    private lateinit var followButton: FloatingActionButton
     private lateinit var topLayout: RelativeLayout
 
     private var lastGPS = LatLng(0.0, 0.0)
+    private var followMode = true
     private lateinit var polyLine: Polyline
     private var hasGPSFix = false
     private var dataService: DataService? = null
@@ -88,6 +91,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
         distance = findViewById(R.id.distance)
         altitude = findViewById(R.id.altitude)
         mode = findViewById(R.id.mode)
+        followButton = findViewById(R.id.follow_button)
+
+        followButton.setOnClickListener {
+            followMode = true
+        }
 
         if (checkCallingOrSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED
             || checkCallingOrSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED
@@ -262,6 +270,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
         map.setPadding(0, topLayout.measuredHeight, 0, 0)
         val polylineOptions = PolylineOptions()
         polyLine = map.addPolyline(polylineOptions)
+        map.setOnCameraMoveStartedListener {
+            if (it == GoogleMap.OnCameraMoveStartedListener.REASON_GESTURE) {
+                followMode = false
+            }
+        }
     }
 
     private fun bitmapDescriptorFromVector(context: Context, @DrawableRes vectorDrawableResourceId: Int): BitmapDescriptor {
@@ -340,7 +353,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
         if (LatLng(latitude, longitude) != lastGPS) {
             lastGPS = LatLng(latitude, longitude)
             marker?.let { it.position = lastGPS }
-            map.moveCamera(CameraUpdateFactory.newLatLng(lastGPS))
+            if (followMode) {
+                map.moveCamera(CameraUpdateFactory.newLatLng(lastGPS))
+            }
             if (hasGPSFix) {
                 val points = polyLine.points
                 points.add(lastGPS)

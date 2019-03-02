@@ -100,7 +100,9 @@
 
         </RelativeLayout>
 
+
         <RelativeLayout
+                android:id="@+id/bottom_layout"
                 android:layout_alignParentBottom="true"
                 android:background="#AA000000"
                 android:layout_width="match_parent"
@@ -145,6 +147,16 @@
                     android:layout_height="wrap_content"/>
 
         </RelativeLayout>
+
+        <android.support.design.widget.FloatingActionButton
+                android:id="@+id/follow_button"
+                android:layout_alignParentEnd="true"
+                android:src="@drawable/ic_follow"
+                android:layout_margin="8dp"
+                android:layout_width="wrap_content"
+                android:layout_above="@id/bottom_layout"
+                android:layout_height="wrap_content"/>
+
     </RelativeLayout>
 
 

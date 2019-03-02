@@ -179,7 +179,7 @@ class DataPoller(
                 Log.d(TAG, "Decoded altitutde $value")
             }
             GSPEED -> Runnable {
-                val value = (data.data / 1000f) * 1.852f
+                val value = (data.data / (1944f / 100f)) / 27.778f
                 listener.onGSpeedData(value)
                 Log.d(TAG, "Decoded GSpeed $value")
             }
