@@ -1,11 +1,16 @@
 package crazydude.com.telemetry
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.Service
 import android.bluetooth.BluetoothDevice
+import android.content.Context
 import android.content.Intent
 import android.os.Binder
+import android.os.Build
 import android.os.Environment
 import android.os.IBinder
+import android.support.v4.app.NotificationCompat
 import com.google.android.gms.maps.model.LatLng
 import crazydude.com.telemetry.protocol.DataPoller
 import java.io.File
@@ -22,6 +27,24 @@ class DataService : Service(), DataPoller.Listener {
     private var hasGPSFix = false
     private var satellites = 0
     val points: ArrayList<LatLng> = ArrayList()
+
+    override fun onCreate() {
+        super.onCreate()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val importance = NotificationManager.IMPORTANCE_LOW
+            val channel =
+                NotificationChannel("bt_channel", "Bluetooth", importance)
+            val notificationManager: NotificationManager =
+                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
+        val notification = NotificationCompat.Builder(this, "bt_channel")
+            .setContentText("Telemetry service is running")
+            .setContentTitle("Telemetry service is running. To stop - disconnect and close the app")
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .build()
+        startForeground(1, notification)
+    }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
@@ -47,6 +70,10 @@ class DataService : Service(), DataPoller.Listener {
         this.dataListener = dataListener
         if (dataListener != null) {
             dataListener.onGPSState(satellites, hasGPSFix)
+        } else {
+            if (!isConnected()) {
+                stopSelf()
+            }
         }
     }
 

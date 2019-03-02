@@ -10,6 +10,7 @@ import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.support.annotation.DrawableRes
@@ -24,6 +25,7 @@ import com.google.android.gms.maps.model.*
 import crazydude.com.telemetry.DataService
 import crazydude.com.telemetry.R
 import crazydude.com.telemetry.protocol.DataPoller
+import kotlin.math.roundToInt
 
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listener {
@@ -194,12 +196,19 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
 
     override fun onDestroy() {
         super.onDestroy()
-        dataService?.setDataListener(null)
+        if (!isChangingConfigurations) {
+            dataService?.setDataListener(null)
+        }
         unbindService(serviceConnection)
     }
 
     private fun startDataService() {
         val intent = Intent(this, DataService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent)
+        } else {
+            startDataService()
+        }
         startService(intent)
         bindService(intent, serviceConnection, 0)
     }
@@ -237,7 +246,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
     }
 
     override fun onGSpeedData(speed: Float) {
-        this.speed.text = "$speed km/h"
+        this.speed.text = "${speed.roundToInt()} km/h"
     }
 
     override fun onGPSState(satellites: Int, gpsFix: Boolean) {
