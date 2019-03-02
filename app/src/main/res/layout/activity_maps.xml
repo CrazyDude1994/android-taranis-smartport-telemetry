@@ -2,6 +2,7 @@
 <android.support.design.widget.CoordinatorLayout
         xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
         android:keepScreenOn="true"
         android:layout_height="match_parent">
 
@@ -149,12 +150,23 @@
         </RelativeLayout>
 
         <android.support.design.widget.FloatingActionButton
+                android:id="@+id/map_type_button"
+                app:fabSize="mini"
+                android:layout_alignParentEnd="true"
+                android:src="@drawable/ic_layers"
+                android:layout_margin="8dp"
+                android:layout_width="wrap_content"
+                android:layout_above="@id/bottom_layout"
+                android:layout_height="wrap_content"/>
+
+        <android.support.design.widget.FloatingActionButton
+                app:fabSize="mini"
                 android:id="@+id/follow_button"
                 android:layout_alignParentEnd="true"
                 android:src="@drawable/ic_follow"
                 android:layout_margin="8dp"
                 android:layout_width="wrap_content"
-                android:layout_above="@id/bottom_layout"
+                android:layout_above="@id/map_type_button"
                 android:layout_height="wrap_content"/>
 
     </RelativeLayout>

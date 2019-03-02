@@ -3,10 +3,7 @@ package crazydude.com.telemetry.ui
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
-import android.content.ComponentName
-import android.content.Context
-import android.content.Intent
-import android.content.ServiceConnection
+import android.content.*
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -20,7 +17,10 @@ import android.support.v4.content.ContextCompat
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.widget.*
-import com.google.android.gms.maps.*
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
 import crazydude.com.telemetry.DataService
 import crazydude.com.telemetry.R
@@ -33,13 +33,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
     companion object {
         private const val REQUEST_ENABLE_BT: Int = 0
         private const val REQUEST_LOCATION_PERMISSION: Int = 1
+        private val MAP_TYPE_ITEMS = arrayOf("Road Map", "Satellite", "Terrain", "Hybrid")
     }
 
     private lateinit var map: GoogleMap
-    private lateinit var connectButton: Button
-
     private var marker: Marker? = null
 
+    private lateinit var connectButton: Button
     private lateinit var fuel: TextView
     private lateinit var satellites: TextView
     private lateinit var current: TextView
@@ -49,6 +49,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
     private lateinit var altitude: TextView
     private lateinit var mode: TextView
     private lateinit var followButton: FloatingActionButton
+    private lateinit var mapTypeButton: FloatingActionButton
     private lateinit var topLayout: RelativeLayout
 
     private var lastGPS = LatLng(0.0, 0.0)
@@ -91,9 +92,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
         altitude = findViewById(R.id.altitude)
         mode = findViewById(R.id.mode)
         followButton = findViewById(R.id.follow_button)
+        mapTypeButton = findViewById(R.id.map_type_button)
 
         followButton.setOnClickListener {
             followMode = true
+        }
+
+        mapTypeButton.setOnClickListener {
+            showMapTypeSelectorDialog()
         }
 
         if (checkCallingOrSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED
@@ -282,6 +288,32 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
                 followMode = false
             }
         }
+        map.mapType = GoogleMap.MAP_TYPE_TERRAIN
+    }
+
+    private fun showMapTypeSelectorDialog() {
+        val fDialogTitle = "Select Map Type"
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle(fDialogTitle)
+
+        val checkItem = map.mapType - 1
+
+        builder.setSingleChoiceItems(
+            MAP_TYPE_ITEMS,
+            checkItem
+        ) { dialog, item ->
+            when (item) {
+                1 -> map.mapType = GoogleMap.MAP_TYPE_SATELLITE
+                2 -> map.mapType = GoogleMap.MAP_TYPE_TERRAIN
+                3 -> map.mapType = GoogleMap.MAP_TYPE_HYBRID
+                else -> map.mapType = GoogleMap.MAP_TYPE_NORMAL
+            }
+            dialog.dismiss()
+        }
+
+        val fMapTypeDialog = builder.create()
+        fMapTypeDialog.setCanceledOnTouchOutside(true)
+        fMapTypeDialog.show()
     }
 
     private fun bitmapDescriptorFromVector(context: Context, @DrawableRes vectorDrawableResourceId: Int): BitmapDescriptor {
