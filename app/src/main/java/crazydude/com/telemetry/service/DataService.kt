@@ -1,4 +1,4 @@
-package crazydude.com.telemetry
+package crazydude.com.telemetry.service
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -6,12 +6,14 @@ import android.app.Service
 import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Binder
 import android.os.Build
 import android.os.Environment
 import android.os.IBinder
 import android.support.v4.app.NotificationCompat
 import com.google.android.gms.maps.model.LatLng
+import crazydude.com.telemetry.R
 import crazydude.com.telemetry.protocol.DataPoller
 import java.io.File
 import java.io.FileOutputStream
@@ -57,13 +59,17 @@ class DataService : Service(), DataPoller.Listener {
     }
 
     fun connect(device: BluetoothDevice) {
+        var fileOutputStream : FileOutputStream? = null
+        if (checkCallingOrSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+            val name = SimpleDateFormat("yyyy-MM-dd HH-mm-ss").format(Date())
+            val dir = Environment.getExternalStoragePublicDirectory("TelemetryLogs")
+            dir.mkdirs()
+            val file = File(dir, "$name.log")
+            fileOutputStream = FileOutputStream(file)
+        }
         val socket = device.createRfcommSocketToServiceRecord(device.uuids[0].uuid)
-        val name = SimpleDateFormat("yyyy-MM-dd HH-mm-ss").format(Date())
-        val dir = Environment.getExternalStoragePublicDirectory("TelemetryLogs")
-        dir.mkdirs()
-        val file = File(dir, "$name.log")
         dataPoller?.disconnect()
-        dataPoller = DataPoller(socket, this, FileOutputStream(file))
+        dataPoller = DataPoller(socket, this, fileOutputStream)
     }
 
     fun setDataListener(dataListener: DataPoller.Listener?) {
@@ -140,6 +146,7 @@ class DataService : Service(), DataPoller.Listener {
     }
 
     override fun onGPSState(satellites: Int, gpsFix: Boolean) {
+        hasGPSFix = gpsFix
         dataListener?.onGPSState(satellites, gpsFix)
     }
 

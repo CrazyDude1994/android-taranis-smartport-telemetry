@@ -92,12 +92,24 @@
                     android:id="@+id/mode"
                     android:textColor="@android:color/white"
                     android:layout_margin="8dp"
+                    android:lines="1"
                     android:text="Disconnected"
+                    android:ellipsize="end"
                     android:drawablePadding="4dp"
+                    android:layout_toStartOf="@+id/settings_button"
                     android:textSize="16sp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"/>
 
+            <ImageView
+                    android:background="?selectableItemBackground"
+                    android:id="@id/settings_button"
+                    android:layout_marginEnd="8dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:src="@drawable/ic_settings"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"/>
 
         </RelativeLayout>
 

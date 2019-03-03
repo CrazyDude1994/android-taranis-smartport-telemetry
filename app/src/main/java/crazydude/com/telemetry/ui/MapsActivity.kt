@@ -22,9 +22,10 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
-import crazydude.com.telemetry.DataService
 import crazydude.com.telemetry.R
+import crazydude.com.telemetry.manager.PreferenceManager
 import crazydude.com.telemetry.protocol.DataPoller
+import crazydude.com.telemetry.service.DataService
 import kotlin.math.roundToInt
 
 
@@ -33,6 +34,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
     companion object {
         private const val REQUEST_ENABLE_BT: Int = 0
         private const val REQUEST_LOCATION_PERMISSION: Int = 1
+        private const val REQUEST_WRITE_PERMISSION: Int = 2
         private val MAP_TYPE_ITEMS = arrayOf("Road Map", "Satellite", "Terrain", "Hybrid")
     }
 
@@ -50,7 +52,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
     private lateinit var mode: TextView
     private lateinit var followButton: FloatingActionButton
     private lateinit var mapTypeButton: FloatingActionButton
+    private lateinit var settingsButton: ImageView
     private lateinit var topLayout: RelativeLayout
+    private lateinit var preferenceManager: PreferenceManager
 
     private var lastGPS = LatLng(0.0, 0.0)
     private var followMode = true
@@ -93,6 +97,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
         mode = findViewById(R.id.mode)
         followButton = findViewById(R.id.follow_button)
         mapTypeButton = findViewById(R.id.map_type_button)
+        settingsButton = findViewById(R.id.settings_button)
+
+        settingsButton.setOnClickListener {
+            startActivity(Intent(this, SettingsActivity::class.java))
+        }
+
+        preferenceManager = PreferenceManager(this)
 
         followButton.setOnClickListener {
             followMode = true
@@ -100,20 +111,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
 
         mapTypeButton.setOnClickListener {
             showMapTypeSelectorDialog()
-        }
-
-        if (checkCallingOrSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED
-            || checkCallingOrSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED
-        ) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(
-                    android.Manifest.permission.ACCESS_FINE_LOCATION,
-                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-                ),
-                REQUEST_LOCATION_PERMISSION
-            )
-            return
         }
 
         switchToDisconnectedState()
@@ -191,12 +188,36 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
         }.show()
     }
 
+
     private fun connectToDevice(device: BluetoothDevice) {
-        startDataService()
-        dataService?.let {
-            connectButton.text = getString(R.string.connecting)
-            connectButton.isEnabled = false
-            it.connect(device)
+        if (!preferenceManager.isLoggingSet()) {
+            AlertDialog.Builder(this)
+                .setMessage("Telemetry logging is enabled by default. In order to work it's need write permission")
+                .setNegativeButton("Disable") { dialogInterface, i ->
+                    preferenceManager.setLoggingEnabled(false)
+                }
+                .setPositiveButton("Grant permission") { dialogInterface, i ->
+                    ActivityCompat.requestPermissions(
+                        this,
+                        arrayOf(
+                            android.Manifest.permission.WRITE_EXTERNAL_STORAGE, android.Manifest.permission.READ_EXTERNAL_STORAGE
+                        ),
+                        REQUEST_WRITE_PERMISSION
+                    )
+                }.show()
+        } else {
+            if (preferenceManager.isLoggingEnabled() && checkCallingOrSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
+                AlertDialog.Builder(this)
+                    .setMessage("You have logging enabled but not granted permission. Logging will not work")
+                    .setPositiveButton("OK", null)
+                    .show()
+            }
+            startDataService()
+            dataService?.let {
+                connectButton.text = getString(R.string.connecting)
+                connectButton.isEnabled = false
+                it.connect(device)
+            }
         }
     }
 
@@ -219,10 +240,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
         bindService(intent, serviceConnection, 0)
     }
 
+    @SuppressLint("MissingPermission")
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_LOCATION_PERMISSION) {
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                map.isMyLocationEnabled = true
+            }
+        } else if (requestCode == REQUEST_WRITE_PERMISSION) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                preferenceManager.setLoggingEnabled(true)
             }
         }
     }
@@ -275,10 +302,20 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
 
     }
 
-    @SuppressLint("MissingPermission")
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
-        map.isMyLocationEnabled = true
+        if (checkCallingOrSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            map.isMyLocationEnabled = true
+        } else {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(
+                    android.Manifest.permission.ACCESS_FINE_LOCATION
+                ),
+                REQUEST_LOCATION_PERMISSION
+            )
+            map.isMyLocationEnabled = false
+        }
         topLayout.measure(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT)
         map.setPadding(0, topLayout.measuredHeight, 0, 0)
         val polylineOptions = PolylineOptions()
