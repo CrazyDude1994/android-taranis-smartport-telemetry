@@ -5,13 +5,13 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import crazydude.com.telemetry.protocol.FrSkySportProtocol.Companion.TelemetryType.*
-import java.io.FileOutputStream
-import java.io.IOException
+import java.io.*
 
 class DataPoller(
     private val bluetoothSocket: BluetoothSocket,
     private val listener: Listener,
-    outputStream: FileOutputStream?
+    outputStream: FileOutputStream?,
+    csvOutputStream: FileOutputStream?
 ) :
     FrSkySportProtocol.Companion.DataListener {
 
@@ -22,6 +22,7 @@ class DataPoller(
     private var newLongitude = false
     private var latitude: Double = 0.0
     private var longitude: Double = 0.0
+    private var outputStreamWriter: OutputStreamWriter? = null
 
     companion object {
         private const val TAG = "DataPoller"
@@ -34,6 +35,7 @@ class DataPoller(
     init {
         thread = Thread(Runnable {
             try {
+                csvOutputStream?.let { outputStreamWriter = OutputStreamWriter(it) }
                 bluetoothSocket.connect()
                 if (bluetoothSocket.isConnected) {
                     runOnMainThread(Runnable {
@@ -51,6 +53,11 @@ class DataPoller(
                 } catch (e: IOException) {
                     // ignore
                 }
+                try {
+                    outputStreamWriter?.close()
+                } catch (e: IOException) {
+                    // ignore
+                }
                 runOnMainThread(Runnable {
                     listener.onConnectionFailed()
                 })
@@ -58,6 +65,11 @@ class DataPoller(
             }
             try {
                 outputStream?.close()
+            } catch (e: IOException) {
+                // ignore
+            }
+            try {
+                outputStreamWriter?.close()
             } catch (e: IOException) {
                 // ignore
             }
@@ -97,6 +109,11 @@ class DataPoller(
                     newLongitude = false
                     newLatitude = false
                     listener.onGPSData(latitude, longitude)
+                    try {
+                        outputStreamWriter?.append("$latitude, $longitude\r\n")
+                    } catch (e: IOException) {
+                        //ignore
+                    }
                     Log.d(TAG, "Decoded GPS lat=$latitude long=$longitude")
                 }
             }

@@ -60,16 +60,19 @@ class DataService : Service(), DataPoller.Listener {
 
     fun connect(device: BluetoothDevice) {
         var fileOutputStream : FileOutputStream? = null
+        var csvFileOutputStream : FileOutputStream? = null
         if (checkCallingOrSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
             val name = SimpleDateFormat("yyyy-MM-dd HH-mm-ss").format(Date())
             val dir = Environment.getExternalStoragePublicDirectory("TelemetryLogs")
             dir.mkdirs()
             val file = File(dir, "$name.log")
+            val csvFile = File(dir, "$name.csv")
             fileOutputStream = FileOutputStream(file)
+            csvFileOutputStream = FileOutputStream(csvFile)
         }
         val socket = device.createRfcommSocketToServiceRecord(device.uuids[0].uuid)
         dataPoller?.disconnect()
-        dataPoller = DataPoller(socket, this, fileOutputStream)
+        dataPoller = DataPoller(socket, this, fileOutputStream, csvFileOutputStream)
     }
 
     fun setDataListener(dataListener: DataPoller.Listener?) {
