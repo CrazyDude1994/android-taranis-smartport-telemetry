@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
     <SwitchPreference
+            android:title="Telemetry logging"
+            android:summary="Save telemetry data to sdcard"
             android:text="Logging enabled"
+            android:defaultValue="true"
             android:key="logging_enabled"/>
 </PreferenceScreen>

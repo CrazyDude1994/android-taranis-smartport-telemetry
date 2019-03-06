@@ -1,8 +1,6 @@
 package crazydude.com.telemetry.service
 
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.Service
+import android.app.*
 import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.content.Intent
@@ -12,9 +10,12 @@ import android.os.Build
 import android.os.Environment
 import android.os.IBinder
 import android.support.v4.app.NotificationCompat
+import android.support.v4.content.ContextCompat
 import com.google.android.gms.maps.model.LatLng
 import crazydude.com.telemetry.R
+import crazydude.com.telemetry.manager.PreferenceManager
 import crazydude.com.telemetry.protocol.DataPoller
+import crazydude.com.telemetry.ui.MapsActivity
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -28,10 +29,14 @@ class DataService : Service(), DataPoller.Listener {
     private val dataBinder = DataBinder()
     private var hasGPSFix = false
     private var satellites = 0
+    private lateinit var preferenceManager: PreferenceManager
     val points: ArrayList<LatLng> = ArrayList()
 
     override fun onCreate() {
         super.onCreate()
+
+        preferenceManager = PreferenceManager(this)
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val importance = NotificationManager.IMPORTANCE_LOW
             val channel =
@@ -40,9 +45,12 @@ class DataService : Service(), DataPoller.Listener {
                 getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
         }
+
+
         val notification = NotificationCompat.Builder(this, "bt_channel")
             .setContentText("Telemetry service is running")
             .setContentTitle("Telemetry service is running. To stop - disconnect and close the app")
+            .setContentIntent(PendingIntent.getActivity(this, -1, Intent(this, MapsActivity::class.java), 0))
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .build()
         startForeground(1, notification)
@@ -59,9 +67,14 @@ class DataService : Service(), DataPoller.Listener {
     }
 
     fun connect(device: BluetoothDevice) {
-        var fileOutputStream : FileOutputStream? = null
-        var csvFileOutputStream : FileOutputStream? = null
-        if (checkCallingOrSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+        var fileOutputStream: FileOutputStream? = null
+        var csvFileOutputStream: FileOutputStream? = null
+        if (preferenceManager.isLoggingEnabled()
+            && ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
             val name = SimpleDateFormat("yyyy-MM-dd HH-mm-ss").format(Date())
             val dir = Environment.getExternalStoragePublicDirectory("TelemetryLogs")
             dir.mkdirs()

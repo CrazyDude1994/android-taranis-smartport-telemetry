@@ -3,7 +3,10 @@ package crazydude.com.telemetry.ui
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
-import android.content.*
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -55,6 +58,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
     private lateinit var settingsButton: ImageView
     private lateinit var topLayout: RelativeLayout
     private lateinit var preferenceManager: PreferenceManager
+    private var mapType = GoogleMap.MAP_TYPE_NORMAL
 
     private var lastGPS = LatLng(0.0, 0.0)
     private var followMode = true
@@ -171,12 +175,39 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
         }
     }
 
+    override fun onSaveInstanceState(outState: Bundle?) {
+        super.onSaveInstanceState(outState)
+        outState?.putInt("map_type", map.mapType)
+        outState?.putBoolean("follow_mode", followMode)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle?) {
+        super.onRestoreInstanceState(savedInstanceState)
+        mapType = savedInstanceState?.getInt("map_type") ?: GoogleMap.MAP_TYPE_NORMAL
+        followMode = savedInstanceState?.getBoolean("follow_mode", true) ?: true
+    }
+
     private fun connect() {
         val adapter = BluetoothAdapter.getDefaultAdapter()
         if (!adapter.isEnabled) {
             val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
         }
+        if (preferenceManager.isLoggingEnabled()) {
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+                ) == PackageManager.PERMISSION_DENIED
+            ) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                    REQUEST_WRITE_PERMISSION
+                )
+                return
+            }
+        }
+
         val devices = BluetoothAdapter.getDefaultAdapter().bondedDevices.toList()
         AlertDialog.Builder(this).setAdapter(
             ArrayAdapter<String>(
@@ -190,34 +221,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
 
 
     private fun connectToDevice(device: BluetoothDevice) {
-        if (!preferenceManager.isLoggingSet()) {
-            AlertDialog.Builder(this)
-                .setMessage("Telemetry logging is enabled by default. In order to work it's need write permission")
-                .setNegativeButton("Disable") { dialogInterface, i ->
-                    preferenceManager.setLoggingEnabled(false)
-                }
-                .setPositiveButton("Grant permission") { dialogInterface, i ->
-                    ActivityCompat.requestPermissions(
-                        this,
-                        arrayOf(
-                            android.Manifest.permission.WRITE_EXTERNAL_STORAGE, android.Manifest.permission.READ_EXTERNAL_STORAGE
-                        ),
-                        REQUEST_WRITE_PERMISSION
-                    )
-                }.show()
-        } else {
-            if (preferenceManager.isLoggingEnabled() && checkCallingOrSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
-                AlertDialog.Builder(this)
-                    .setMessage("You have logging enabled but not granted permission. Logging will not work")
-                    .setPositiveButton("OK", null)
-                    .show()
-            }
-            startDataService()
-            dataService?.let {
-                connectButton.text = getString(R.string.connecting)
-                connectButton.isEnabled = false
-                it.connect(device)
-            }
+        startDataService()
+        dataService?.let {
+            connectButton.text = getString(R.string.connecting)
+            connectButton.isEnabled = false
+            it.connect(device)
         }
     }
 
@@ -234,7 +242,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForegroundService(intent)
         } else {
-            startDataService()
+            startService(intent)
         }
         startService(intent)
         bindService(intent, serviceConnection, 0)
@@ -249,7 +257,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
             }
         } else if (requestCode == REQUEST_WRITE_PERMISSION) {
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                preferenceManager.setLoggingEnabled(true)
+                connect()
+            } else {
+                AlertDialog.Builder(this)
+                    .setMessage("Write permission is required in order to log telemetry data. Disable logging or grant permission to continue")
+                    .setPositiveButton("OK", null)
+                    .show()
             }
         }
     }
@@ -304,6 +317,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
 
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
+        map.mapType = mapType
         if (checkCallingOrSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             map.isMyLocationEnabled = true
         } else {
@@ -325,7 +339,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
                 followMode = false
             }
         }
-        map.mapType = GoogleMap.MAP_TYPE_TERRAIN
     }
 
     private fun showMapTypeSelectorDialog() {

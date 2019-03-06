@@ -24,6 +24,7 @@
                 android:value="@integer/google_play_services_version"/>
 
         <activity
+                android:launchMode="singleInstance"
                 android:name=".ui.MapsActivity"
                 android:theme="@style/AppTheme"
                 android:label="@string/app_name">
@@ -35,7 +36,10 @@
             </intent-filter>
 
         </activity>
-        <activity android:name=".ui.SettingsActivity"/>
+        <activity
+                android:label="Settings"
+                android:name=".ui.SettingsActivity"
+                android:theme="@style/AppTheme"/>
 
         <service android:name=".service.DataService"/>
     </application>

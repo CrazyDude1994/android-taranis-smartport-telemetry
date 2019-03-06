@@ -8,7 +8,7 @@ public class PrefsFragment extends PreferenceFragmentCompat {
 
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
-        // Load the preferences from an XML resource
+        getPreferenceManager().setSharedPreferencesName("settings");
         setPreferencesFromResource(R.xml.preferences, rootKey);
     }
 }
