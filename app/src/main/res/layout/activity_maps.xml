@@ -45,7 +45,9 @@
                     android:drawablePadding="4dp"
                     android:textSize="16sp"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
+                    android:layout_height="wrap_content"
+                    android:layout_toRightOf="@id/connect_button"
+                    android:drawableLeft="@drawable/ic_satellite"/>
 
 
             <TextView
@@ -58,7 +60,9 @@
                     android:drawableStart="@drawable/ic_battery_unknown"
                     android:textSize="16sp"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
+                    android:layout_height="wrap_content"
+                    android:layout_toRightOf="@id/satellites"
+                    android:drawableLeft="@drawable/ic_battery_unknown"/>
 
             <TextView
                     android:layout_centerVertical="true"
@@ -71,7 +75,9 @@
                     android:drawableStart="@drawable/ic_current"
                     android:textSize="16sp"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
+                    android:layout_height="wrap_content"
+                    android:layout_toRightOf="@id/fuel"
+                    android:drawableLeft="@drawable/ic_current"/>
 
             <TextView
                     android:layout_centerVertical="true"
@@ -84,7 +90,9 @@
                     android:drawableStart="@drawable/ic_voltage"
                     android:textSize="16sp"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
+                    android:layout_height="wrap_content"
+                    android:layout_toRightOf="@id/current"
+                    android:drawableLeft="@drawable/ic_voltage"/>
 
             <ImageView
                     android:background="?selectableItemBackground"
@@ -94,7 +102,9 @@
                     android:layout_centerVertical="true"
                     android:src="@drawable/ic_settings"
                     android:layout_width="32dp"
-                    android:layout_height="32dp"/>
+                    android:layout_height="32dp"
+                    android:layout_marginRight="8dp"
+                    android:layout_alignParentRight="true"/>
 
         </RelativeLayout>
 
@@ -116,7 +126,8 @@
                     android:drawableStart="@drawable/ic_speed"
                     android:textSize="16sp"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
+                    android:layout_height="wrap_content"
+                    android:drawableLeft="@drawable/ic_speed"/>
 
             <TextView
                     android:layout_centerVertical="true"
@@ -129,7 +140,9 @@
                     android:drawableStart="@drawable/ic_distance"
                     android:textSize="16sp"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
+                    android:layout_height="wrap_content"
+                    android:layout_toRightOf="@id/speed"
+                    android:drawableLeft="@drawable/ic_distance"/>
 
             <TextView
                     android:layout_centerVertical="true"
@@ -142,7 +155,9 @@
                     android:drawableStart="@drawable/ic_altitutde"
                     android:textSize="16sp"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
+                    android:layout_height="wrap_content"
+                    android:layout_toRightOf="@id/distance"
+                    android:drawableLeft="@drawable/ic_altitutde"/>
 
             <TextView
                     android:layout_centerVertical="true"
@@ -156,7 +171,8 @@
                     android:textSize="16sp"
                     android:layout_alignParentEnd="true"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentRight="true"/>
 
         </RelativeLayout>
 
@@ -168,7 +184,8 @@
                 android:layout_margin="8dp"
                 android:layout_width="wrap_content"
                 android:layout_above="@id/bottom_layout"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"/>
 
         <android.support.design.widget.FloatingActionButton
                 app:fabSize="mini"
@@ -178,7 +195,8 @@
                 android:layout_margin="8dp"
                 android:layout_width="wrap_content"
                 android:layout_above="@id/map_type_button"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"/>
 
     </RelativeLayout>
 
