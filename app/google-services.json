@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "699333424947",
+    "firebase_url": "https://rational-cat-233021.firebaseio.com",
+    "project_id": "rational-cat-233021",
+    "storage_bucket": "rational-cat-233021.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:699333424947:android:b573d54adff8e8f4",
+        "android_client_info": {
+          "package_name": "crazydude.com.telemetry"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "699333424947-tg21sh8vvcdfnuhtrj5f9lqfmh5pf07l.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "crazydude.com.telemetry",
+            "certificate_hash": "83e19a1d2234cd3e2dd15b5a2622b3f1dcd14089"
+          }
+        },
+        {
+          "client_id": "699333424947-3slmlfpu1025nn2bds0gito59kbbi1m3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDDygjF8Jmtrwcu78HOnUIi7SdgCMzYBTo"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "699333424947-3slmlfpu1025nn2bds0gito59kbbi1m3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
