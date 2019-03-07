@@ -23,6 +23,14 @@
           }
         },
         {
+          "client_id": "699333424947-u941s714a40tds2k7alkss8iepb3crh5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "crazydude.com.telemetry",
+            "certificate_hash": "b17f80fe08547518b1158704a93731d97585d623"
+          }
+        },
+        {
           "client_id": "699333424947-3slmlfpu1025nn2bds0gito59kbbi1m3.apps.googleusercontent.com",
           "client_type": 3
         }
