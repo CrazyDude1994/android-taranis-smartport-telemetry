@@ -15,6 +15,6 @@ Connect inverter to your Smart Port and then connect bluetooth module to the inv
 # Google Play
 https://play.google.com/store/apps/details?id=crazydude.com.telemetry
 
-# Donate help
+# Say thanks
 If you want to help or say thanks, best way is just to follow my FPV youtube channel
 https://www.youtube.com/channel/UCjAhODF0Achhc1fynxEXQLg?view_as=subscriber
