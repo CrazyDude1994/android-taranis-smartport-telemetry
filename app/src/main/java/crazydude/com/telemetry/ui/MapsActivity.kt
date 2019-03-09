@@ -177,7 +177,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
 
     override fun onSaveInstanceState(outState: Bundle?) {
         super.onSaveInstanceState(outState)
-        outState?.putInt("map_type", map.mapType)
+        outState?.putInt("map_type", mapType)
         outState?.putBoolean("follow_mode", followMode)
     }
 
@@ -358,6 +358,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
                 3 -> map.mapType = GoogleMap.MAP_TYPE_HYBRID
                 else -> map.mapType = GoogleMap.MAP_TYPE_NORMAL
             }
+            mapType = map.mapType
             dialog.dismiss()
         }
 
@@ -434,7 +435,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
             in 21..30 -> R.drawable.ic_battery_30
             in 0..20 -> R.drawable.ic_battery_alert
             else -> R.drawable.ic_battery_unknown
-        }.let { this.fuel.setCompoundDrawablesWithIntrinsicBounds(getDrawable(it), null, null, null) }
+        }.let { this.fuel.setCompoundDrawablesWithIntrinsicBounds(ContextCompat.getDrawable(this, it), null, null, null) }
         this.fuel.text = "$fuel%"
     }
 
