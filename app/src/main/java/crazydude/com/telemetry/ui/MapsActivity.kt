@@ -251,18 +251,20 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
     @SuppressLint("MissingPermission")
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_LOCATION_PERMISSION) {
-            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                map.isMyLocationEnabled = true
-            }
-        } else if (requestCode == REQUEST_WRITE_PERMISSION) {
-            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                connect()
-            } else {
-                AlertDialog.Builder(this)
-                    .setMessage("Write permission is required in order to log telemetry data. Disable logging or grant permission to continue")
-                    .setPositiveButton("OK", null)
-                    .show()
+        if (grantResults.isNotEmpty()) {
+            if (requestCode == REQUEST_LOCATION_PERMISSION) {
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    map.isMyLocationEnabled = true
+                }
+            } else if (requestCode == REQUEST_WRITE_PERMISSION) {
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    connect()
+                } else {
+                    AlertDialog.Builder(this)
+                        .setMessage("Write permission is required in order to log telemetry data. Disable logging or grant permission to continue")
+                        .setPositiveButton("OK", null)
+                        .show()
+                }
             }
         }
     }
