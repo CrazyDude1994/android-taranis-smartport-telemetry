@@ -4,8 +4,9 @@ import android.bluetooth.BluetoothSocket
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import crazydude.com.telemetry.protocol.FrSkySportProtocol.Companion.TelemetryType.*
-import java.io.*
+import java.io.FileOutputStream
+import java.io.IOException
+import java.io.OutputStreamWriter
 
 class DataPoller(
     private val bluetoothSocket: BluetoothSocket,
@@ -90,10 +91,10 @@ class DataPoller(
 
     override fun onNewData(data: FrSkySportProtocol.Companion.TelemetryData) {
         runOnMainThread(when (data.telemetryType) {
-            FUEL -> Runnable {
+            FrSkySportProtocol.FUEL -> Runnable {
                 listener.onFuelData(data.data)
             }
-            GPS -> Runnable {
+            FrSkySportProtocol.GPS -> Runnable {
                 var gpsData = (data.data and 0x3FFFFFFF) / 10000.0 / 60.0
                 if (data.data and 0x40000000 > 0) {
                     gpsData = -gpsData
@@ -117,32 +118,32 @@ class DataPoller(
                     Log.d(TAG, "Decoded GPS lat=$latitude long=$longitude")
                 }
             }
-            VBAT -> Runnable {
+            FrSkySportProtocol.VBAT -> Runnable {
                 val value = data.data / 100f
                 listener.onVBATData(value)
                 Log.d(TAG, "Decoded vbat $value")
             }
-            CELL_VOLTAGE -> Runnable {
+            FrSkySportProtocol.CELL_VOLTAGE -> Runnable {
                 val value = data.data / 100f
                 listener.onCellVoltageData(value)
                 Log.d(TAG, "Decoded cell voltage $value")
             }
-            CURRENT -> Runnable {
+            FrSkySportProtocol.CURRENT -> Runnable {
                 val value = data.data / 10f
                 listener.onCurrentData(value)
                 Log.d(TAG, "Decoded current $value")
             }
 
-            HEADING -> Runnable {
+            FrSkySportProtocol.HEADING -> Runnable {
                 val value = data.data / 100f
                 listener.onHeadingData(value)
                 Log.d(TAG, "Decoded heading $value")
             }
-            RSSI -> Runnable {
+            FrSkySportProtocol.RSSI -> Runnable {
                 listener.onRSSIData(data.data)
             }
 
-            FLYMODE -> Runnable {
+            FrSkySportProtocol.FLYMODE -> Runnable {
                 val modeA = data.data / 10000
                 val modeB = data.data / 1000 % 10
                 val modeC = data.data / 100 % 10
@@ -179,45 +180,48 @@ class DataPoller(
 
                 listener.onFlyModeData(armed, heading, firstFlightMode, secondFlightMode)
             }
-            GPS_STATE -> Runnable {
+            FrSkySportProtocol.GPS_STATE -> Runnable {
                 val satellites = data.data % 100
                 val isFix = data.data > 1000
                 listener.onGPSState(satellites, isFix)
                 Log.d(TAG, "Decoded satellites $satellites isFix=$isFix")
             }
-            VSPEED -> Runnable {
+            FrSkySportProtocol.VSPEED -> Runnable {
                 val value = data.data / 100f
                 listener.onVSpeedData(value)
                 Log.d(TAG, "Decoded vspeed $value")
             }
-            ALTITUDE -> Runnable {
+            FrSkySportProtocol.ALTITUDE -> Runnable {
                 val value = data.data / 100f
                 listener.onAltitudeData(value)
                 Log.d(TAG, "Decoded altitutde $value")
             }
-            GSPEED -> Runnable {
+            FrSkySportProtocol.GSPEED -> Runnable {
                 val value = (data.data / (1944f / 100f)) / 27.778f
                 listener.onGSpeedData(value)
                 Log.d(TAG, "Decoded GSpeed $value")
             }
-            DISTANCE -> Runnable {
+            FrSkySportProtocol.DISTANCE -> Runnable {
                 listener.onDistanceData(data.data)
                 Log.d(TAG, "Decoded distance ${data.data}")
             }
-            ROLL -> Runnable {
+            FrSkySportProtocol.ROLL -> Runnable {
                 val value = data.data / 10f
                 listener.onRollData(value)
                 Log.d(TAG, "Decoded roll $value")
             }
-            GALT -> Runnable {
+            FrSkySportProtocol.GALT -> Runnable {
                 val value = data.data / 100f
                 listener.onGPSAltitudeData(value)
                 Log.d(TAG, "Decoded gps altitude $value")
             }
-            PITCH -> Runnable {
+            FrSkySportProtocol.PITCH -> Runnable {
                 val value = data.data / 10f
                 listener.onPitchData(value)
                 Log.d(TAG, "Decoded pitch $value")
+            }
+            else -> {
+                Runnable { }
             }
         })
     }

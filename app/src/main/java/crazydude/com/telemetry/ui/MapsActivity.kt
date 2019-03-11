@@ -1,6 +1,7 @@
 package crazydude.com.telemetry.ui
 
 import android.annotation.SuppressLint
+import android.app.ProgressDialog
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.content.ComponentName
@@ -12,6 +13,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.os.IBinder
 import android.support.annotation.DrawableRes
 import android.support.design.widget.FloatingActionButton
@@ -19,6 +21,7 @@ import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
+import android.view.View
 import android.widget.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -28,7 +31,9 @@ import com.google.android.gms.maps.model.*
 import crazydude.com.telemetry.R
 import crazydude.com.telemetry.manager.PreferenceManager
 import crazydude.com.telemetry.protocol.DataPoller
+import crazydude.com.telemetry.protocol.LogPlayer
 import crazydude.com.telemetry.service.DataService
+import java.io.File
 import kotlin.math.roundToInt
 
 
@@ -38,6 +43,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
         private const val REQUEST_ENABLE_BT: Int = 0
         private const val REQUEST_LOCATION_PERMISSION: Int = 1
         private const val REQUEST_WRITE_PERMISSION: Int = 2
+        private const val REQUEST_READ_PERMISSION: Int = 3
         private val MAP_TYPE_ITEMS = arrayOf("Road Map", "Satellite", "Terrain", "Hybrid")
     }
 
@@ -45,6 +51,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
     private var marker: Marker? = null
 
     private lateinit var connectButton: Button
+    private lateinit var replayButton: ImageView
+    private lateinit var seekBar: SeekBar
     private lateinit var fuel: TextView
     private lateinit var satellites: TextView
     private lateinit var current: TextView
@@ -102,6 +110,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
         followButton = findViewById(R.id.follow_button)
         mapTypeButton = findViewById(R.id.map_type_button)
         settingsButton = findViewById(R.id.settings_button)
+        replayButton = findViewById(R.id.replay_button)
+        seekBar = findViewById(R.id.seekbar)
+
+        replayButton.setOnClickListener {
+            replay()
+        }
 
         settingsButton.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
@@ -124,6 +138,72 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
         mapFragment.getMapAsync(this)
 
         startDataService()
+    }
+
+    private fun replay() {
+        if (dataService?.isConnected() != true) {
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    android.Manifest.permission.READ_EXTERNAL_STORAGE
+                ) == PackageManager.PERMISSION_DENIED
+            ) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE),
+                    REQUEST_READ_PERMISSION
+                )
+            } else {
+                val dir = Environment.getExternalStoragePublicDirectory("TelemetryLogs")
+                if (dir.exists()) {
+                    val files = dir.listFiles { file -> file.extension == "log" && file.length() > 0 }
+                    AlertDialog.Builder(this)
+                        .setAdapter(
+                            ArrayAdapter<String>(
+                                this,
+                                android.R.layout.simple_list_item_1,
+                                files.map { i -> i.nameWithoutExtension })
+                        ) { _, i ->
+                            startReplay(files[i])
+                        }
+                        .show()
+                }
+            }
+        } else {
+            Toast.makeText(this, "You need to disconnect first", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun startReplay(file: File?) {
+        file?.also {
+            val progressDialog = ProgressDialog(this)
+            progressDialog.setCancelable(false)
+            progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL)
+            progressDialog.max = 100
+            progressDialog.show()
+
+            val logPlayer = LogPlayer(it, object: LogPlayer.DataReadyListener {
+                override fun onUpdate(percent: Int) {
+                    progressDialog.progress = percent
+                }
+
+                override fun onDataReady(size: Int) {
+                    progressDialog.hide()
+                    seekBar.max = size
+                    seekBar.visibility = View.VISIBLE
+                    seekBar.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener {
+                        override fun onProgressChanged(p0: SeekBar?, position: Int, p2: Boolean) {
+                        }
+
+                        override fun onStartTrackingTouch(p0: SeekBar?) {
+                        }
+
+                        override fun onStopTrackingTouch(p0: SeekBar?) {
+
+                        }
+                    })
+                }
+            })
+        }
     }
 
     override fun onFlyModeData(
@@ -262,6 +342,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
                 } else {
                     AlertDialog.Builder(this)
                         .setMessage("Write permission is required in order to log telemetry data. Disable logging or grant permission to continue")
+                        .setPositiveButton("OK", null)
+                        .show()
+                }
+            } else if (requestCode == REQUEST_READ_PERMISSION) {
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    replay()
+                } else {
+                    AlertDialog.Builder(this)
+                        .setMessage("Read permission is required in order to read and replay telemetry data")
                         .setPositiveButton("OK", null)
                         .show()
                 }
