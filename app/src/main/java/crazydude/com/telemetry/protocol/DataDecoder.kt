@@ -1,94 +1,25 @@
 package crazydude.com.telemetry.protocol
 
-import android.bluetooth.BluetoothSocket
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import java.io.FileOutputStream
 import java.io.IOException
-import java.io.OutputStreamWriter
 
-class DataPoller(
-    private val bluetoothSocket: BluetoothSocket,
-    private val listener: Listener,
-    outputStream: FileOutputStream?,
-    csvOutputStream: FileOutputStream?
-) :
-    FrSkySportProtocol.Companion.DataListener {
+class DataDecoder(private val listener: Listener): FrSkySportProtocol.Companion.DataListener {
 
-    private val protocol: FrSkySportProtocol =
-        FrSkySportProtocol(this)
-    private lateinit var thread: Thread
     private var newLatitude = false
     private var newLongitude = false
     private var latitude: Double = 0.0
     private var longitude: Double = 0.0
-    private var outputStreamWriter: OutputStreamWriter? = null
-
+    
     companion object {
-        private const val TAG = "DataPoller"
+        private const val TAG = "DataDecoder"
 
         enum class FlyMode {
             ACRO, HORIZON, ANGLE, FAILSAFE, RTH, WAYPOINT, MANUAL, CRUISE
         }
     }
-
-    init {
-        thread = Thread(Runnable {
-            try {
-                csvOutputStream?.let { outputStreamWriter = OutputStreamWriter(it) }
-                bluetoothSocket.connect()
-                if (bluetoothSocket.isConnected) {
-                    runOnMainThread(Runnable {
-                        listener.onConnected()
-                    })
-                }
-                while (!thread.isInterrupted && bluetoothSocket.isConnected) {
-                    val data = bluetoothSocket.inputStream.read()
-                    outputStream?.write(data)
-                    protocol.process(data)
-                }
-            } catch (e: IOException) {
-                try {
-                    outputStream?.close()
-                } catch (e: IOException) {
-                    // ignore
-                }
-                try {
-                    outputStreamWriter?.close()
-                } catch (e: IOException) {
-                    // ignore
-                }
-                runOnMainThread(Runnable {
-                    listener.onConnectionFailed()
-                })
-                return@Runnable
-            }
-            try {
-                outputStream?.close()
-            } catch (e: IOException) {
-                // ignore
-            }
-            try {
-                outputStreamWriter?.close()
-            } catch (e: IOException) {
-                // ignore
-            }
-            try {
-                bluetoothSocket.close()
-                runOnMainThread(Runnable {
-                    listener.onDisconnected()
-                })
-            } catch (e: IOException) {
-                runOnMainThread(Runnable {
-                    listener.onDisconnected()
-                })
-            }
-        })
-
-        thread.start()
-    }
-
+    
     override fun onNewData(data: FrSkySportProtocol.Companion.TelemetryData) {
         runOnMainThread(when (data.telemetryType) {
             FrSkySportProtocol.FUEL -> Runnable {
@@ -111,7 +42,7 @@ class DataPoller(
                     newLatitude = false
                     listener.onGPSData(latitude, longitude)
                     try {
-                        outputStreamWriter?.append("$latitude, $longitude\r\n")
+//                        outputStreamWriter?.append("$latitude, $longitude\r\n")
                     } catch (e: IOException) {
                         //ignore
                     }
@@ -154,26 +85,26 @@ class DataPoller(
                 val secondFlightMode: FlyMode?
 
                 if (modeD and 2 == 2) {
-                    firstFlightMode = Companion.FlyMode.HORIZON
+                    firstFlightMode = FlyMode.HORIZON
                 } else if (modeD and 1 == 1) {
-                    firstFlightMode = Companion.FlyMode.ANGLE
+                    firstFlightMode = FlyMode.ANGLE
                 } else {
-                    firstFlightMode = Companion.FlyMode.ACRO
+                    firstFlightMode = FlyMode.ACRO
                 }
 
                 val armed = modeE and 4 == 4
                 val heading = modeC and 1 == 1
 
                 if (modeA and 4 == 4) {
-                    secondFlightMode = Companion.FlyMode.FAILSAFE
+                    secondFlightMode = FlyMode.FAILSAFE
                 } else if (modeB and 1 == 1) {
-                    secondFlightMode = Companion.FlyMode.RTH
+                    secondFlightMode = FlyMode.RTH
                 } else if (modeD and 4 == 4) {
-                    secondFlightMode = Companion.FlyMode.MANUAL
+                    secondFlightMode = FlyMode.MANUAL
                 } else if (modeB and 2 == 2) {
-                    secondFlightMode = Companion.FlyMode.WAYPOINT
+                    secondFlightMode = FlyMode.WAYPOINT
                 } else if (modeB and 8 == 8) {
-                    secondFlightMode = Companion.FlyMode.CRUISE
+                    secondFlightMode = FlyMode.CRUISE
                 } else {
                     secondFlightMode = null
                 }
@@ -226,17 +157,6 @@ class DataPoller(
         })
     }
 
-    private fun runOnMainThread(runnable: Runnable) {
-        Handler(Looper.getMainLooper())
-            .post {
-                runnable.run()
-            }
-    }
-
-    fun disconnect() {
-        thread.interrupt()
-    }
-
     interface Listener {
         fun onConnectionFailed()
         fun onFuelData(fuel: Int)
@@ -262,5 +182,13 @@ class DataPoller(
             firstFlightMode: FlyMode,
             secondFlightMode: FlyMode?
         )
+    }
+
+
+    private fun runOnMainThread(runnable: Runnable) {
+        Handler(Looper.getMainLooper())
+            .post {
+                runnable.run()
+            }
     }
 }

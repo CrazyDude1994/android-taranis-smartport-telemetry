@@ -8,6 +8,7 @@ class LogPlayer(file: File, val dataReadyListener: DataReadyListener) {
 
     private val logFile = FileInputStream(file)
     private var cachedData = ArrayList<FrSkySportProtocol.Companion.TelemetryData>()
+    private var dataPoller: BluetoothDataPoller? = null
 
     companion object {
         private const val TAG = "LogPlayer"
@@ -45,11 +46,16 @@ class LogPlayer(file: File, val dataReadyListener: DataReadyListener) {
             }
 
             override fun onPostExecute(result: ArrayList<FrSkySportProtocol.Companion.TelemetryData>) {
-                dataReadyListener.onDataReady(result?.size)
                 cachedData = result
+//                dataPoller = BluetoothDataPoller()
+                dataReadyListener.onDataReady(result?.size)
             }
 
         }.execute(file)
+    }
+
+    fun seek(position: Int) {
+
     }
 
     interface DataReadyListener {

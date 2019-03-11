@@ -30,14 +30,15 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
 import crazydude.com.telemetry.R
 import crazydude.com.telemetry.manager.PreferenceManager
-import crazydude.com.telemetry.protocol.DataPoller
+import crazydude.com.telemetry.protocol.BluetoothDataPoller
+import crazydude.com.telemetry.protocol.DataDecoder
 import crazydude.com.telemetry.protocol.LogPlayer
 import crazydude.com.telemetry.service.DataService
 import java.io.File
 import kotlin.math.roundToInt
 
 
-class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listener {
+class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listener {
 
     companion object {
         private const val REQUEST_ENABLE_BT: Int = 0
@@ -181,7 +182,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
             progressDialog.max = 100
             progressDialog.show()
 
-            val logPlayer = LogPlayer(it, object: LogPlayer.DataReadyListener {
+            LogPlayer(it, object: LogPlayer.DataReadyListener {
                 override fun onUpdate(percent: Int) {
                     progressDialog.progress = percent
                 }
@@ -191,7 +192,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
                     seekBar.max = size
                     seekBar.visibility = View.VISIBLE
                     seekBar.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener {
-                        override fun onProgressChanged(p0: SeekBar?, position: Int, p2: Boolean) {
+                        override fun onProgressChanged(seekbar: SeekBar, position: Int, p2: Boolean) {
                         }
 
                         override fun onStartTrackingTouch(p0: SeekBar?) {
@@ -209,8 +210,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
     override fun onFlyModeData(
         armed: Boolean,
         heading: Boolean,
-        firstFlightMode: DataPoller.Companion.FlyMode,
-        secondFlightMode: DataPoller.Companion.FlyMode?
+        firstFlightMode: DataDecoder.Companion.FlyMode,
+        secondFlightMode: DataDecoder.Companion.FlyMode?
     ) {
         if (armed) {
             mode.text = "Armed"
@@ -224,31 +225,31 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataPoller.Listene
 
         if (secondFlightMode == null) {
             when (firstFlightMode) {
-                DataPoller.Companion.FlyMode.ACRO -> {
+                DataDecoder.Companion.FlyMode.ACRO -> {
                     mode.text = mode.text.toString() + " | Acro"
                 }
-                DataPoller.Companion.FlyMode.HORIZON -> {
+                DataDecoder.Companion.FlyMode.HORIZON -> {
                     mode.text = mode.text.toString() + " | Horizon"
                 }
-                DataPoller.Companion.FlyMode.ANGLE -> {
+                DataDecoder.Companion.FlyMode.ANGLE -> {
                     mode.text = mode.text.toString() + " | Angle"
                 }
             }
         } else {
             when (secondFlightMode) {
-                DataPoller.Companion.FlyMode.FAILSAFE -> {
+                DataDecoder.Companion.FlyMode.FAILSAFE -> {
                     mode.text = mode.text.toString() + " | Failsafe"
                 }
-                DataPoller.Companion.FlyMode.RTH -> {
+                DataDecoder.Companion.FlyMode.RTH -> {
                     mode.text = mode.text.toString() + " | RTH"
                 }
-                DataPoller.Companion.FlyMode.WAYPOINT -> {
+                DataDecoder.Companion.FlyMode.WAYPOINT -> {
                     mode.text = mode.text.toString() + " | Waypoint"
                 }
-                DataPoller.Companion.FlyMode.MANUAL -> {
+                DataDecoder.Companion.FlyMode.MANUAL -> {
                     mode.text = mode.text.toString() + " | Manual"
                 }
-                DataPoller.Companion.FlyMode.CRUISE -> {
+                DataDecoder.Companion.FlyMode.CRUISE -> {
                     mode.text = mode.text.toString() + " | Cruise"
                 }
             }

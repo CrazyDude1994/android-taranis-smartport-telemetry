@@ -14,7 +14,8 @@ import android.support.v4.content.ContextCompat
 import com.google.android.gms.maps.model.LatLng
 import crazydude.com.telemetry.R
 import crazydude.com.telemetry.manager.PreferenceManager
-import crazydude.com.telemetry.protocol.DataPoller
+import crazydude.com.telemetry.protocol.BluetoothDataPoller
+import crazydude.com.telemetry.protocol.DataDecoder
 import crazydude.com.telemetry.ui.MapsActivity
 import java.io.File
 import java.io.FileOutputStream
@@ -22,10 +23,10 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
 
-class DataService : Service(), DataPoller.Listener {
+class DataService : Service(), DataDecoder.Listener {
 
-    private var dataPoller: DataPoller? = null
-    private var dataListener: DataPoller.Listener? = null
+    private var dataPoller: BluetoothDataPoller? = null
+    private var dataListener: DataDecoder.Listener? = null
     private val dataBinder = DataBinder()
     private var hasGPSFix = false
     private var satellites = 0
@@ -85,10 +86,10 @@ class DataService : Service(), DataPoller.Listener {
         }
         val socket = device.createRfcommSocketToServiceRecord(device.uuids[0].uuid)
         dataPoller?.disconnect()
-        dataPoller = DataPoller(socket, this, fileOutputStream, csvFileOutputStream)
+        dataPoller = BluetoothDataPoller(socket, this, fileOutputStream, csvFileOutputStream)
     }
 
-    fun setDataListener(dataListener: DataPoller.Listener?) {
+    fun setDataListener(dataListener: DataDecoder.Listener?) {
         this.dataListener = dataListener
         if (dataListener != null) {
             dataListener.onGPSState(satellites, hasGPSFix)
@@ -197,8 +198,8 @@ class DataService : Service(), DataPoller.Listener {
     override fun onFlyModeData(
         armed: Boolean,
         heading: Boolean,
-        firstFlightMode: DataPoller.Companion.FlyMode,
-        secondFlightMode: DataPoller.Companion.FlyMode?
+        firstFlightMode: DataDecoder.Companion.FlyMode,
+        secondFlightMode: DataDecoder.Companion.FlyMode?
     ) {
         dataListener?.onFlyModeData(armed, heading, firstFlightMode, secondFlightMode)
     }
