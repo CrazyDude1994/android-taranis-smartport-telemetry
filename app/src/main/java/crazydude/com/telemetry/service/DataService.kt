@@ -11,6 +11,7 @@ import android.os.Environment
 import android.os.IBinder
 import android.support.v4.app.NotificationCompat
 import android.support.v4.content.ContextCompat
+import android.widget.Toast
 import com.google.android.gms.maps.model.LatLng
 import crazydude.com.telemetry.R
 import crazydude.com.telemetry.manager.PreferenceManager
@@ -18,6 +19,7 @@ import crazydude.com.telemetry.protocol.DataPoller
 import crazydude.com.telemetry.ui.MapsActivity
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
@@ -83,9 +85,13 @@ class DataService : Service(), DataPoller.Listener {
             fileOutputStream = FileOutputStream(file)
             csvFileOutputStream = FileOutputStream(csvFile)
         }
-        val socket = device.createRfcommSocketToServiceRecord(device.uuids[0].uuid)
-        dataPoller?.disconnect()
-        dataPoller = DataPoller(socket, this, fileOutputStream, csvFileOutputStream)
+        try {
+            val socket = device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
+            dataPoller?.disconnect()
+            dataPoller = DataPoller(socket, this, fileOutputStream, csvFileOutputStream)
+        } catch (e: IOException) {
+            Toast.makeText(this, "Failed to connect to bluetooth", Toast.LENGTH_LONG).show()
+        }
     }
 
     fun setDataListener(dataListener: DataPoller.Listener?) {
