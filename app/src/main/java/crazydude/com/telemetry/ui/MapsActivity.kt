@@ -11,10 +11,7 @@ import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.os.Build
-import android.os.Bundle
-import android.os.Environment
-import android.os.IBinder
+import android.os.*
 import android.support.annotation.DrawableRes
 import android.support.design.widget.FloatingActionButton
 import android.support.v4.app.ActivityCompat
@@ -73,6 +70,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     private var followMode = true
     private lateinit var polyLine: Polyline
     private var hasGPSFix = false
+    private var inReplayMode = false
     private var dataService: DataService? = null
 
     private val serviceConnection: ServiceConnection = object : ServiceConnection {
@@ -182,17 +180,23 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
             progressDialog.max = 100
             progressDialog.show()
 
-            LogPlayer(it, object: LogPlayer.DataReadyListener {
+            val logPlayer = LogPlayer(this)
+            logPlayer.load(file, object : LogPlayer.DataReadyListener {
                 override fun onUpdate(percent: Int) {
                     progressDialog.progress = percent
                 }
 
                 override fun onDataReady(size: Int) {
+                    inReplayMode = true
                     progressDialog.hide()
                     seekBar.max = size
                     seekBar.visibility = View.VISIBLE
-                    seekBar.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener {
+                    seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                         override fun onProgressChanged(seekbar: SeekBar, position: Int, p2: Boolean) {
+                            val points = polyLine.points
+                            points.clear()
+                            polyLine.points = points
+                            logPlayer.seek(position)
                         }
 
                         override fun onStartTrackingTouch(p0: SeekBar?) {
@@ -529,6 +533,17 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
             else -> R.drawable.ic_battery_unknown
         }.let { this.fuel.setCompoundDrawablesWithIntrinsicBounds(ContextCompat.getDrawable(this, it), null, null, null) }
         this.fuel.text = "$fuel%"
+    }
+
+    override fun onGPSData(list: List<LatLng>) {
+        if (hasGPSFix && list.isNotEmpty()) {
+            val points = polyLine.points
+            points.clear()
+            points.addAll(list)
+            points.removeAt(points.size - 1)
+            polyLine.points = points
+            onGPSData(list[list.size - 1].latitude, list[list.size - 1].longitude)
+        }
     }
 
     override fun onGPSData(latitude: Double, longitude: Double) {

@@ -1,14 +1,14 @@
 package crazydude.com.telemetry.service
 
-import android.app.*
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.app.Service
 import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.Binder
-import android.os.Build
-import android.os.Environment
-import android.os.IBinder
+import android.os.*
 import android.support.v4.app.NotificationCompat
 import android.support.v4.content.ContextCompat
 import com.google.android.gms.maps.model.LatLng
@@ -92,7 +92,9 @@ class DataService : Service(), DataDecoder.Listener {
     fun setDataListener(dataListener: DataDecoder.Listener?) {
         this.dataListener = dataListener
         if (dataListener != null) {
-            dataListener.onGPSState(satellites, hasGPSFix)
+            runOnMainThread(Runnable {
+                dataListener.onGPSState(satellites, hasGPSFix)
+            })
         } else {
             if (!isConnected()) {
                 stopSelf()
@@ -115,48 +117,72 @@ class DataService : Service(), DataDecoder.Listener {
     }
 
     override fun onConnectionFailed() {
-        dataListener?.onConnectionFailed()
+        runOnMainThread(Runnable {
+            dataListener?.onConnectionFailed()
+        })
         dataPoller = null
     }
 
     override fun onFuelData(fuel: Int) {
-        dataListener?.onFuelData(fuel)
+        runOnMainThread(Runnable {
+            dataListener?.onFuelData(fuel)
+        })
     }
 
     override fun onConnected() {
-        dataListener?.onConnected()
+        runOnMainThread(Runnable {
+            dataListener?.onConnected()
+        })
     }
 
     override fun onGPSData(latitude: Double, longitude: Double) {
         if (hasGPSFix) {
             points.add(LatLng(latitude, longitude))
         }
-        dataListener?.onGPSData(latitude, longitude)
+        runOnMainThread(Runnable {
+            dataListener?.onGPSData(latitude, longitude)
+        })
+    }
+
+    override fun onGPSData(list: List<LatLng>) {
+
     }
 
     override fun onVBATData(voltage: Float) {
-        dataListener?.onVBATData(voltage)
+        runOnMainThread(Runnable {
+            dataListener?.onVBATData(voltage)
+        })
     }
 
     override fun onCellVoltageData(voltage: Float) {
-        dataListener?.onCellVoltageData(voltage)
+        runOnMainThread(Runnable {
+            dataListener?.onCellVoltageData(voltage)
+        })
     }
 
     override fun onCurrentData(current: Float) {
-        dataListener?.onCurrentData(current)
+        runOnMainThread(Runnable {
+            dataListener?.onCurrentData(current)
+        })
     }
 
     override fun onHeadingData(heading: Float) {
-        dataListener?.onHeadingData(heading)
+        runOnMainThread(Runnable {
+            dataListener?.onHeadingData(heading)
+        })
     }
 
     override fun onRSSIData(rssi: Int) {
-        dataListener?.onRSSIData(rssi)
+        runOnMainThread(Runnable {
+            dataListener?.onRSSIData(rssi)
+        })
     }
 
     override fun onDisconnected() {
         points.clear()
-        dataListener?.onDisconnected()
+        runOnMainThread(Runnable {
+            dataListener?.onDisconnected()
+        })
         dataPoller = null
         satellites = 0
         hasGPSFix = false
@@ -164,35 +190,49 @@ class DataService : Service(), DataDecoder.Listener {
 
     override fun onGPSState(satellites: Int, gpsFix: Boolean) {
         hasGPSFix = gpsFix
-        dataListener?.onGPSState(satellites, gpsFix)
+        runOnMainThread(Runnable {
+            dataListener?.onGPSState(satellites, gpsFix)
+        })
     }
 
     override fun onVSpeedData(vspeed: Float) {
-        dataListener?.onVSpeedData(vspeed)
+        runOnMainThread(Runnable {
+            dataListener?.onVSpeedData(vspeed)
+        })
     }
 
     override fun onAltitudeData(altitude: Float) {
-        dataListener?.onAltitudeData(altitude)
+        runOnMainThread(Runnable {
+            dataListener?.onAltitudeData(altitude)
+        })
     }
 
     override fun onGPSAltitudeData(altitude: Float) {
-        dataListener?.onGPSAltitudeData(altitude)
+        runOnMainThread(Runnable {
+            dataListener?.onGPSAltitudeData(altitude)
+        })
     }
 
     override fun onDistanceData(distance: Int) {
-        dataListener?.onDistanceData(distance)
+        runOnMainThread(Runnable {
+            dataListener?.onDistanceData(distance)
+        })
     }
 
     override fun onRollData(rollAngle: Float) {
-        dataListener?.onRollData(rollAngle)
+        runOnMainThread(Runnable {
+            dataListener?.onRollData(rollAngle)
+        })
     }
 
     override fun onPitchData(pitchAngle: Float) {
-        dataListener?.onPitchData(pitchAngle)
+        runOnMainThread(Runnable {
+            dataListener?.onPitchData(pitchAngle)
+        })
     }
 
     override fun onGSpeedData(speed: Float) {
-        dataListener?.onGSpeedData(speed)
+        runOnMainThread(Runnable { dataListener?.onGSpeedData(speed) })
     }
 
     override fun onFlyModeData(
@@ -201,7 +241,17 @@ class DataService : Service(), DataDecoder.Listener {
         firstFlightMode: DataDecoder.Companion.FlyMode,
         secondFlightMode: DataDecoder.Companion.FlyMode?
     ) {
-        dataListener?.onFlyModeData(armed, heading, firstFlightMode, secondFlightMode)
+        runOnMainThread(Runnable {
+            dataListener?.onFlyModeData(armed, heading, firstFlightMode, secondFlightMode)
+        })
+
+    }
+
+    private fun runOnMainThread(runnable: Runnable) {
+        Handler(Looper.getMainLooper())
+            .post {
+                runnable.run()
+            }
     }
 
     fun disconnect() {

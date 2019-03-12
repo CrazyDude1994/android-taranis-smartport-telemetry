@@ -1,17 +1,16 @@
 package crazydude.com.telemetry.protocol
 
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
+import com.google.android.gms.maps.model.LatLng
 import java.io.IOException
 
-class DataDecoder(private val listener: Listener): FrSkySportProtocol.Companion.DataListener {
+class DataDecoder(private val listener: Listener) : FrSkySportProtocol.Companion.DataListener {
 
     private var newLatitude = false
     private var newLongitude = false
     private var latitude: Double = 0.0
     private var longitude: Double = 0.0
-    
+
     companion object {
         private const val TAG = "DataDecoder"
 
@@ -19,13 +18,13 @@ class DataDecoder(private val listener: Listener): FrSkySportProtocol.Companion.
             ACRO, HORIZON, ANGLE, FAILSAFE, RTH, WAYPOINT, MANUAL, CRUISE
         }
     }
-    
+
     override fun onNewData(data: FrSkySportProtocol.Companion.TelemetryData) {
-        runOnMainThread(when (data.telemetryType) {
-            FrSkySportProtocol.FUEL -> Runnable {
+        when (data.telemetryType) {
+            FrSkySportProtocol.FUEL -> {
                 listener.onFuelData(data.data)
             }
-            FrSkySportProtocol.GPS -> Runnable {
+            FrSkySportProtocol.GPS -> {
                 var gpsData = (data.data and 0x3FFFFFFF) / 10000.0 / 60.0
                 if (data.data and 0x40000000 > 0) {
                     gpsData = -gpsData
@@ -49,32 +48,32 @@ class DataDecoder(private val listener: Listener): FrSkySportProtocol.Companion.
                     Log.d(TAG, "Decoded GPS lat=$latitude long=$longitude")
                 }
             }
-            FrSkySportProtocol.VBAT -> Runnable {
+            FrSkySportProtocol.VBAT -> {
                 val value = data.data / 100f
                 listener.onVBATData(value)
                 Log.d(TAG, "Decoded vbat $value")
             }
-            FrSkySportProtocol.CELL_VOLTAGE -> Runnable {
+            FrSkySportProtocol.CELL_VOLTAGE -> {
                 val value = data.data / 100f
                 listener.onCellVoltageData(value)
                 Log.d(TAG, "Decoded cell voltage $value")
             }
-            FrSkySportProtocol.CURRENT -> Runnable {
+            FrSkySportProtocol.CURRENT -> {
                 val value = data.data / 10f
                 listener.onCurrentData(value)
                 Log.d(TAG, "Decoded current $value")
             }
 
-            FrSkySportProtocol.HEADING -> Runnable {
+            FrSkySportProtocol.HEADING -> {
                 val value = data.data / 100f
                 listener.onHeadingData(value)
                 Log.d(TAG, "Decoded heading $value")
             }
-            FrSkySportProtocol.RSSI -> Runnable {
+            FrSkySportProtocol.RSSI -> {
                 listener.onRSSIData(data.data)
             }
 
-            FrSkySportProtocol.FLYMODE -> Runnable {
+            FrSkySportProtocol.FLYMODE -> {
                 val modeA = data.data / 10000
                 val modeB = data.data / 1000 % 10
                 val modeC = data.data / 100 % 10
@@ -111,50 +110,48 @@ class DataDecoder(private val listener: Listener): FrSkySportProtocol.Companion.
 
                 listener.onFlyModeData(armed, heading, firstFlightMode, secondFlightMode)
             }
-            FrSkySportProtocol.GPS_STATE -> Runnable {
+            FrSkySportProtocol.GPS_STATE -> {
                 val satellites = data.data % 100
                 val isFix = data.data > 1000
                 listener.onGPSState(satellites, isFix)
                 Log.d(TAG, "Decoded satellites $satellites isFix=$isFix")
             }
-            FrSkySportProtocol.VSPEED -> Runnable {
+            FrSkySportProtocol.VSPEED -> {
                 val value = data.data / 100f
                 listener.onVSpeedData(value)
                 Log.d(TAG, "Decoded vspeed $value")
             }
-            FrSkySportProtocol.ALTITUDE -> Runnable {
+            FrSkySportProtocol.ALTITUDE -> {
                 val value = data.data / 100f
                 listener.onAltitudeData(value)
                 Log.d(TAG, "Decoded altitutde $value")
             }
-            FrSkySportProtocol.GSPEED -> Runnable {
+            FrSkySportProtocol.GSPEED -> {
                 val value = (data.data / (1944f / 100f)) / 27.778f
                 listener.onGSpeedData(value)
                 Log.d(TAG, "Decoded GSpeed $value")
             }
-            FrSkySportProtocol.DISTANCE -> Runnable {
+            FrSkySportProtocol.DISTANCE -> {
                 listener.onDistanceData(data.data)
                 Log.d(TAG, "Decoded distance ${data.data}")
             }
-            FrSkySportProtocol.ROLL -> Runnable {
+            FrSkySportProtocol.ROLL -> {
                 val value = data.data / 10f
                 listener.onRollData(value)
                 Log.d(TAG, "Decoded roll $value")
             }
-            FrSkySportProtocol.GALT -> Runnable {
+            FrSkySportProtocol.GALT -> {
                 val value = data.data / 100f
                 listener.onGPSAltitudeData(value)
                 Log.d(TAG, "Decoded gps altitude $value")
             }
-            FrSkySportProtocol.PITCH -> Runnable {
+            FrSkySportProtocol.PITCH -> {
                 val value = data.data / 10f
                 listener.onPitchData(value)
                 Log.d(TAG, "Decoded pitch $value")
             }
-            else -> {
-                Runnable { }
-            }
-        })
+            else -> {}
+        }
     }
 
     interface Listener {
@@ -162,6 +159,7 @@ class DataDecoder(private val listener: Listener): FrSkySportProtocol.Companion.
         fun onFuelData(fuel: Int)
         fun onConnected()
         fun onGPSData(latitude: Double, longitude: Double)
+        fun onGPSData(list: List<LatLng>)
         fun onVBATData(voltage: Float)
         fun onCellVoltageData(voltage: Float)
         fun onCurrentData(current: Float)
@@ -182,13 +180,5 @@ class DataDecoder(private val listener: Listener): FrSkySportProtocol.Companion.
             firstFlightMode: FlyMode,
             secondFlightMode: FlyMode?
         )
-    }
-
-
-    private fun runOnMainThread(runnable: Runnable) {
-        Handler(Looper.getMainLooper())
-            .post {
-                runnable.run()
-            }
     }
 }
