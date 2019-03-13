@@ -72,7 +72,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     private var followMode = true
     private lateinit var polyLine: Polyline
     private var hasGPSFix = false
-    private var inReplayMode = false
+    private var replayFileString : String? = null
     private var dataService: DataService? = null
 
     private val serviceConnection: ServiceConnection = object : ServiceConnection {
@@ -98,6 +98,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
 
+        mapType = savedInstanceState?.getInt("map_type") ?: GoogleMap.MAP_TYPE_NORMAL
+        followMode = savedInstanceState?.getBoolean("follow_mode", true) ?: true
+        replayFileString = savedInstanceState?.getString("replay_file_name")
+
         fuel = findViewById(R.id.fuel)
         satellites = findViewById(R.id.satellites)
         topLayout = findViewById(R.id.top_layout)
@@ -113,10 +117,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         settingsButton = findViewById(R.id.settings_button)
         replayButton = findViewById(R.id.replay_button)
         seekBar = findViewById(R.id.seekbar)
-
-        replayButton.setOnClickListener {
-            replay()
-        }
 
         settingsButton.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
@@ -135,7 +135,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
             showMapTypeSelectorDialog()
         }
 
-        switchToDisconnectedState()
+        if (replayFileString != null) {
+            startReplay(File(Environment.getExternalStoragePublicDirectory("TelemetryLogs"), replayFileString))
+        } else {
+            switchToIdleState()
+        }
 
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
@@ -177,27 +181,33 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         }
     }
 
+    private fun switchToReplayMode() {
+        connectButton.visibility = View.GONE
+        replayButton.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_close))
+        replayButton.setOnClickListener {
+            replayButton.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_replay))
+            replayButton.setOnClickListener { replay() }
+            replayFileString = null
+            connectButton.visibility = View.VISIBLE
+            marker?.remove()
+            val points = polyLine.points
+            points.clear()
+            polyLine.points = points
+            seekBar.visibility = View.GONE
+        }
+    }
+
     private fun startReplay(file: File?) {
         file?.also {
-            inReplayMode = true
-            connectButton.visibility = View.GONE
-            replayButton.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_close))
-            replayButton.setOnClickListener {
-                replayButton.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_replay))
-                replayButton.setOnClickListener { replay() }
-                inReplayMode = false
-                connectButton.visibility = View.VISIBLE
-                marker?.remove()
-                val points = polyLine.points
-                points.clear()
-                polyLine.points = points
-                seekBar.visibility = View.GONE
-            }
             val progressDialog = ProgressDialog(this)
             progressDialog.setCancelable(false)
             progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL)
             progressDialog.max = 100
             progressDialog.show()
+
+            switchToReplayMode()
+
+            replayFileString = it.name
 
             val logPlayer = LogPlayer(this)
             logPlayer.load(file, object : LogPlayer.DataReadyListener {
@@ -279,12 +289,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         super.onSaveInstanceState(outState)
         outState?.putInt("map_type", mapType)
         outState?.putBoolean("follow_mode", followMode)
-    }
-
-    override fun onRestoreInstanceState(savedInstanceState: Bundle?) {
-        super.onRestoreInstanceState(savedInstanceState)
-        mapType = savedInstanceState?.getInt("map_type") ?: GoogleMap.MAP_TYPE_NORMAL
-        followMode = savedInstanceState?.getBoolean("follow_mode", true) ?: true
+        outState?.putString("replay_file_name", replayFileString)
     }
 
     private fun connect() {
@@ -506,12 +511,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
 
     override fun onDisconnected() {
         Toast.makeText(this, "Disconnected", Toast.LENGTH_SHORT).show()
-        switchToDisconnectedState()
+        switchToIdleState()
     }
 
-    private fun switchToDisconnectedState() {
+    private fun switchToIdleState() {
         connectButton.text = getString(R.string.connect)
+        replayButton.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_replay))
         replayButton.visibility = View.VISIBLE
+        replayButton.setOnClickListener {
+            replay()
+        }
         connectButton.isEnabled = true
         connectButton.setOnClickListener {
             connect()
