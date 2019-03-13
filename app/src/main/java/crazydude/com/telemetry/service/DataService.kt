@@ -89,7 +89,7 @@ class DataService : Service(), DataDecoder.Listener {
         try {
             val socket = device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
             dataPoller?.disconnect()
-            dataPoller = DataPoller(socket, this, fileOutputStream, csvFileOutputStream)
+            dataPoller = BluetoothDataPoller(socket, this, fileOutputStream, csvFileOutputStream)
         } catch (e: IOException) {
             Toast.makeText(this, "Failed to connect to bluetooth", Toast.LENGTH_LONG).show()
         }
