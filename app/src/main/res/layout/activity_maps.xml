@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <android.support.design.widget.CoordinatorLayout
         xmlns:android="http://schemas.android.com/apk/res/android"
-        android:layout_width="match_parent"
         xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:layout_width="match_parent"
         android:keepScreenOn="true"
         android:layout_height="match_parent">
 
@@ -17,6 +17,16 @@
     <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent">
+
+        <SeekBar
+                android:id="@+id/seekbar"
+                android:visibility="gone"
+                android:layout_toStartOf="@+id/map_type_button"
+                android:layout_margin="8dp"
+                android:layout_above="@+id/bottom_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_toLeftOf="@+id/map_type_button"/>
 
         <RelativeLayout
                 android:id="@+id/top_layout"
@@ -39,6 +49,8 @@
                     android:id="@+id/satellites"
                     android:textColor="@android:color/white"
                     android:layout_margin="4dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp"
                     android:textStyle="bold"
                     android:drawableStart="@drawable/ic_satellite"
                     android:text="-"
@@ -80,6 +92,7 @@
                     android:drawableLeft="@drawable/ic_current"/>
 
             <TextView
+                    android:layout_toStartOf="@+id/replay_button"
                     android:layout_centerVertical="true"
                     android:layout_toEndOf="@id/current"
                     android:id="@+id/voltage"
@@ -92,11 +105,24 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_toRightOf="@id/current"
-                    android:drawableLeft="@drawable/ic_voltage"/>
+                    android:drawableLeft="@drawable/ic_voltage"
+                    android:layout_toLeftOf="@+id/replay_button"/>
+
+            <ImageView
+                    android:layout_toLeftOf="@+id/settings_button"
+                    android:background="?selectableItemBackground"
+                    android:id="@id/replay_button"
+                    android:layout_marginEnd="8dp"
+                    android:layout_centerVertical="true"
+                    android:src="@drawable/ic_replay"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_marginRight="8dp"
+                    android:layout_toStartOf="@+id/settings_button"/>
 
             <ImageView
                     android:background="?selectableItemBackground"
-                    android:id="@+id/settings_button"
+                    android:id="@id/settings_button"
                     android:layout_marginEnd="8dp"
                     android:layout_alignParentEnd="true"
                     android:layout_centerVertical="true"
@@ -108,9 +134,8 @@
 
         </RelativeLayout>
 
-
         <RelativeLayout
-                android:id="@+id/bottom_layout"
+                android:id="@id/bottom_layout"
                 android:layout_alignParentBottom="true"
                 android:background="#AA000000"
                 android:layout_width="match_parent"
@@ -177,7 +202,7 @@
         </RelativeLayout>
 
         <android.support.design.widget.FloatingActionButton
-                android:id="@+id/map_type_button"
+                android:id="@id/map_type_button"
                 app:fabSize="mini"
                 android:layout_alignParentEnd="true"
                 android:src="@drawable/ic_layers"

@@ -1,9 +1,9 @@
 package crazydude.com.telemetry.protocol
 
+import android.support.annotation.IntDef
 import android.util.Log
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import kotlin.math.PI
 
 
 class FrSkySportProtocol(var dataListener: DataListener) {
@@ -44,34 +44,35 @@ class FrSkySportProtocol(var dataListener: DataListener) {
         const val PITCH_SENSOR = 0x0430
         const val ROLL_SENSOR = 0x0440
 
+        const val FUEL = 0
+        const val GPS = 1
+        const val VBAT = 2
+        const val CELL_VOLTAGE = 3
+        const val CURRENT = 4
+        const val HEADING = 5
+        const val RSSI = 6
+        const val FLYMODE = 7
+        const val GPS_STATE = 8
+        const val VSPEED = 9
+        const val ALTITUDE = 10
+        const val GSPEED = 11
+        const val DISTANCE = 12
+        const val ROLL = 13
+        const val PITCH = 14
+        const val GALT = 15
 
         interface DataListener {
             fun onNewData(data: TelemetryData)
         }
 
-        enum class TelemetryType {
-            FUEL,
-            GPS,
-            VBAT,
-            CELL_VOLTAGE,
-            CURRENT,
-            HEADING,
-            RSSI,
-            FLYMODE,
-            GPS_STATE,
-            VSPEED,
-            ALTITUDE,
-            GSPEED,
-            DISTANCE,
+        @Retention(AnnotationRetention.SOURCE)
+        @IntDef(
+            FUEL, GPS, VBAT, CELL_VOLTAGE, CURRENT, HEADING, RSSI, FLYMODE, GPS_STATE, VSPEED, ALTITUDE, GSPEED,
+            DISTANCE, ROLL, PITCH, GALT
+        )
+        annotation class TelemetryType
 
-            ROLL,
-
-            PITCH,
-
-            GALT
-        }
-
-        data class TelemetryData(val telemetryType: TelemetryType, val data: Int)
+        data class TelemetryData(@TelemetryType val telemetryType: Int, val data: Int)
 
         private val TAG: String = "FrSky Protocol"
     }
@@ -117,7 +118,7 @@ class FrSkySportProtocol(var dataListener: DataListener) {
                         Log.d(TAG, "Fuel: $rawData")
                         dataListener.onNewData(
                             TelemetryData(
-                                Companion.TelemetryType.FUEL,
+                                FUEL,
                                 rawData
                             )
                         )
@@ -126,7 +127,7 @@ class FrSkySportProtocol(var dataListener: DataListener) {
                         Log.d(TAG, "GPS: $rawData")
                         dataListener.onNewData(
                             TelemetryData(
-                                Companion.TelemetryType.GPS,
+                                GPS,
                                 rawData
                             )
                         )
@@ -135,7 +136,7 @@ class FrSkySportProtocol(var dataListener: DataListener) {
                         Log.d(TAG, "VBAT: $rawData")
                         dataListener.onNewData(
                             TelemetryData(
-                                Companion.TelemetryType.VBAT,
+                                VBAT,
                                 rawData
                             )
                         )
@@ -144,7 +145,7 @@ class FrSkySportProtocol(var dataListener: DataListener) {
                         Log.d(TAG, "Cell voltage: $rawData")
                         dataListener.onNewData(
                             TelemetryData(
-                                Companion.TelemetryType.CELL_VOLTAGE,
+                                CELL_VOLTAGE,
                                 rawData
                             )
                         )
@@ -153,7 +154,7 @@ class FrSkySportProtocol(var dataListener: DataListener) {
                         Log.d(TAG, "Current: $rawData")
                         dataListener.onNewData(
                             TelemetryData(
-                                Companion.TelemetryType.CURRENT,
+                                CURRENT,
                                 rawData
                             )
                         )
@@ -162,7 +163,7 @@ class FrSkySportProtocol(var dataListener: DataListener) {
                         Log.d(TAG, "Heading: $rawData")
                         dataListener.onNewData(
                             TelemetryData(
-                                Companion.TelemetryType.HEADING,
+                                HEADING,
                                 rawData
                             )
                         )
@@ -171,7 +172,7 @@ class FrSkySportProtocol(var dataListener: DataListener) {
                         Log.d(TAG, "RSSI: $rawData")
                         dataListener.onNewData(
                             TelemetryData(
-                                Companion.TelemetryType.RSSI,
+                                RSSI,
                                 rawData
                             )
                         )
@@ -180,7 +181,7 @@ class FrSkySportProtocol(var dataListener: DataListener) {
                         Log.d(TAG, "Fly mode: $rawData")
                         dataListener.onNewData(
                             TelemetryData(
-                                Companion.TelemetryType.FLYMODE,
+                                FLYMODE,
                                 rawData
                             )
                         )
@@ -189,7 +190,7 @@ class FrSkySportProtocol(var dataListener: DataListener) {
                         Log.d(TAG, "GPS State: $rawData")
                         dataListener.onNewData(
                             TelemetryData(
-                                Companion.TelemetryType.GPS_STATE,
+                                GPS_STATE,
                                 rawData
                             )
                         )
@@ -198,7 +199,7 @@ class FrSkySportProtocol(var dataListener: DataListener) {
                         Log.d(TAG, "VSpeed: $rawData")
                         dataListener.onNewData(
                             TelemetryData(
-                                Companion.TelemetryType.VSPEED,
+                                VSPEED,
                                 rawData
                             )
                         )
@@ -207,7 +208,7 @@ class FrSkySportProtocol(var dataListener: DataListener) {
                         Log.d(TAG, "GAlt: $rawData")
                         dataListener.onNewData(
                             TelemetryData(
-                                Companion.TelemetryType.GALT,
+                                GALT,
                                 rawData
                             )
                         )
@@ -216,7 +217,7 @@ class FrSkySportProtocol(var dataListener: DataListener) {
                         Log.d(TAG, "GSpeed: $rawData")
                         dataListener.onNewData(
                             TelemetryData(
-                                Companion.TelemetryType.GSPEED,
+                                GSPEED,
                                 rawData
                             )
                         )
@@ -225,7 +226,7 @@ class FrSkySportProtocol(var dataListener: DataListener) {
                         Log.d(TAG, "Distance: $rawData")
                         dataListener.onNewData(
                             TelemetryData(
-                                Companion.TelemetryType.DISTANCE,
+                                DISTANCE,
                                 rawData
                             )
                         )
@@ -234,7 +235,7 @@ class FrSkySportProtocol(var dataListener: DataListener) {
                         Log.d(TAG, "Altitutde: $rawData")
                         dataListener.onNewData(
                             TelemetryData(
-                                Companion.TelemetryType.ALTITUDE,
+                                ALTITUDE,
                                 rawData
                             )
                         )
@@ -243,7 +244,7 @@ class FrSkySportProtocol(var dataListener: DataListener) {
                         Log.d(TAG, "Pitch: $rawData")
                         dataListener.onNewData(
                             TelemetryData(
-                                Companion.TelemetryType.PITCH,
+                                PITCH,
                                 rawData
                             )
                         )
@@ -252,7 +253,7 @@ class FrSkySportProtocol(var dataListener: DataListener) {
                         Log.d(TAG, "Roll: $rawData")
                         dataListener.onNewData(
                             TelemetryData(
-                                Companion.TelemetryType.ROLL,
+                                ROLL,
                                 rawData
                             )
                         )
