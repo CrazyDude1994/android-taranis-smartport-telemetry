@@ -535,10 +535,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         this.fuel.text = "$fuel%"
     }
 
-    override fun onGPSData(list: List<LatLng>) {
+    override fun onGPSData(list: List<LatLng>, addToEnd: Boolean) {
         if (hasGPSFix && list.isNotEmpty()) {
             val points = polyLine.points
-            points.clear()
+            if (!addToEnd) {
+                points.clear()
+            }
             points.addAll(list)
             points.removeAt(points.size - 1)
             polyLine.points = points

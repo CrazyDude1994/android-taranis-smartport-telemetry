@@ -67,6 +67,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
 
     fun seek(position: Int) {
         uniqueData.clear()
+        val addToEnd: Boolean
         if (position > currentPosition) {
             for (i in currentPosition until position) {
                 if (cachedData[i].telemetryType == FrSkySportProtocol.GPS) {
@@ -75,6 +76,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
                     uniqueData[cachedData[i].telemetryType] = i
                 }
             }
+            addToEnd = true
             currentPosition = position
         } else {
             decodedCoordinates.clear()
@@ -86,11 +88,12 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
                 }
             }
             currentPosition = position
+            addToEnd = false
         }
         uniqueData.entries.forEach {
             dataDecoder.onNewData(cachedData[it.value])
         }
-        originalListener.onGPSData(decodedCoordinates)
+        originalListener.onGPSData(decodedCoordinates, addToEnd)
     }
 
     override fun onConnectionFailed() {
@@ -127,7 +130,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
         originalListener.onRSSIData(rssi)
     }
 
-    override fun onGPSData(list: List<LatLng>) {
+    override fun onGPSData(list: List<LatLng>, addToEnd: Boolean) {
 
     }
 

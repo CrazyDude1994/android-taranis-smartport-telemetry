@@ -159,7 +159,7 @@ class DataDecoder(private val listener: Listener) : FrSkySportProtocol.Companion
         fun onFuelData(fuel: Int)
         fun onConnected()
         fun onGPSData(latitude: Double, longitude: Double)
-        fun onGPSData(list: List<LatLng>)
+        fun onGPSData(list: List<LatLng>, addToEnd: Boolean)
         fun onVBATData(voltage: Float)
         fun onCellVoltageData(voltage: Float)
         fun onCurrentData(current: Float)

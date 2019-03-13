@@ -144,7 +144,7 @@ class DataService : Service(), DataDecoder.Listener {
         })
     }
 
-    override fun onGPSData(list: List<LatLng>) {
+    override fun onGPSData(list: List<LatLng>, addToEnd: Boolean) {
 
     }
 
