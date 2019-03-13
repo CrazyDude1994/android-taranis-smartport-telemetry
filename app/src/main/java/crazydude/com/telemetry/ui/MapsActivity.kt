@@ -294,6 +294,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
 
     private fun connect() {
         val adapter = BluetoothAdapter.getDefaultAdapter()
+        if (adapter == null) {
+            AlertDialog.Builder(this)
+                .setMessage("It seems like your phone does not have bluetooth, or it does not supported")
+                .setPositiveButton("OK", null)
+                .show()
+            return
+        }
         if (!adapter.isEnabled) {
             val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
