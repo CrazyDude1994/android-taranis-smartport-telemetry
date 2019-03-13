@@ -6,7 +6,7 @@ import crazydude.com.telemetry.R
 
 class PrefsFragment : PreferenceFragmentCompat() {
 
-    override fun onCreatePreferences(savedInstanceState: Bundle, rootKey: String) {
+    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String) {
         preferenceManager.sharedPreferencesName = "settings"
         setPreferencesFromResource(R.xml.preferences, rootKey)
     }
