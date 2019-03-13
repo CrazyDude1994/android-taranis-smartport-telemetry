@@ -16,7 +16,7 @@ class BluetoothDataPoller(
 
     private lateinit var protocol: FrSkySportProtocol
     private lateinit var thread: Thread
-    private lateinit var dataDecoder: DataDecoder
+    private val dataDecoder: DataDecoder = DataDecoder(listener)
     private var outputStreamWriter: OutputStreamWriter? = null
 
     init {

@@ -21,7 +21,6 @@
         <SeekBar
                 android:id="@+id/seekbar"
                 android:visibility="gone"
-                android:max="100000"
                 android:layout_toStartOf="@+id/map_type_button"
                 android:layout_margin="8dp"
                 android:layout_above="@+id/bottom_layout"
@@ -50,6 +49,8 @@
                     android:id="@+id/satellites"
                     android:textColor="@android:color/white"
                     android:layout_margin="4dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp"
                     android:textStyle="bold"
                     android:drawableStart="@drawable/ic_satellite"
                     android:text="-"

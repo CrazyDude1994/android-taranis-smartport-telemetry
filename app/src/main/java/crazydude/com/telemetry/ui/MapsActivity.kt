@@ -11,7 +11,10 @@ import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.os.*
+import android.os.Build
+import android.os.Bundle
+import android.os.Environment
+import android.os.IBinder
 import android.support.annotation.DrawableRes
 import android.support.design.widget.FloatingActionButton
 import android.support.v4.app.ActivityCompat
@@ -27,7 +30,6 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
 import crazydude.com.telemetry.R
 import crazydude.com.telemetry.manager.PreferenceManager
-import crazydude.com.telemetry.protocol.BluetoothDataPoller
 import crazydude.com.telemetry.protocol.DataDecoder
 import crazydude.com.telemetry.protocol.LogPlayer
 import crazydude.com.telemetry.service.DataService
@@ -124,6 +126,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
 
         followButton.setOnClickListener {
             followMode = true
+            marker?.let {
+                map.moveCamera(CameraUpdateFactory.newLatLng(it.position))
+            }
         }
 
         mapTypeButton.setOnClickListener {
@@ -174,6 +179,20 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
 
     private fun startReplay(file: File?) {
         file?.also {
+            inReplayMode = true
+            connectButton.visibility = View.GONE
+            replayButton.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_close))
+            replayButton.setOnClickListener {
+                replayButton.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_replay))
+                replayButton.setOnClickListener { replay() }
+                inReplayMode = false
+                connectButton.visibility = View.VISIBLE
+                marker?.remove()
+                val points = polyLine.points
+                points.clear()
+                polyLine.points = points
+                seekBar.visibility = View.GONE
+            }
             val progressDialog = ProgressDialog(this)
             progressDialog.setCancelable(false)
             progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL)
@@ -187,15 +206,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
                 }
 
                 override fun onDataReady(size: Int) {
-                    inReplayMode = true
                     progressDialog.hide()
                     seekBar.max = size
                     seekBar.visibility = View.VISIBLE
                     seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                         override fun onProgressChanged(seekbar: SeekBar, position: Int, p2: Boolean) {
-                            val points = polyLine.points
-                            points.clear()
-                            polyLine.points = points
                             logPlayer.seek(position)
                         }
 
@@ -496,6 +511,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
 
     private fun switchToDisconnectedState() {
         connectButton.text = getString(R.string.connect)
+        replayButton.visibility = View.VISIBLE
         connectButton.isEnabled = true
         connectButton.setOnClickListener {
             connect()
@@ -503,6 +519,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     }
 
     private fun switchToConnectedState() {
+        replayButton.visibility = View.GONE
         connectButton.text = getString(R.string.disconnect)
         connectButton.isEnabled = true
         connectButton.setOnClickListener {
@@ -531,7 +548,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
             in 21..30 -> R.drawable.ic_battery_30
             in 0..20 -> R.drawable.ic_battery_alert
             else -> R.drawable.ic_battery_unknown
-        }.let { this.fuel.setCompoundDrawablesWithIntrinsicBounds(ContextCompat.getDrawable(this, it), null, null, null) }
+        }.let {
+            this.fuel.setCompoundDrawablesWithIntrinsicBounds(
+                ContextCompat.getDrawable(this, it),
+                null,
+                null,
+                null
+            )
+        }
         this.fuel.text = "$fuel%"
     }
 
