@@ -4,13 +4,11 @@ import android.annotation.SuppressLint
 import android.app.ProgressDialog
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
-import android.content.ComponentName
-import android.content.Context
-import android.content.Intent
-import android.content.ServiceConnection
+import android.content.*
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
@@ -150,6 +148,33 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         mapFragment.getMapAsync(this)
 
         startDataService()
+
+        checkAppInstallDate()
+    }
+
+    private fun checkAppInstallDate() {
+        val installTime = packageManager.getPackageInfo(packageName, 0).firstInstallTime
+        val delta = System.currentTimeMillis() - installTime
+
+        if (delta / 1000 / 60 / 60 / 24 > 3 && !preferenceManager.isYoutubeChannelShown()) {
+            AlertDialog.Builder(this)
+                .setTitle("Thanks for using my application")
+                .setMessage(
+                    "Thanks for using my application. As it's does not contain any ads and completely free, " +
+                            "you can help me by subscribing to my youtube channel"
+                )
+                .setPositiveButton("Subscribe") { dialog: DialogInterface?, i: Int ->
+                    startActivity(
+                        Intent(
+                            Intent.ACTION_VIEW,
+                            Uri.parse("https://www.youtube.com/channel/UCjAhODF0Achhc1fynxEXQLg?view_as=subscriber&sub_confirmation=1")
+                        )
+                    )
+                }
+                .setNegativeButton("Cancel", null)
+                .setOnDismissListener { preferenceManager.setYoutubeShown() }
+                .show()
+        }
     }
 
     private fun isInReplayMode(): Boolean {
@@ -452,7 +477,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
                 MarkerOptions().icon(
                     bitmapDescriptorFromVector(
                         this,
-                        R.drawable.ic_plane, preferenceManager.getPlaneColor())
+                        R.drawable.ic_plane, preferenceManager.getPlaneColor()
+                    )
                 ).position(lastGPS)
             )
             if (headingPolyline == null && preferenceManager.isHeadingLineEnabled()) {
@@ -464,7 +490,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     }
 
     private fun createHeadingPolyline(): Polyline? {
-        return map?.addPolyline(PolylineOptions().add(lastGPS).add(lastGPS).color(preferenceManager.getHeadLineColor()).width(3f))
+        return map?.addPolyline(
+            PolylineOptions().add(lastGPS).add(lastGPS).color(preferenceManager.getHeadLineColor()).width(
+                3f
+            )
+        )
     }
 
     override fun onRSSIData(rssi: Int) {

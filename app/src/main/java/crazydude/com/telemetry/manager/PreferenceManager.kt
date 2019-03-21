@@ -33,4 +33,12 @@ class PreferenceManager(context: Context) {
     fun getPlaneColor(): Int {
         return sharedPreferences.getInt("plane_color", defaultPlaneColor)
     }
+
+    fun isYoutubeChannelShown(): Boolean {
+        return sharedPreferences.getBoolean("youtube_shown", false)
+    }
+
+    fun setYoutubeShown() {
+        sharedPreferences.edit().putBoolean("youtube_shown", true).apply()
+    }
 }
