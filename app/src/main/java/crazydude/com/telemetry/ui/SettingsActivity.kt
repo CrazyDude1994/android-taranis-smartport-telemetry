@@ -1,7 +1,7 @@
 package crazydude.com.telemetry.ui
 
 import android.os.Bundle
-import android.support.v7.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatActivity
 import crazydude.com.telemetry.R
 
 class SettingsActivity: AppCompatActivity() {

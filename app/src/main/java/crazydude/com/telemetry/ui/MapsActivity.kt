@@ -15,19 +15,21 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.os.IBinder
-import android.support.annotation.DrawableRes
-import android.support.design.widget.FloatingActionButton
-import android.support.v4.app.ActivityCompat
-import android.support.v4.content.ContextCompat
-import android.support.v7.app.AlertDialog
-import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.widget.*
+import androidx.annotation.DrawableRes
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.DrawableCompat
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.maps.android.SphericalUtil
 import crazydude.com.telemetry.R
 import crazydude.com.telemetry.manager.PreferenceManager
 import crazydude.com.telemetry.protocol.DataDecoder
@@ -47,7 +49,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         private val MAP_TYPE_ITEMS = arrayOf("Road Map", "Satellite", "Terrain", "Hybrid")
     }
 
-    private lateinit var map: GoogleMap
+    private var map: GoogleMap? = null
     private var marker: Marker? = null
 
     private lateinit var connectButton: Button
@@ -69,10 +71,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     private var mapType = GoogleMap.MAP_TYPE_NORMAL
 
     private var lastGPS = LatLng(0.0, 0.0)
+    private var lastHeading = 0f
     private var followMode = true
-    private lateinit var polyLine: Polyline
+    private var polyLine: Polyline? = null
+    private var headingPolyline: Polyline? = null
     private var hasGPSFix = false
-    private var replayFileString : String? = null
+    private var replayFileString: String? = null
     private var dataService: DataService? = null
 
     private val serviceConnection: ServiceConnection = object : ServiceConnection {
@@ -86,9 +90,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
             dataService?.let {
                 if (it.isConnected()) {
                     switchToConnectedState()
-                    val points = polyLine.points
-                    points.addAll(it.points)
-                    polyLine.points = points
+                    val points = polyLine?.points
+                    points?.addAll(it.points)
+                    polyLine?.points = points
                 }
             }
         }
@@ -127,7 +131,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         followButton.setOnClickListener {
             followMode = true
             marker?.let {
-                map.moveCamera(CameraUpdateFactory.newLatLng(it.position))
+                map?.moveCamera(CameraUpdateFactory.newLatLng(it.position))
             }
         }
 
@@ -135,7 +139,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
             showMapTypeSelectorDialog()
         }
 
-        if (replayFileString != null) {
+        if (isInReplayMode()) {
             startReplay(File(Environment.getExternalStoragePublicDirectory("TelemetryLogs"), replayFileString))
         } else {
             switchToIdleState()
@@ -146,6 +150,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         mapFragment.getMapAsync(this)
 
         startDataService()
+    }
+
+    private fun isInReplayMode(): Boolean {
+        return replayFileString != null
+    }
+
+    private fun isIdle(): Boolean {
+        return !isInReplayMode() && !(dataService?.isConnected() ?: false)
     }
 
     private fun replay() {
@@ -169,7 +181,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
                             ArrayAdapter<String>(
                                 this,
                                 android.R.layout.simple_list_item_1,
-                                files.map { i -> i.nameWithoutExtension })
+                                files.map { i -> "${i.nameWithoutExtension} (${i.length() / 1024} Kb)" })
                         ) { _, i ->
                             startReplay(files[i])
                         }
@@ -190,9 +202,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
             replayFileString = null
             connectButton.visibility = View.VISIBLE
             marker?.remove()
-            val points = polyLine.points
-            points.clear()
-            polyLine.points = points
+            val points = polyLine?.points
+            points?.clear()
+            polyLine?.points = points
             seekBar.visibility = View.GONE
         }
     }
@@ -292,6 +304,21 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         outState?.putString("replay_file_name", replayFileString)
     }
 
+    override fun onStart() {
+        super.onStart()
+        if (!isIdle()) {
+            headingPolyline?.let { it.color = preferenceManager.getHeadLineColor() }
+            if (preferenceManager.isHeadingLineEnabled() && headingPolyline == null) {
+                headingPolyline = createHeadingPolyline()
+                updateHeading()
+            } else if (!preferenceManager.isHeadingLineEnabled() && headingPolyline != null) {
+                headingPolyline?.remove()
+                headingPolyline = null
+            }
+            marker?.setIcon(bitmapDescriptorFromVector(this, R.drawable.ic_plane, preferenceManager.getPlaneColor()))
+        }
+    }
+
     private fun connect() {
         val adapter = BluetoothAdapter.getDefaultAdapter()
         if (adapter == null) {
@@ -366,7 +393,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         if (grantResults.isNotEmpty()) {
             if (requestCode == REQUEST_LOCATION_PERMISSION) {
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    map.isMyLocationEnabled = true
+                    map?.isMyLocationEnabled = true
                 }
             } else if (requestCode == REQUEST_WRITE_PERMISSION) {
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -421,17 +448,23 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     override fun onGPSState(satellites: Int, gpsFix: Boolean) {
         this.hasGPSFix = gpsFix
         if (gpsFix && marker == null) {
-            marker = map.addMarker(
+            marker = map?.addMarker(
                 MarkerOptions().icon(
                     bitmapDescriptorFromVector(
                         this,
-                        R.drawable.ic_plane
-                    )
+                        R.drawable.ic_plane, preferenceManager.getPlaneColor())
                 ).position(lastGPS)
             )
-            map.moveCamera(CameraUpdateFactory.newLatLngZoom(lastGPS, 15f))
+            if (headingPolyline == null && preferenceManager.isHeadingLineEnabled()) {
+                headingPolyline = createHeadingPolyline()
+            }
+            map?.moveCamera(CameraUpdateFactory.newLatLngZoom(lastGPS, 15f))
         }
         this.satellites.text = satellites.toString()
+    }
+
+    private fun createHeadingPolyline(): Polyline? {
+        return map?.addPolyline(PolylineOptions().add(lastGPS).add(lastGPS).color(preferenceManager.getHeadLineColor()).width(3f))
     }
 
     override fun onRSSIData(rssi: Int) {
@@ -440,9 +473,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
 
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
-        map.mapType = mapType
+        map?.mapType = mapType
         if (checkCallingOrSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            map.isMyLocationEnabled = true
+            map?.isMyLocationEnabled = true
         } else {
             ActivityCompat.requestPermissions(
                 this,
@@ -451,13 +484,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
                 ),
                 REQUEST_LOCATION_PERMISSION
             )
-            map.isMyLocationEnabled = false
+            map?.isMyLocationEnabled = false
         }
         topLayout.measure(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT)
-        map.setPadding(0, topLayout.measuredHeight, 0, 0)
-        val polylineOptions = PolylineOptions()
-        polyLine = map.addPolyline(polylineOptions)
-        map.setOnCameraMoveStartedListener {
+        map?.setPadding(0, topLayout.measuredHeight, 0, 0)
+        polyLine = map?.addPolyline(PolylineOptions())
+        map?.setOnCameraMoveStartedListener {
             if (it == GoogleMap.OnCameraMoveStartedListener.REASON_GESTURE) {
                 followMode = false
             }
@@ -469,19 +501,19 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         val builder = AlertDialog.Builder(this)
         builder.setTitle(fDialogTitle)
 
-        val checkItem = map.mapType - 1
+        val checkItem = (map?.mapType ?: GoogleMap.MAP_TYPE_NORMAL) - 1
 
         builder.setSingleChoiceItems(
             MAP_TYPE_ITEMS,
             checkItem
         ) { dialog, item ->
             when (item) {
-                1 -> map.mapType = GoogleMap.MAP_TYPE_SATELLITE
-                2 -> map.mapType = GoogleMap.MAP_TYPE_TERRAIN
-                3 -> map.mapType = GoogleMap.MAP_TYPE_HYBRID
-                else -> map.mapType = GoogleMap.MAP_TYPE_NORMAL
+                1 -> map?.mapType = GoogleMap.MAP_TYPE_SATELLITE
+                2 -> map?.mapType = GoogleMap.MAP_TYPE_TERRAIN
+                3 -> map?.mapType = GoogleMap.MAP_TYPE_HYBRID
+                else -> map?.mapType = GoogleMap.MAP_TYPE_NORMAL
             }
-            mapType = map.mapType
+            mapType = map?.mapType ?: GoogleMap.MAP_TYPE_NORMAL
             dialog.dismiss()
         }
 
@@ -490,8 +522,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         fMapTypeDialog.show()
     }
 
-    private fun bitmapDescriptorFromVector(context: Context, @DrawableRes vectorDrawableResourceId: Int): BitmapDescriptor {
+    private fun bitmapDescriptorFromVector(
+        context: Context, @DrawableRes vectorDrawableResourceId: Int,
+        color: Int? = null
+    ): BitmapDescriptor {
         val vectorDrawable = ContextCompat.getDrawable(context, vectorDrawableResourceId)
+        color?.let {
+            DrawableCompat.setTint(vectorDrawable!!, it)
+        }
         vectorDrawable!!.setBounds(0, 0, vectorDrawable.intrinsicWidth, vectorDrawable.intrinsicHeight)
         val bitmap =
             Bitmap.createBitmap(vectorDrawable.intrinsicWidth, vectorDrawable.intrinsicHeight, Bitmap.Config.ARGB_8888)
@@ -509,7 +547,20 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     }
 
     override fun onHeadingData(heading: Float) {
-        marker?.let { it.rotation = heading }
+        lastHeading = heading
+        marker?.let {
+            it.rotation = heading
+            updateHeading()
+        }
+    }
+
+    private fun updateHeading() {
+        headingPolyline?.let { headingLine ->
+            val points = headingLine.points
+            points[0] = lastGPS
+            points[1] = SphericalUtil.computeOffset(lastGPS, 1000.0, lastHeading.toDouble())
+            headingLine.points = points
+        }
     }
 
     override fun onCellVoltageData(voltage: Float) {
@@ -577,13 +628,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
 
     override fun onGPSData(list: List<LatLng>, addToEnd: Boolean) {
         if (hasGPSFix && list.isNotEmpty()) {
-            val points = polyLine.points
+            val points = polyLine?.points
             if (!addToEnd) {
-                points.clear()
+                points?.clear()
             }
-            points.addAll(list)
-            points.removeAt(points.size - 1)
-            polyLine.points = points
+            points?.addAll(list)
+            points?.removeAt(points.size - 1)
+            polyLine?.points = points
             onGPSData(list[list.size - 1].latitude, list[list.size - 1].longitude)
         }
     }
@@ -592,13 +643,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         if (LatLng(latitude, longitude) != lastGPS) {
             lastGPS = LatLng(latitude, longitude)
             marker?.let { it.position = lastGPS }
+            updateHeading()
             if (followMode) {
-                map.moveCamera(CameraUpdateFactory.newLatLng(lastGPS))
+                map?.moveCamera(CameraUpdateFactory.newLatLng(lastGPS))
             }
             if (hasGPSFix) {
-                val points = polyLine.points
-                points.add(lastGPS)
-                polyLine.points = points
+                val points = polyLine?.points
+                points?.add(lastGPS)
+                polyLine?.points = points
             }
         }
     }

@@ -9,8 +9,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.*
-import android.support.v4.app.NotificationCompat
-import android.support.v4.content.ContextCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import android.widget.Toast
 import com.google.android.gms.maps.model.LatLng
 import crazydude.com.telemetry.R

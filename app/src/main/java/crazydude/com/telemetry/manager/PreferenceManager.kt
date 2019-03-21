@@ -1,10 +1,13 @@
 package crazydude.com.telemetry.manager
 
 import android.content.Context
+import crazydude.com.telemetry.R
 
 class PreferenceManager(context: Context) {
 
     private val sharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+    private val defaultHeadlineColor = context.resources.getColor(R.color.colorHeadline)
+    private val defaultPlaneColor = context.resources.getColor(R.color.colorPlane)
 
     fun isLoggingEnabled(): Boolean {
         return sharedPreferences.getBoolean("logging_enabled", true)
@@ -17,5 +20,17 @@ class PreferenceManager(context: Context) {
     fun setLoggingEnabled(enabled: Boolean) {
         sharedPreferences.edit().putBoolean("logging_enabled", enabled)
             .apply()
+    }
+
+    fun isHeadingLineEnabled(): Boolean {
+        return sharedPreferences.getBoolean("show_heading_line", true)
+    }
+
+    fun getHeadLineColor(): Int {
+        return sharedPreferences.getInt("headline_color", defaultHeadlineColor)
+    }
+
+    fun getPlaneColor(): Int {
+        return sharedPreferences.getInt("plane_color", defaultPlaneColor)
     }
 }

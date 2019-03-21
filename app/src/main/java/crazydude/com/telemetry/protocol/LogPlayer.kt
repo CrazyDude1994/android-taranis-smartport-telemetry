@@ -67,8 +67,8 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
 
     fun seek(position: Int) {
         uniqueData.clear()
-        val addToEnd: Boolean
         decodedCoordinates.clear()
+        val addToEnd: Boolean
         if (position > currentPosition) {
             for (i in currentPosition until position) {
                 if (cachedData[i].telemetryType == FrSkySportProtocol.GPS) {

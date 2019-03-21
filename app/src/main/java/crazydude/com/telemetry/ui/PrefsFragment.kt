@@ -1,7 +1,7 @@
 package crazydude.com.telemetry.ui
 
 import android.os.Bundle
-import android.support.v7.preference.PreferenceFragmentCompat
+import androidx.preference.PreferenceFragmentCompat
 import crazydude.com.telemetry.R
 
 class PrefsFragment : PreferenceFragmentCompat() {

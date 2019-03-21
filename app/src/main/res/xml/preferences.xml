@@ -1,9 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+                  xmlns:app="http://schemas.android.com/apk/res-auto">
+
     <SwitchPreference
             android:title="Telemetry logging"
-            android:summary="Save telemetry data to sdcard"
+            android:summary="Save telemetry data to sdcard. They are saved to TelemetryLog at external storage (sdcard)"
             android:text="Logging enabled"
             android:defaultValue="true"
             android:key="logging_enabled"/>
+
+    <com.jaredrummler.android.colorpicker.ColorPreferenceCompat
+            android:defaultValue="@color/colorPlane"
+            android:key="plane_color"
+            app:cpv_showAlphaSlider="false"
+            app:cpv_allowPresets="false"
+            app:cpv_allowCustom="true"
+            android:summary="Color of the plane icon on the map"
+            android:title="Plane color"/>
+
+    <PreferenceCategory android:title="Heading line">
+
+        <SwitchPreference
+                android:title="Show heading line"
+                android:summary="Shows heading line on the map"
+                android:defaultValue="true"
+                android:key="show_heading_line"/>
+
+        <com.jaredrummler.android.colorpicker.ColorPreferenceCompat
+                android:defaultValue="@color/colorHeadline"
+                android:key="headline_color"
+                app:cpv_showAlphaSlider="false"
+                app:cpv_allowPresets="false"
+                app:cpv_allowCustom="true"
+                android:summary="Color of the heading line on the map"
+                android:title="Heading line color"/>
+
+    </PreferenceCategory>
+
+
 </PreferenceScreen>
