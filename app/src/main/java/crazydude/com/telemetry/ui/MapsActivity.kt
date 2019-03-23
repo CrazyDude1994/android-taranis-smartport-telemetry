@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.content.*
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.net.Uri
@@ -404,12 +405,21 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         speed.text = "-"
         distance.text = "-"
         mode.text = "Disconnected"
-        this.fuel.setCompoundDrawablesWithIntrinsicBounds(
-            ContextCompat.getDrawable(this, R.drawable.ic_battery_unknown),
-            null,
-            null,
-            null
-        )
+        if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            this.fuel.setCompoundDrawablesWithIntrinsicBounds(
+                ContextCompat.getDrawable(this, R.drawable.ic_battery_unknown),
+                null,
+                null,
+                null
+            )
+        } else {
+            this.fuel.setCompoundDrawablesWithIntrinsicBounds(
+                null,
+                ContextCompat.getDrawable(this, R.drawable.ic_battery_unknown),
+                null,
+                null
+            )
+        }
     }
 
     private fun bleCheck() =
@@ -707,13 +717,21 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
             in 0..20 -> R.drawable.ic_battery_alert
             else -> R.drawable.ic_battery_unknown
         }.let {
-            this.fuel.setCompoundDrawablesWithIntrinsicBounds(
-                ContextCompat.getDrawable(this, it),
-                null,
-                null,
-                null
-            )
-        }
+            if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                this.fuel.setCompoundDrawablesWithIntrinsicBounds(
+                    ContextCompat.getDrawable(this, it),
+                    null,
+                    null,
+                    null
+                )
+            } else {
+                this.fuel.setCompoundDrawablesWithIntrinsicBounds(
+                    null,
+                    ContextCompat.getDrawable(this, it),
+                    null,
+                    null
+                )
+            } }
         this.fuel.text = "$fuel%"
     }
 

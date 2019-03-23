@@ -22,16 +22,14 @@
                 android:id="@+id/satellites"
                 android:textColor="@android:color/white"
                 android:layout_margin="4dp"
-                android:paddingTop="8dp"
-                android:paddingBottom="8dp"
-                android:drawableStart="@drawable/ic_satellite"
                 android:text="-"
                 android:drawablePadding="4dp"
                 android:textSize="16sp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_toRightOf="@id/connect_button"
-                android:drawableLeft="@drawable/ic_satellite"/>
+                android:textAlignment="center"
+                android:drawableTop="@drawable/ic_satellite"/>
 
 
         <TextView
@@ -41,12 +39,12 @@
                 android:textColor="@android:color/white"
                 android:layout_margin="4dp"
                 android:text="-"
-                android:drawableStart="@drawable/ic_battery_unknown"
                 android:textSize="16sp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_toRightOf="@id/satellites"
-                android:drawableLeft="@drawable/ic_battery_unknown"/>
+                android:textAlignment="center"
+                android:drawableTop="@drawable/ic_battery_unknown"/>
 
         <TextView
                 android:layout_centerVertical="true"
@@ -56,15 +54,14 @@
                 android:layout_margin="4dp"
                 android:text="-"
                 android:drawablePadding="4dp"
-                android:drawableStart="@drawable/ic_current"
                 android:textSize="16sp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_toRightOf="@id/fuel"
-                android:drawableLeft="@drawable/ic_current"/>
+                android:textAlignment="center"
+                android:drawableTop="@drawable/ic_current"/>
 
         <TextView
-                android:layout_toStartOf="@+id/replay_button"
                 android:layout_centerVertical="true"
                 android:layout_toEndOf="@id/current"
                 android:id="@+id/voltage"
@@ -72,13 +69,12 @@
                 android:layout_margin="4dp"
                 android:text="-"
                 android:drawablePadding="4dp"
-                android:drawableStart="@drawable/ic_voltage"
                 android:textSize="16sp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_toRightOf="@id/current"
-                android:drawableLeft="@drawable/ic_voltage"
-                android:layout_toLeftOf="@+id/replay_button"/>
+                android:textAlignment="center"
+                android:drawableTop="@drawable/ic_voltage"/>
 
         <ImageView
                 android:layout_toLeftOf="@+id/settings_button"
