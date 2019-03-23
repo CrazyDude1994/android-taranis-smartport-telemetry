@@ -1,10 +1,12 @@
 package crazydude.com.telemetry.service
 
+import android.annotation.SuppressLint
+import android.annotation.TargetApi
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
-import android.bluetooth.BluetoothDevice
+import android.bluetooth.*
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -16,7 +18,9 @@ import com.google.android.gms.maps.model.LatLng
 import crazydude.com.telemetry.R
 import crazydude.com.telemetry.manager.PreferenceManager
 import crazydude.com.telemetry.protocol.BluetoothDataPoller
+import crazydude.com.telemetry.protocol.BluetoothLeDataPoller
 import crazydude.com.telemetry.protocol.DataDecoder
+import crazydude.com.telemetry.protocol.DataPoller
 import crazydude.com.telemetry.ui.MapsActivity
 import java.io.File
 import java.io.FileOutputStream
@@ -27,7 +31,7 @@ import kotlin.collections.ArrayList
 
 class DataService : Service(), DataDecoder.Listener {
 
-    private var dataPoller: BluetoothDataPoller? = null
+    private var dataPoller: DataPoller? = null
     private var dataListener: DataDecoder.Listener? = null
     private val dataBinder = DataBinder()
     private var hasGPSFix = false
@@ -69,6 +73,7 @@ class DataService : Service(), DataDecoder.Listener {
         fun getService(): DataService = this@DataService
     }
 
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
     fun connect(device: BluetoothDevice) {
         var fileOutputStream: FileOutputStream? = null
         var csvFileOutputStream: FileOutputStream? = null
@@ -87,9 +92,20 @@ class DataService : Service(), DataDecoder.Listener {
             csvFileOutputStream = FileOutputStream(csvFile)
         }
         try {
-            val socket = device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
             dataPoller?.disconnect()
-            dataPoller = BluetoothDataPoller(socket, this, fileOutputStream, csvFileOutputStream)
+
+            var isBle = false
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                isBle = device.type == BluetoothDevice.DEVICE_TYPE_DUAL || device.type == BluetoothDevice.DEVICE_TYPE_LE
+            }
+
+            if (!isBle) {
+                val socket = device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
+                dataPoller = BluetoothDataPoller(socket, this, fileOutputStream, csvFileOutputStream)
+            } else {
+                dataPoller = BluetoothLeDataPoller(this, device, this, fileOutputStream, csvFileOutputStream)
+            }
         } catch (e: IOException) {
             Toast.makeText(this, "Failed to connect to bluetooth", Toast.LENGTH_LONG).show()
         }

@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.content.*
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.net.Uri
@@ -76,6 +77,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     private var hasGPSFix = false
     private var replayFileString: String? = null
     private var dataService: DataService? = null
+    private var lastVBAT = 0f
+    private var lastCellVoltage = 0f
 
     private val serviceConnection: ServiceConnection = object : ServiceConnection {
         override fun onServiceDisconnected(p0: ComponentName?) {
@@ -218,22 +221,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         }
     }
 
-    private fun switchToReplayMode() {
-        connectButton.visibility = View.GONE
-        replayButton.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_close))
-        replayButton.setOnClickListener {
-            replayButton.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_replay))
-            replayButton.setOnClickListener { replay() }
-            replayFileString = null
-            connectButton.visibility = View.VISIBLE
-            marker?.remove()
-            val points = polyLine?.points
-            points?.clear()
-            polyLine?.points = points
-            seekBar.visibility = View.GONE
-        }
-    }
-
     private fun startReplay(file: File?) {
         file?.also {
             val progressDialog = ProgressDialog(this)
@@ -353,6 +340,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
                 .show()
             return
         }
+
         if (!adapter.isEnabled) {
             val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
@@ -372,17 +360,73 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
             }
         }
 
-        val devices = BluetoothAdapter.getDefaultAdapter().bondedDevices.toList()
-        AlertDialog.Builder(this).setAdapter(
-            ArrayAdapter<String>(
-                this,
-                android.R.layout.simple_list_item_1,
-                devices.map { it.name })
-        ) { _, i ->
-            connectToDevice(devices[i])
+        val devices = ArrayList<BluetoothDevice>(adapter.bondedDevices)
+        val deviceNames = ArrayList<String>(devices.map {
+            var result = it.name
+            if (result == null) {
+                result = it.address
+            }
+            result
+        }.filterNotNull())
+        val deviceAdapter = ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, deviceNames)
+
+        val callback = BluetoothAdapter.LeScanCallback { bluetoothDevice, i, bytes ->
+            if (!devices.contains(bluetoothDevice) && bluetoothDevice.name != null) {
+                devices.add(bluetoothDevice)
+                deviceNames.add(bluetoothDevice.name)
+                deviceAdapter.notifyDataSetChanged()
+            }
+        }
+
+        if (bleCheck()) {
+            adapter.startLeScan(callback)
+        }
+
+        AlertDialog.Builder(this).setOnDismissListener {
+            if (bleCheck()) {
+                adapter.stopLeScan(callback)
+            }
+        }.setAdapter(deviceAdapter) { _, i ->
+            if (bleCheck()) {
+                adapter.stopLeScan(callback)
+            }
+            runOnUiThread {
+                connectToDevice(devices[i])
+            }
         }.show()
     }
 
+    private fun resetUI() {
+        satellites.text = "0"
+        voltage.text = "-"
+        current.text = "-"
+        fuel.text = "-"
+        altitude.text = "-"
+        speed.text = "-"
+        distance.text = "-"
+        mode.text = "Disconnected"
+        if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            this.fuel.setCompoundDrawablesWithIntrinsicBounds(
+                ContextCompat.getDrawable(this, R.drawable.ic_battery_unknown),
+                null,
+                null,
+                null
+            )
+        } else {
+            this.fuel.setCompoundDrawablesWithIntrinsicBounds(
+                null,
+                ContextCompat.getDrawable(this, R.drawable.ic_battery_unknown),
+                null,
+                null
+            )
+        }
+    }
+
+    private fun bleCheck() =
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2 && ContextCompat.checkSelfPermission(
+            this,
+            android.Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
 
     private fun connectToDevice(device: BluetoothDevice) {
         startDataService()
@@ -419,6 +463,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
             if (requestCode == REQUEST_LOCATION_PERMISSION) {
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     map?.isMyLocationEnabled = true
+                } else {
+                    AlertDialog.Builder(this)
+                        .setMessage("Location permission is needed in order to discover BLE devices and show your location on map")
+                        .setPositiveButton("OK", null)
+                        .show()
                 }
             } else if (requestCode == REQUEST_WRITE_PERMISSION) {
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -569,7 +618,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     }
 
     override fun onVBATData(voltage: Float) {
-
+        lastVBAT = voltage
+        updateVoltage()
     }
 
     override fun onCurrentData(current: Float) {
@@ -594,7 +644,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     }
 
     override fun onCellVoltageData(voltage: Float) {
-        this.voltage.text = "$voltage V"
+        lastCellVoltage = voltage
+        updateVoltage()
+    }
+
+    private fun updateVoltage() {
+        this.voltage.text = "$lastVBAT ($lastCellVoltage) V"
     }
 
     override fun onDisconnected() {
@@ -602,7 +657,19 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         switchToIdleState()
     }
 
+    private fun switchToReplayMode() {
+        connectButton.visibility = View.GONE
+        replayButton.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_close))
+        replayButton.setOnClickListener {
+            switchToIdleState()
+            replayFileString = null
+        }
+    }
+
     private fun switchToIdleState() {
+        resetUI()
+        seekBar.visibility = View.GONE
+        connectButton.visibility = View.VISIBLE
         connectButton.text = getString(R.string.connect)
         replayButton.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_replay))
         replayButton.visibility = View.VISIBLE
@@ -613,6 +680,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         connectButton.setOnClickListener {
             connect()
         }
+        marker?.remove()
+        val points = polyLine?.points
+        points?.clear()
+        polyLine?.points = points
+        headingPolyline?.remove()
     }
 
     private fun switchToConnectedState() {
@@ -646,13 +718,21 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
             in 0..20 -> R.drawable.ic_battery_alert
             else -> R.drawable.ic_battery_unknown
         }.let {
-            this.fuel.setCompoundDrawablesWithIntrinsicBounds(
-                ContextCompat.getDrawable(this, it),
-                null,
-                null,
-                null
-            )
-        }
+            if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                this.fuel.setCompoundDrawablesWithIntrinsicBounds(
+                    ContextCompat.getDrawable(this, it),
+                    null,
+                    null,
+                    null
+                )
+            } else {
+                this.fuel.setCompoundDrawablesWithIntrinsicBounds(
+                    null,
+                    ContextCompat.getDrawable(this, it),
+                    null,
+                    null
+                )
+            } }
         this.fuel.text = "$fuel%"
     }
 
