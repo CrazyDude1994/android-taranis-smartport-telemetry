@@ -89,7 +89,7 @@ class DataService : Service(), DataDecoder.Listener {
             csvFileOutputStream = FileOutputStream(csvFile)
         }
         try {
-            val bluetoothGatt = device.connectGatt(this, false, object: BluetoothGattCallback() {
+            val bluetoothGatt = device.connectGatt(this, true, object: BluetoothGattCallback() {
 
                 override fun onCharacteristicChanged(
                     gatt: BluetoothGatt?,
@@ -98,9 +98,9 @@ class DataService : Service(), DataDecoder.Listener {
                     super.onCharacteristicChanged(gatt, characteristic)
                     val value = characteristic?.getStringValue(0)
                     if (value != null) {
-                        callback.onData(value)
+                        callback.onData("Notification:$value")
                     } else {
-                        callback.onData("Data received but was null")
+                        callback.onData("Null notification\r\n")
                     }
                 }
 
@@ -108,21 +108,30 @@ class DataService : Service(), DataDecoder.Listener {
                     super.onConnectionStateChange(gatt, status, newState)
                     if (newState == BluetoothProfile.STATE_CONNECTED) {
                         gatt?.discoverServices()
-                        callback.onData("Connected\r\n")
+                        callback.onData("Connected ($status)\r\n")
                     } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                        callback.onData("Disconnected\r\n")
+                        callback.onData("Disconnected ($status)\r\n")
                         disconnect()
                     }
                 }
 
                 override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
                     super.onServicesDiscovered(gatt, status)
-                    callback.onData("Discovered services")
-                    gatt?.setCharacteristicNotification(gatt.getService(UUID.fromString("0000ffe0-0000-1000-8000-00805f9b34fb")).getCharacteristic(UUID.fromString("0000ffe1-0000-1000-8000-00805f9b34fb")), true)
-                }
+                    callback.onData("Discovered services ($status)\r\n")
+                    val characteristic = gatt?.getService(UUID.fromString("0000ffe0-0000-1000-8000-00805f9b34fb"))
+                        ?.getCharacteristic(UUID.fromString("0000ffe1-0000-1000-8000-00805f9b34fb"))
+/*
+                    val characteristic = gatt?.getService(UUID.fromString("000001800-0000-1000-8000-00805f9b34fb"))
+                        ?.getCharacteristic(UUID.fromString("00002A00-0000-1000-8000-00805f9b34fb"))
+*/
+                    if (characteristic != null) {
+                        callback.onData("Found characteristic\r\n")
+                    } else {
+                        callback.onData("Characteristic is null\r\n")
+                    }
+                    gatt?.setCharacteristicNotification(characteristic, true)
 
-                override fun onReadRemoteRssi(gatt: BluetoothGatt?, rssi: Int, status: Int) {
-                    super.onReadRemoteRssi(gatt, rssi, status)
+//                    gatt?.readCharacteristic(characteristic)
                 }
 
                 override fun onCharacteristicRead(
@@ -131,6 +140,13 @@ class DataService : Service(), DataDecoder.Listener {
                     status: Int
                 ) {
                     super.onCharacteristicRead(gatt, characteristic, status)
+                    val value = characteristic?.value
+                    if (value != null) {
+                        callback.onData("Data read ($status): ${value.contentToString()}\r\n")
+                    } else {
+                        callback.onData("Null data ($status)\r\n")
+                    }
+                    gatt?.readCharacteristic(characteristic)
                 }
             })
 

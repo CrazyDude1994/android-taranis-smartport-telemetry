@@ -34,7 +34,6 @@ import crazydude.com.telemetry.protocol.DataDecoder
 import crazydude.com.telemetry.protocol.LogPlayer
 import crazydude.com.telemetry.service.DataService
 import java.io.File
-import kotlin.math.log
 import kotlin.math.roundToInt
 
 
@@ -381,7 +380,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         val deviceAdapter = ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, deviceNames)
 
         val callback = BluetoothAdapter.LeScanCallback { bluetoothDevice, i, bytes ->
-            if (!devices.contains(bluetoothDevice)) {
+            if (!devices.contains(bluetoothDevice) && bluetoothDevice.name != null) {
                 devices.add(bluetoothDevice)
                 deviceNames.add(bluetoothDevice.name)
                 deviceAdapter.notifyDataSetChanged()
@@ -392,7 +391,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
 
         AlertDialog.Builder(this).setAdapter(deviceAdapter) { _, i ->
             adapter.stopLeScan(callback)
-            connectToDevice(devices[i])
+            runOnUiThread {
+                connectToDevice(devices[i])
+            }
         }.show()
     }
 
@@ -402,7 +403,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         dataService?.let {
             connectButton.text = getString(R.string.connecting)
             connectButton.isEnabled = false
-            it.connect(device, object: DataService.LogCallback {
+            it.connect(device, object : DataService.LogCallback {
                 override fun onData(data: String) {
                     runOnUiThread { logView.text = logView.text.toString() + data }
                 }
