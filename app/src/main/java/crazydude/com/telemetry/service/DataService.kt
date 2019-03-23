@@ -97,7 +97,7 @@ class DataService : Service(), DataDecoder.Listener {
             var isBle = false
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-                isBle = device.type == BluetoothDevice.DEVICE_TYPE_CLASSIC || device.type == BluetoothDevice.DEVICE_TYPE_UNKNOWN
+                isBle = device.type == BluetoothDevice.DEVICE_TYPE_DUAL || device.type == BluetoothDevice.DEVICE_TYPE_LE
             }
 
             if (!isBle) {

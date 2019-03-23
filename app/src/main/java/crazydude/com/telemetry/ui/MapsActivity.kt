@@ -220,22 +220,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         }
     }
 
-    private fun switchToReplayMode() {
-        connectButton.visibility = View.GONE
-        replayButton.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_close))
-        replayButton.setOnClickListener {
-            replayButton.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_replay))
-            replayButton.setOnClickListener { replay() }
-            replayFileString = null
-            connectButton.visibility = View.VISIBLE
-            marker?.remove()
-            val points = polyLine?.points
-            points?.clear()
-            polyLine?.points = points
-            seekBar.visibility = View.GONE
-        }
-    }
-
     private fun startReplay(file: File?) {
         file?.also {
             val progressDialog = ProgressDialog(this)
@@ -409,6 +393,23 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
                 connectToDevice(devices[i])
             }
         }.show()
+    }
+
+    private fun resetUI() {
+        satellites.text = "0"
+        voltage.text = "-"
+        current.text = "-"
+        fuel.text = "-"
+        altitude.text = "-"
+        speed.text = "-"
+        distance.text = "-"
+        mode.text = "Disconnected"
+        this.fuel.setCompoundDrawablesWithIntrinsicBounds(
+            ContextCompat.getDrawable(this, R.drawable.ic_battery_unknown),
+            null,
+            null,
+            null
+        )
     }
 
     private fun bleCheck() =
@@ -646,7 +647,23 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         switchToIdleState()
     }
 
+    private fun switchToReplayMode() {
+        connectButton.visibility = View.GONE
+        replayButton.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_close))
+        replayButton.setOnClickListener {
+            switchToIdleState()
+            replayFileString = null
+            marker?.remove()
+            val points = polyLine?.points
+            points?.clear()
+            polyLine?.points = points
+        }
+    }
+
     private fun switchToIdleState() {
+        resetUI()
+        seekBar.visibility = View.GONE
+        connectButton.visibility = View.VISIBLE
         connectButton.text = getString(R.string.connect)
         replayButton.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_replay))
         replayButton.visibility = View.VISIBLE
