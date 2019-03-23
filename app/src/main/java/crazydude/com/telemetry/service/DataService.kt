@@ -1,10 +1,11 @@
 package crazydude.com.telemetry.service
 
+import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
-import android.bluetooth.BluetoothDevice
+import android.bluetooth.*
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -69,7 +70,8 @@ class DataService : Service(), DataDecoder.Listener {
         fun getService(): DataService = this@DataService
     }
 
-    fun connect(device: BluetoothDevice) {
+    @SuppressLint("NewApi")
+    fun connect(device: BluetoothDevice, callback: LogCallback) {
         var fileOutputStream: FileOutputStream? = null
         var csvFileOutputStream: FileOutputStream? = null
         if (preferenceManager.isLoggingEnabled()
@@ -87,9 +89,54 @@ class DataService : Service(), DataDecoder.Listener {
             csvFileOutputStream = FileOutputStream(csvFile)
         }
         try {
-            val socket = device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
-            dataPoller?.disconnect()
-            dataPoller = BluetoothDataPoller(socket, this, fileOutputStream, csvFileOutputStream)
+            val bluetoothGatt = device.connectGatt(this, false, object: BluetoothGattCallback() {
+
+                override fun onCharacteristicChanged(
+                    gatt: BluetoothGatt?,
+                    characteristic: BluetoothGattCharacteristic?
+                ) {
+                    super.onCharacteristicChanged(gatt, characteristic)
+                    val value = characteristic?.getStringValue(0)
+                    if (value != null) {
+                        callback.onData(value)
+                    } else {
+                        callback.onData("Data received but was null")
+                    }
+                }
+
+                override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
+                    super.onConnectionStateChange(gatt, status, newState)
+                    if (newState == BluetoothProfile.STATE_CONNECTED) {
+                        gatt?.discoverServices()
+                        callback.onData("Connected\r\n")
+                    } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                        callback.onData("Disconnected\r\n")
+                        disconnect()
+                    }
+                }
+
+                override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
+                    super.onServicesDiscovered(gatt, status)
+                    callback.onData("Discovered services")
+                    gatt?.setCharacteristicNotification(gatt.getService(UUID.fromString("0000ffe0-0000-1000-8000-00805f9b34fb")).getCharacteristic(UUID.fromString("0000ffe1-0000-1000-8000-00805f9b34fb")), true)
+                }
+
+                override fun onReadRemoteRssi(gatt: BluetoothGatt?, rssi: Int, status: Int) {
+                    super.onReadRemoteRssi(gatt, rssi, status)
+                }
+
+                override fun onCharacteristicRead(
+                    gatt: BluetoothGatt?,
+                    characteristic: BluetoothGattCharacteristic?,
+                    status: Int
+                ) {
+                    super.onCharacteristicRead(gatt, characteristic, status)
+                }
+            })
+
+//            val socket = device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
+//            dataPoller?.disconnect()
+//            dataPoller = BluetoothDataPoller(socket, this, fileOutputStream, csvFileOutputStream)
         } catch (e: IOException) {
             Toast.makeText(this, "Failed to connect to bluetooth", Toast.LENGTH_LONG).show()
         }
@@ -258,6 +305,10 @@ class DataService : Service(), DataDecoder.Listener {
             .post {
                 runnable.run()
             }
+    }
+
+    interface LogCallback {
+        fun onData(data: String)
     }
 
     fun disconnect() {

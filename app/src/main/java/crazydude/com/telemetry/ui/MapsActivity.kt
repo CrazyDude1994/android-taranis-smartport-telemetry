@@ -34,6 +34,7 @@ import crazydude.com.telemetry.protocol.DataDecoder
 import crazydude.com.telemetry.protocol.LogPlayer
 import crazydude.com.telemetry.service.DataService
 import java.io.File
+import kotlin.math.log
 import kotlin.math.roundToInt
 
 
@@ -54,6 +55,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     private lateinit var replayButton: ImageView
     private lateinit var seekBar: SeekBar
     private lateinit var fuel: TextView
+    private lateinit var logView: TextView
     private lateinit var satellites: TextView
     private lateinit var current: TextView
     private lateinit var voltage: TextView
@@ -119,6 +121,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         settingsButton = findViewById(R.id.settings_button)
         replayButton = findViewById(R.id.replay_button)
         seekBar = findViewById(R.id.seekbar)
+        logView = findViewById(R.id.log)
 
         settingsButton.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
@@ -353,6 +356,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
                 .show()
             return
         }
+
         if (!adapter.isEnabled) {
             val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
@@ -372,13 +376,22 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
             }
         }
 
-        val devices = BluetoothAdapter.getDefaultAdapter().bondedDevices.toList()
-        AlertDialog.Builder(this).setAdapter(
-            ArrayAdapter<String>(
-                this,
-                android.R.layout.simple_list_item_1,
-                devices.map { it.name })
-        ) { _, i ->
+        val devices = ArrayList<BluetoothDevice>()
+        val deviceNames = ArrayList<String>()
+        val deviceAdapter = ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, deviceNames)
+
+        val callback = BluetoothAdapter.LeScanCallback { bluetoothDevice, i, bytes ->
+            if (!devices.contains(bluetoothDevice)) {
+                devices.add(bluetoothDevice)
+                deviceNames.add(bluetoothDevice.name)
+                deviceAdapter.notifyDataSetChanged()
+            }
+        }
+
+        adapter.startLeScan(callback)
+
+        AlertDialog.Builder(this).setAdapter(deviceAdapter) { _, i ->
+            adapter.stopLeScan(callback)
             connectToDevice(devices[i])
         }.show()
     }
@@ -389,7 +402,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         dataService?.let {
             connectButton.text = getString(R.string.connecting)
             connectButton.isEnabled = false
-            it.connect(device)
+            it.connect(device, object: DataService.LogCallback {
+                override fun onData(data: String) {
+                    runOnUiThread { logView.text = logView.text.toString() + data }
+                }
+            })
         }
     }
 
