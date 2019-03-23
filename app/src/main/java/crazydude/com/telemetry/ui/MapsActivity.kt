@@ -54,7 +54,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     private lateinit var replayButton: ImageView
     private lateinit var seekBar: SeekBar
     private lateinit var fuel: TextView
-    private lateinit var logView: TextView
     private lateinit var satellites: TextView
     private lateinit var current: TextView
     private lateinit var voltage: TextView
@@ -77,6 +76,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     private var hasGPSFix = false
     private var replayFileString: String? = null
     private var dataService: DataService? = null
+    private var lastVBAT = 0f
+    private var lastCellVoltage = 0f
 
     private val serviceConnection: ServiceConnection = object : ServiceConnection {
         override fun onServiceDisconnected(p0: ComponentName?) {
@@ -120,7 +121,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         settingsButton = findViewById(R.id.settings_button)
         replayButton = findViewById(R.id.replay_button)
         seekBar = findViewById(R.id.seekbar)
-        logView = findViewById(R.id.log)
 
         settingsButton.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
@@ -375,8 +375,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
             }
         }
 
-        val devices = ArrayList<BluetoothDevice>()
-        val deviceNames = ArrayList<String>()
+        val devices = ArrayList<BluetoothDevice>(adapter.bondedDevices)
+        val deviceNames = ArrayList<String>(devices.map {
+            var result = it.name
+            if (result == null) {
+                result = it.address
+            }
+            result
+        }.filterNotNull())
         val deviceAdapter = ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, deviceNames)
 
         val callback = BluetoothAdapter.LeScanCallback { bluetoothDevice, i, bytes ->
@@ -387,27 +393,36 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
             }
         }
 
-        adapter.startLeScan(callback)
+        if (bleCheck()) {
+            adapter.startLeScan(callback)
+        }
 
-        AlertDialog.Builder(this).setAdapter(deviceAdapter) { _, i ->
-            adapter.stopLeScan(callback)
+        AlertDialog.Builder(this).setOnDismissListener {
+            if (bleCheck()) {
+                adapter.stopLeScan(callback)
+            }
+        }.setAdapter(deviceAdapter) { _, i ->
+            if (bleCheck()) {
+                adapter.stopLeScan(callback)
+            }
             runOnUiThread {
                 connectToDevice(devices[i])
             }
         }.show()
     }
 
+    private fun bleCheck() =
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2 && ContextCompat.checkSelfPermission(
+            this,
+            android.Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
 
     private fun connectToDevice(device: BluetoothDevice) {
         startDataService()
         dataService?.let {
             connectButton.text = getString(R.string.connecting)
             connectButton.isEnabled = false
-            it.connect(device, object : DataService.LogCallback {
-                override fun onData(data: String) {
-                    runOnUiThread { logView.text = logView.text.toString() + data }
-                }
-            })
+            it.connect(device)
         }
     }
 
@@ -437,6 +452,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
             if (requestCode == REQUEST_LOCATION_PERMISSION) {
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     map?.isMyLocationEnabled = true
+                } else {
+                    AlertDialog.Builder(this)
+                        .setMessage("Location permission is needed in order to discover BLE devices and show your location on map")
+                        .setPositiveButton("OK", null)
+                        .show()
                 }
             } else if (requestCode == REQUEST_WRITE_PERMISSION) {
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -587,7 +607,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     }
 
     override fun onVBATData(voltage: Float) {
-
+        lastVBAT = voltage
+        updateVoltage()
     }
 
     override fun onCurrentData(current: Float) {
@@ -612,7 +633,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     }
 
     override fun onCellVoltageData(voltage: Float) {
-        this.voltage.text = "$voltage V"
+        lastCellVoltage = voltage
+        updateVoltage()
+    }
+
+    private fun updateVoltage() {
+        this.voltage.text = "$lastVBAT ($lastCellVoltage) V"
     }
 
     override fun onDisconnected() {

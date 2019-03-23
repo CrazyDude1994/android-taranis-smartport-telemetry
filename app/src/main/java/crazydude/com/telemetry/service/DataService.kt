@@ -1,6 +1,7 @@
 package crazydude.com.telemetry.service
 
 import android.annotation.SuppressLint
+import android.annotation.TargetApi
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -17,7 +18,9 @@ import com.google.android.gms.maps.model.LatLng
 import crazydude.com.telemetry.R
 import crazydude.com.telemetry.manager.PreferenceManager
 import crazydude.com.telemetry.protocol.BluetoothDataPoller
+import crazydude.com.telemetry.protocol.BluetoothLeDataPoller
 import crazydude.com.telemetry.protocol.DataDecoder
+import crazydude.com.telemetry.protocol.DataPoller
 import crazydude.com.telemetry.ui.MapsActivity
 import java.io.File
 import java.io.FileOutputStream
@@ -28,7 +31,7 @@ import kotlin.collections.ArrayList
 
 class DataService : Service(), DataDecoder.Listener {
 
-    private var dataPoller: BluetoothDataPoller? = null
+    private var dataPoller: DataPoller? = null
     private var dataListener: DataDecoder.Listener? = null
     private val dataBinder = DataBinder()
     private var hasGPSFix = false
@@ -70,8 +73,8 @@ class DataService : Service(), DataDecoder.Listener {
         fun getService(): DataService = this@DataService
     }
 
-    @SuppressLint("NewApi")
-    fun connect(device: BluetoothDevice, callback: LogCallback) {
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
+    fun connect(device: BluetoothDevice) {
         var fileOutputStream: FileOutputStream? = null
         var csvFileOutputStream: FileOutputStream? = null
         if (preferenceManager.isLoggingEnabled()
@@ -89,70 +92,20 @@ class DataService : Service(), DataDecoder.Listener {
             csvFileOutputStream = FileOutputStream(csvFile)
         }
         try {
-            val bluetoothGatt = device.connectGatt(this, true, object: BluetoothGattCallback() {
+            dataPoller?.disconnect()
 
-                override fun onCharacteristicChanged(
-                    gatt: BluetoothGatt?,
-                    characteristic: BluetoothGattCharacteristic?
-                ) {
-                    super.onCharacteristicChanged(gatt, characteristic)
-                    val value = characteristic?.getStringValue(0)
-                    if (value != null) {
-                        callback.onData("Notification:$value")
-                    } else {
-                        callback.onData("Null notification\r\n")
-                    }
-                }
+            var isBle = false
 
-                override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
-                    super.onConnectionStateChange(gatt, status, newState)
-                    if (newState == BluetoothProfile.STATE_CONNECTED) {
-                        gatt?.discoverServices()
-                        callback.onData("Connected ($status)\r\n")
-                    } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                        callback.onData("Disconnected ($status)\r\n")
-                        disconnect()
-                    }
-                }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                isBle = device.type == BluetoothDevice.DEVICE_TYPE_CLASSIC || device.type == BluetoothDevice.DEVICE_TYPE_UNKNOWN
+            }
 
-                override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
-                    super.onServicesDiscovered(gatt, status)
-                    callback.onData("Discovered services ($status)\r\n")
-                    val characteristic = gatt?.getService(UUID.fromString("0000ffe0-0000-1000-8000-00805f9b34fb"))
-                        ?.getCharacteristic(UUID.fromString("0000ffe1-0000-1000-8000-00805f9b34fb"))
-/*
-                    val characteristic = gatt?.getService(UUID.fromString("000001800-0000-1000-8000-00805f9b34fb"))
-                        ?.getCharacteristic(UUID.fromString("00002A00-0000-1000-8000-00805f9b34fb"))
-*/
-                    if (characteristic != null) {
-                        callback.onData("Found characteristic\r\n")
-                    } else {
-                        callback.onData("Characteristic is null\r\n")
-                    }
-                    gatt?.setCharacteristicNotification(characteristic, true)
-
-//                    gatt?.readCharacteristic(characteristic)
-                }
-
-                override fun onCharacteristicRead(
-                    gatt: BluetoothGatt?,
-                    characteristic: BluetoothGattCharacteristic?,
-                    status: Int
-                ) {
-                    super.onCharacteristicRead(gatt, characteristic, status)
-                    val value = characteristic?.value
-                    if (value != null) {
-                        callback.onData("Data read ($status): ${value.contentToString()}\r\n")
-                    } else {
-                        callback.onData("Null data ($status)\r\n")
-                    }
-                    gatt?.readCharacteristic(characteristic)
-                }
-            })
-
-//            val socket = device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
-//            dataPoller?.disconnect()
-//            dataPoller = BluetoothDataPoller(socket, this, fileOutputStream, csvFileOutputStream)
+            if (!isBle) {
+                val socket = device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
+                dataPoller = BluetoothDataPoller(socket, this, fileOutputStream, csvFileOutputStream)
+            } else {
+                dataPoller = BluetoothLeDataPoller(this, device, this, fileOutputStream, csvFileOutputStream)
+            }
         } catch (e: IOException) {
             Toast.makeText(this, "Failed to connect to bluetooth", Toast.LENGTH_LONG).show()
         }
@@ -321,10 +274,6 @@ class DataService : Service(), DataDecoder.Listener {
             .post {
                 runnable.run()
             }
-    }
-
-    interface LogCallback {
-        fun onData(data: String)
     }
 
     fun disconnect() {

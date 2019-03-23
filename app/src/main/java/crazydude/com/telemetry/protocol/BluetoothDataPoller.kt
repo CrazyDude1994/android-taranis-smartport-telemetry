@@ -12,7 +12,7 @@ class BluetoothDataPoller(
     private val listener: DataDecoder.Listener,
     outputStream: FileOutputStream?,
     csvOutputStream: FileOutputStream?
-) {
+) : DataPoller {
 
     private lateinit var protocol: FrSkySportProtocol
     private lateinit var thread: Thread
@@ -84,7 +84,7 @@ class BluetoothDataPoller(
             }
     }
 
-    fun disconnect() {
+    override fun disconnect() {
         thread.interrupt()
     }
 }
