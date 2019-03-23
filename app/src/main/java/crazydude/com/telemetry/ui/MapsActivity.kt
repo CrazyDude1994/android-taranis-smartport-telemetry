@@ -663,10 +663,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         replayButton.setOnClickListener {
             switchToIdleState()
             replayFileString = null
-            marker?.remove()
-            val points = polyLine?.points
-            points?.clear()
-            polyLine?.points = points
         }
     }
 
@@ -684,6 +680,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         connectButton.setOnClickListener {
             connect()
         }
+        marker?.remove()
+        val points = polyLine?.points
+        points?.clear()
+        polyLine?.points = points
+        headingPolyline?.remove()
     }
 
     private fun switchToConnectedState() {
