@@ -30,6 +30,7 @@ import java.util.*
 class MainActivity : AppCompatActivity() {
 
     private val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+    private var broadcastReceiver: BroadcastReceiver? = null
 
     companion object {
         private const val REQUEST_ENABLE_BT_BL: Int = 0
@@ -80,11 +81,20 @@ class MainActivity : AppCompatActivity() {
 
                 override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
                     super.onConnectionStateChange(gatt, status, newState)
+                    fileOutputStream?.write("State changed $status, $newState\r\n".toByteArray())
                     if (newState == BluetoothGatt.STATE_CONNECTED) {
                         gatt?.discoverServices()
+                        fileOutputStream = getLogFileOutputStream()
+                        fileOutputStream?.write("Connected as BLE\r\n".toByteArray())
+                        disconnectButton.setOnClickListener {
+                            gatt?.disconnect()
+                        }
+                        switchToConnectedState()
                     } else {
-                        Toast.makeText(this@MainActivity, "Disconnected", Toast.LENGTH_SHORT).show()
+                        fileOutputStream?.write("Disconnected\r\n".toByteArray())
                         fileOutputStream?.close()
+                        switchToDisconnected()
+                        gatt?.close()
                     }
                 }
 
@@ -107,31 +117,38 @@ class MainActivity : AppCompatActivity() {
                 override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
                     super.onServicesDiscovered(gatt, status)
 
+                    fileOutputStream?.write("On service discovered $status\r\n".toByteArray())
+
                     val list = gatt?.services?.flatMap { it.characteristics }
                         ?.filter { it.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY == BluetoothGattCharacteristic.PROPERTY_NOTIFY }
 
-                    GlobalScope.launch(Dispatchers.Main) {
-                        AlertDialog.Builder(this@MainActivity)
-                            .setAdapter(
-                                ArrayAdapter<String>(
-                                    this@MainActivity,
-                                    android.R.layout.simple_list_item_1,
-                                    list?.map { it.uuid.toString() } ?: emptyList()
-                                )
-                            ) { dialogInterface, i ->
-                                val dir = Environment.getExternalStoragePublicDirectory("BluetoothLogs")
-                                dir.mkdirs()
-                                val file = File(dir, "btlog.log")
-                                fileOutputStream = FileOutputStream(file)
-                                buttonsLayout.visibility = View.GONE
-                                logTextView.visibility = View.VISIBLE
-                                Toast.makeText(this@MainActivity, "Connected", Toast.LENGTH_SHORT).show()
-                                gatt?.setCharacteristicNotification(list!![i], true)
-                            }
-                            .show()
+                    if (list?.isEmpty() != false) {
+                        fileOutputStream?.write("No notify services found\r\n".toByteArray())
+                    } else {
+                        GlobalScope.launch(Dispatchers.Main) {
+                            AlertDialog.Builder(this@MainActivity)
+                                .setAdapter(
+                                    ArrayAdapter<String>(
+                                        this@MainActivity,
+                                        android.R.layout.simple_list_item_1,
+                                        list.map { it.uuid.toString() }
+                                    )
+                                ) { dialogInterface, i ->
+                                    fileOutputStream?.write("Selected service: ${list[i].uuid}\r\n".toByteArray())
+                                    gatt.setCharacteristicNotification(list[i], true)
+                                }
+                                .show()
+                        }
                     }
                 }
             })
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        broadcastReceiver?.let {
+            unregisterReceiver(it)
+        }
     }
 
     private fun connectBl() {
@@ -144,7 +161,10 @@ class MainActivity : AppCompatActivity() {
                 }
                 .setOnDismissListener { bluetoothAdapter.cancelDiscovery() }
                 .show()
-            registerReceiver(object : BroadcastReceiver() {
+            broadcastReceiver?.let {
+                unregisterReceiver(it)
+            }
+            broadcastReceiver = object : BroadcastReceiver() {
                 override fun onReceive(p0: Context?, intent: Intent?) {
                     intent?.let {
                         val bluetoothDevice = it.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE) as BluetoothDevice
@@ -154,7 +174,8 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 }
-            }, IntentFilter(BluetoothDevice.ACTION_FOUND))
+            }
+            registerReceiver(broadcastReceiver, IntentFilter(BluetoothDevice.ACTION_FOUND))
             if (bluetoothAdapter.isDiscovering) {
                 bluetoothAdapter.cancelDiscovery()
             }
@@ -170,13 +191,9 @@ class MainActivity : AppCompatActivity() {
             try {
                 bluetoothSocket.connect()
                 if (bluetoothSocket.isConnected) {
-                    val dir = Environment.getExternalStoragePublicDirectory("BluetoothLogs")
-                    dir.mkdirs()
-                    val file = File(dir, "btlog.log")
-                    val fileOutputStream = FileOutputStream(file)
-                    buttonsLayout.visibility = View.GONE
-                    logTextView.visibility = View.VISIBLE
-                    Toast.makeText(this, "Connected", Toast.LENGTH_SHORT).show()
+                    val fileOutputStream = getLogFileOutputStream()
+                    switchToConnectedState()
+                    fileOutputStream.write("Connected as BL\r\n".toByteArray())
                     GlobalScope.launch {
                         while (bluetoothSocket.isConnected) {
                             val data = bluetoothSocket.inputStream.read()
@@ -188,6 +205,8 @@ class MainActivity : AppCompatActivity() {
                                 logTextView.text = "${logTextView.text}:${Integer.toHexString(data)}"
                             }
                         }
+                        fileOutputStream.write("Disconnected\r\n".toByteArray())
+                        switchToDisconnected()
                         fileOutputStream.close()
                     }
                 } else {
@@ -199,6 +218,32 @@ class MainActivity : AppCompatActivity() {
         } catch (e: IOException) {
             Toast.makeText(this, "Failed to create socket (${e.message})", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    private fun switchToConnectedState() {
+        GlobalScope.launch(Dispatchers.Main) {
+            buttonsLayout.visibility = View.GONE
+            logTextView.visibility = View.VISIBLE
+            disconnectButton.visibility = View.VISIBLE
+            Toast.makeText(this@MainActivity, "Connected", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun switchToDisconnected() {
+        GlobalScope.launch(Dispatchers.Main) {
+            buttonsLayout.visibility = View.VISIBLE
+            logTextView.visibility = View.GONE
+            disconnectButton.visibility = View.GONE
+            logTextView.text = ""
+            Toast.makeText(this@MainActivity, "Disconnected", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun getLogFileOutputStream(): FileOutputStream {
+        val dir = Environment.getExternalStoragePublicDirectory("BluetoothLogs")
+        dir.mkdirs()
+        val file = File(dir, "btlog.log")
+        return FileOutputStream(file, true)
     }
 
     private fun checkBluetooth(requestId: Int): Boolean {

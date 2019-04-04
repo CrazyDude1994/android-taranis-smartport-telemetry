@@ -28,7 +28,15 @@
 
     </LinearLayout>
 
+    <Button
+            android:visibility="gone"
+            android:id="@+id/disconnectButton"
+            android:text="Disconnect"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
     <TextView
+            android:layout_below="@id/disconnectButton"
             android:visibility="gone"
             android:id="@+id/logTextView"
             android:layout_width="match_parent"
