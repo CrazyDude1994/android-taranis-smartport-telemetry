@@ -41,4 +41,8 @@ class PreferenceManager(context: Context) {
     fun setYoutubeShown() {
         sharedPreferences.edit().putBoolean("youtube_shown", true).apply()
     }
+
+    fun getBatteryUnits(): String {
+        return sharedPreferences.getString("battery_units", "mAh") ?: "mAh"
+    }
 }

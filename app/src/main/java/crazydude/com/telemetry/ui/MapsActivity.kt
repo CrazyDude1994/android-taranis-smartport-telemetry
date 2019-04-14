@@ -708,7 +708,20 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     }
 
     override fun onFuelData(fuel: Int) {
-        when (fuel) {
+        val batteryUnits = preferenceManager.getBatteryUnits()
+        var realFuel = fuel
+
+        when (batteryUnits) {
+            "mAh", "mWh" -> {
+                this.fuel.text = "$fuel $batteryUnits"
+                realFuel = ((1 - (4.2f - lastCellVoltage)).coerceIn(0f, 1f) * 100).toInt()
+            }
+            "Percentage" -> {
+                this.fuel.text = "$fuel%"
+            }
+        }
+
+        when (realFuel) {
             in 91..100 -> R.drawable.ic_battery_full
             in 81..90 -> R.drawable.ic_battery_90
             in 61..80 -> R.drawable.ic_battery_80
@@ -732,8 +745,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
                     null,
                     null
                 )
-            } }
-        this.fuel.text = "$fuel%"
+            }
+        }
+
+
     }
 
     override fun onGPSData(list: List<LatLng>, addToEnd: Boolean) {
