@@ -12,6 +12,10 @@ Connect inverter to your Smart Port and then connect bluetooth module to the inv
 
 ![alt text](https://raw.githubusercontent.com/CrazyDude1994/android-taranis-smartport-telemetry/master/connection.jpg "Connection example")
 
+## Tested modules
+
+Currently we support classic BL and BLE modules. We currently tested them on the HC-05, HC-06, HC-09, HC-10. Make sure that when using BLE module you should disable PIN code. For classic BL module to appear in the list, you should pair it to your Android device first.
+
 ## HC-06 With MOSFET inverter
 
 ![Inverter diagram](inverter.png)
@@ -32,6 +36,9 @@ HC-06 module will expect that each command will be entered very fast (AFAIR max 
 
 # Google Play
 https://play.google.com/store/apps/details?id=crazydude.com.telemetry
+
+# Your module doesn't work?
+Make sure you followed all the steps. If this doesn't help, you can ask for help by creating new issue with your module model.
 
 # Say thanks
 If you want to help or say thanks, best way is just to follow my FPV youtube channel
