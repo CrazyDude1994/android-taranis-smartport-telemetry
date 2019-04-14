@@ -37,6 +37,9 @@ HC-06 module will expect that each command will be entered very fast (AFAIR max 
 # Google Play
 https://play.google.com/store/apps/details?id=crazydude.com.telemetry
 
+# RCGroups Thread
+https://www.rcgroups.com/forums/showthread.php?3284789-iNav-SmartPort-telemetry-viewer-and-logger
+
 # Your module doesn't work?
 Make sure you followed all the steps. If this doesn't help, you can ask for help by creating new issue with your module model.
 
