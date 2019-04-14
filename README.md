@@ -46,3 +46,9 @@ Make sure you followed all the steps. If this doesn't help, you can ask for help
 # Say thanks
 If you want to help or say thanks, best way is just to follow my FPV youtube channel
 https://www.youtube.com/channel/UCjAhODF0Achhc1fynxEXQLg?view_as=subscriber
+
+# Special thanks
+Alexey Stankevich - initial testing, feedback
+Marios Chrysomallis - testing BLE support
+Paweł Spychalski - project contribute, made a great video about the app (https://www.youtube.com/watch?v=0-AyP5Y7pCI)
+AeroSIM RC - for sending their simulator for testing app from home (they have plugin to connect my app with their sim)
