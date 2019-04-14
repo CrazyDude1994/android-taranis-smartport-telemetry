@@ -150,6 +150,9 @@ class DataDecoder(private val listener: Listener) : FrSkySportProtocol.Companion
                 listener.onPitchData(value)
 //                Log.d(TAG, "Decoded pitch $value")
             }
+            FrSkySportProtocol.ASPEED -> {
+                listener.onAirSpeed(data.data * 1.852f)
+            }
             else -> {}
         }
     }
@@ -180,5 +183,6 @@ class DataDecoder(private val listener: Listener) : FrSkySportProtocol.Companion
             firstFlightMode: FlyMode,
             secondFlightMode: FlyMode?
         )
+        fun onAirSpeed(speed: Float)
     }
 }

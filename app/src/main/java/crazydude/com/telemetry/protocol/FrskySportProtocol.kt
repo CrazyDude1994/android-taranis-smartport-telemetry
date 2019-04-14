@@ -43,6 +43,7 @@ class FrSkySportProtocol(var dataListener: DataListener) {
         const val GPS_STATE_SENSOR = 0x0410
         const val PITCH_SENSOR = 0x0430
         const val ROLL_SENSOR = 0x0440
+        const val AIRSPEED_SENSOR = 0x0A00
 
         const val FUEL = 0
         const val GPS = 1
@@ -60,6 +61,7 @@ class FrSkySportProtocol(var dataListener: DataListener) {
         const val ROLL = 13
         const val PITCH = 14
         const val GALT = 15
+        const val ASPEED = 16
 
         interface DataListener {
             fun onNewData(data: TelemetryData)
@@ -68,7 +70,7 @@ class FrSkySportProtocol(var dataListener: DataListener) {
         @Retention(AnnotationRetention.SOURCE)
         @IntDef(
             FUEL, GPS, VBAT, CELL_VOLTAGE, CURRENT, HEADING, RSSI, FLYMODE, GPS_STATE, VSPEED, ALTITUDE, GSPEED,
-            DISTANCE, ROLL, PITCH, GALT
+            DISTANCE, ROLL, PITCH, GALT, ASPEED
         )
         annotation class TelemetryType
 
@@ -256,6 +258,11 @@ class FrSkySportProtocol(var dataListener: DataListener) {
                                 ROLL,
                                 rawData
                             )
+                        )
+                    }
+                    AIRSPEED_SENSOR -> {
+                        dataListener.onNewData(
+                            TelemetryData(ASPEED, rawData)
                         )
                     }
                     else -> {

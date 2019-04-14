@@ -516,6 +516,18 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     }
 
     override fun onGSpeedData(speed: Float) {
+        if (!preferenceManager.usePitotTube()) {
+            updateSpeed(speed)
+        }
+    }
+
+    override fun onAirSpeed(speed: Float) {
+        if (preferenceManager.usePitotTube()) {
+            updateSpeed(speed)
+        }
+    }
+
+    private fun updateSpeed(speed: Float) {
         this.speed.text = "${speed.roundToInt()} km/h"
     }
 

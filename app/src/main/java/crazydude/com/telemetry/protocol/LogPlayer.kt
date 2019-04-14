@@ -161,6 +161,10 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
         originalListener.onRollData(rollAngle)
     }
 
+    override fun onAirSpeed(speed: Float) {
+        originalListener.onAirSpeed(speed)
+    }
+
     override fun onPitchData(pitchAngle: Float) {
         originalListener.onPitchData(pitchAngle)
     }
