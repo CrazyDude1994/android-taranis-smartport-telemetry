@@ -37,5 +37,30 @@
 
     </PreferenceCategory>
 
+    <PreferenceCategory android:title="Sensors">
+
+
+        <ListPreference
+                android:title="Battery units (CLI smartport_fuel_unit)"
+                android:summary="%s"
+                android:entries="@array/BatteryUnits"
+                android:entryValues="@array/BatteryUnits"
+                android:defaultValue="mAh"
+                android:key="battery_units"/>
+
+        <SwitchPreference
+                android:title="Use pitot tube"
+                android:summary="Uses pitot tube sensor as air speed source"
+                android:defaultValue="false"
+                android:key="use_pitot_tube"/>
+
+        <SwitchPreference
+                android:title="Show artificial horizon view"
+                android:summary="Shows attitude. Works only on Inav 2.0.+ You need to set frsky_pitch_roll = ON CLI in order it to work"
+                android:defaultValue="true"
+                android:key="show_artificial_horizon"/>
+
+    </PreferenceCategory>
+
 
 </PreferenceScreen>

@@ -194,6 +194,12 @@ class DataService : Service(), DataDecoder.Listener {
         })
     }
 
+    override fun onAirSpeed(speed: Float) {
+        runOnMainThread(Runnable {
+            dataListener?.onAirSpeed(speed)
+        })
+    }
+
     override fun onRSSIData(rssi: Int) {
         runOnMainThread(Runnable {
             dataListener?.onRSSIData(rssi)

@@ -41,4 +41,16 @@ class PreferenceManager(context: Context) {
     fun setYoutubeShown() {
         sharedPreferences.edit().putBoolean("youtube_shown", true).apply()
     }
+
+    fun getBatteryUnits(): String {
+        return sharedPreferences.getString("battery_units", "mAh") ?: "mAh"
+    }
+
+    fun usePitotTube(): Boolean {
+        return sharedPreferences.getBoolean("use_pitot_tube", false)
+    }
+
+    fun showArtificialHorizonView(): Boolean {
+        return sharedPreferences.getBoolean("show_artificial_horizon", true)
+    }
 }
