@@ -54,6 +54,12 @@
                 android:defaultValue="false"
                 android:key="use_pitot_tube"/>
 
+        <SwitchPreference
+                android:title="Show artificial horizon view"
+                android:summary="Shows attitude. Works only on Inav 2.0.+ You need to set frsky_pitch_roll = ON CLI in order it to work"
+                android:defaultValue="true"
+                android:key="show_artificial_horizon"/>
+
     </PreferenceCategory>
 
 

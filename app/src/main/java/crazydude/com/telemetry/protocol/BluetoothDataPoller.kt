@@ -30,10 +30,13 @@ class BluetoothDataPoller(
                     })
                 }
                 protocol = FrSkySportProtocol(dataDecoder)
+                val buffer = ByteArray(1024)
                 while (!thread.isInterrupted && bluetoothSocket.isConnected) {
-                    val data = bluetoothSocket.inputStream.read()
-                    outputStream?.write(data)
-                    protocol.process(data)
+                    val size = bluetoothSocket.inputStream.read(buffer)
+                    outputStream?.write(buffer, 0, size)
+                    for (i in 0 until size) {
+                        protocol.process(buffer[i].toInt())
+                    }
                 }
             } catch (e: IOException) {
                 try {

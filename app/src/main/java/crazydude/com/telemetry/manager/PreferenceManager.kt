@@ -49,4 +49,8 @@ class PreferenceManager(context: Context) {
     fun usePitotTube(): Boolean {
         return sharedPreferences.getBoolean("use_pitot_tube", false)
     }
+
+    fun showArtificialHorizonView(): Boolean {
+        return sharedPreferences.getBoolean("show_artificial_horizon", true)
+    }
 }

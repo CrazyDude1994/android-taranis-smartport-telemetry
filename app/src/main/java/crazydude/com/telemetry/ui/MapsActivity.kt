@@ -66,6 +66,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     private lateinit var mapTypeButton: FloatingActionButton
     private lateinit var settingsButton: ImageView
     private lateinit var topLayout: RelativeLayout
+    private lateinit var horizonView: HorizonView
     private lateinit var preferenceManager: PreferenceManager
     private var mapType = GoogleMap.MAP_TYPE_NORMAL
 
@@ -122,6 +123,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         settingsButton = findViewById(R.id.settings_button)
         replayButton = findViewById(R.id.replay_button)
         seekBar = findViewById(R.id.seekbar)
+        horizonView = findViewById(R.id.horizon_view)
 
         settingsButton.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
@@ -329,6 +331,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
             }
             marker?.setIcon(bitmapDescriptorFromVector(this, R.drawable.ic_plane, preferenceManager.getPlaneColor()))
         }
+        if (preferenceManager.showArtificialHorizonView()) {
+            horizonView.visibility = View.VISIBLE
+        } else {
+            horizonView.visibility = View.GONE
+        }
     }
 
     private fun connect() {
@@ -405,6 +412,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         speed.text = "-"
         distance.text = "-"
         mode.text = "Disconnected"
+        horizonView.setPitch(0f)
+        horizonView.setRoll(0f)
         if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
             this.fuel.setCompoundDrawablesWithIntrinsicBounds(
                 ContextCompat.getDrawable(this, R.drawable.ic_battery_unknown),
@@ -508,11 +517,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     }
 
     override fun onRollData(rollAngle: Float) {
-
+        horizonView.setRoll(rollAngle)
     }
 
     override fun onPitchData(pitchAngle: Float) {
-
+        horizonView.setPitch(pitchAngle)
     }
 
     override fun onGSpeedData(speed: Float) {
