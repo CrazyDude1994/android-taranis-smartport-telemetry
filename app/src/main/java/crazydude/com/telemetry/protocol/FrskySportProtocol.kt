@@ -1,7 +1,7 @@
 package crazydude.com.telemetry.protocol
 
-import androidx.annotation.IntDef
 import android.util.Log
+import androidx.annotation.IntDef
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -24,9 +24,6 @@ class FrSkySportProtocol(var dataListener: DataListener) {
         const val DATA_STUFF = 0x7D
         const val STUFF_MASK = 0x20
 
-        const val FC_SENSORS = 0x1B
-
-
         const val VFAS_SENSOR = 0x0210
         const val CELL_SENSOR = 0x0910
         const val VSPEED_SENSOR = 0x0110
@@ -38,7 +35,7 @@ class FrSkySportProtocol(var dataListener: DataListener) {
         const val GPS_SENSOR = 0x0800
         const val CURRENT_SENSOR = 0x200
         const val HEADING_SENSOR = 0x0840
-        const val RSSI_SENSOR = 0xf101
+        const val RSSI_SENSOR = 0xF101
         const val FLYMODE_SENSOR = 0x0400
         const val GPS_STATE_SENSOR = 0x0410
         const val PITCH_SENSOR = 0x0430
@@ -90,6 +87,8 @@ class FrSkySportProtocol(var dataListener: DataListener) {
             Companion.State.DATA -> {
                 if (data == DATA_STUFF) {
                     state = Companion.State.XOR
+                } else if (data == START_BYTE) {
+                    bufferIndex = 0
                 } else {
                     buffer[bufferIndex++] = data
                 }
@@ -112,7 +111,7 @@ class FrSkySportProtocol(var dataListener: DataListener) {
             }).order(ByteOrder.LITTLE_ENDIAN)
             val sensorType = byteBuffer.get()
             val packetType = byteBuffer.get()
-            if (sensorType.toInt() == FC_SENSORS && packetType.toInt() == DATA_START) {
+            if (packetType.toInt() == DATA_START) {
                 val dataType = byteBuffer.short
                 val rawData = byteBuffer.int
                 when (dataType.toInt()) {
@@ -266,7 +265,7 @@ class FrSkySportProtocol(var dataListener: DataListener) {
                         )
                     }
                     else -> {
-                        //Log.d(TAG, "Unknown packet" + buffer.contentToString())
+                        Log.d(TAG, "Unknown packet" + buffer.contentToString())
                     }
                 }
             }
