@@ -41,7 +41,10 @@ https://play.google.com/store/apps/details?id=crazydude.com.telemetry
 https://www.rcgroups.com/forums/showthread.php?3284789-iNav-SmartPort-telemetry-viewer-and-logger
 
 # Your module doesn't work?
-Make sure you followed all the steps. If this doesn't help, you can ask for help by creating new issue with your module model.
+Make sure you followed all the steps. If this doesn't help, you can ask for help by creating new issue with your module model. Also for quick support you can join our telegram group and ask for help there
+
+# Telegram group
+https://t.me/joinchat/Gf03BFXI2e48WMvzjLeIjw
 
 # Say thanks
 If you want to help or say thanks, best way is just to follow my FPV youtube channel
