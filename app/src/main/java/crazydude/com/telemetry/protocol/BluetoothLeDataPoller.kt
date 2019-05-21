@@ -21,8 +21,8 @@ class BluetoothLeDataPoller(
 ) : DataPoller {
 
     companion object {
-        private val SERVICE_UUID = UUID.fromString("0000ffe0-0000-1000-8000-00805f9b34fb")
-        private val CHARACTERISTIC_UUID = UUID.fromString("0000ffe1-0000-1000-8000-00805f9b34fb")
+        private val SERVICE_CHARACTERISTIC_UUID = mapOf(Pair(UUID.fromString("0000ffe0-0000-1000-8000-00805f9b34fb"), UUID.fromString("0000ffe1-0000-1000-8000-00805f9b34fb")),
+            Pair(UUID.fromString("0000fff0-0000-1000-8000-00805f9b34fb"), UUID.fromString("0000fff4-0000-1000-8000-00805f9b34fb")))
     }
 
     private lateinit var protocol: FrSkySportProtocol
@@ -70,15 +70,20 @@ class BluetoothLeDataPoller(
 
                 override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
                     super.onServicesDiscovered(gatt, status)
-                    val characteristic = gatt?.getService(SERVICE_UUID)
-                        ?.getCharacteristic(CHARACTERISTIC_UUID)
+                    var characteristic: BluetoothGattCharacteristic? = null
+                    for (service in SERVICE_CHARACTERISTIC_UUID) {
+                        characteristic = gatt?.getService(service.key)
+                            ?.getCharacteristic(service.value)
+                        break
+                    }
                     if (characteristic != null) {
                         runOnMainThread(Runnable {
                             listener.onConnected()
                         })
                         protocol = FrSkySportProtocol(dataDecoder)
-                        gatt.setCharacteristicNotification(characteristic, true)
+                        gatt?.setCharacteristicNotification(characteristic, true)
                     } else {
+                        closeConnection()
                         runOnMainThread(Runnable {
                             listener.onConnectionFailed()
                         })
