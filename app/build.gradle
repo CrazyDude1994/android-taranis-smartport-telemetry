@@ -41,14 +41,14 @@ android {
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    implementation 'androidx.appcompat:appcompat:1.0.0'
+    implementation 'androidx.appcompat:appcompat:1.0.2'
     implementation 'com.google.android.gms:play-services-maps:16.1.0'
     implementation 'com.google.android.material:material:1.0.0'
     implementation 'androidx.preference:preference:1.0.0'
-    implementation 'com.google.firebase:firebase-core:16.0.7'
+    implementation 'com.google.firebase:firebase-core:16.0.9'
     implementation 'com.jaredrummler:colorpicker:1.1.0'
     implementation 'com.google.maps.android:android-maps-utils:0.5+'
-    releaseImplementation 'com.crashlytics.sdk.android:crashlytics:2.9.9'
+    releaseImplementation 'com.crashlytics.sdk.android:crashlytics:2.10.0'
 }
 
 apply plugin: 'com.google.gms.google-services'
