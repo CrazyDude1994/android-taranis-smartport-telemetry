@@ -9,21 +9,16 @@ import androidx.annotation.RequiresApi
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.OutputStreamWriter
-import java.util.*
 
 @RequiresApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
 class BluetoothLeDataPoller(
     context: Context,
     device: BluetoothDevice,
     private val listener: DataDecoder.Listener,
+    private val bleSelectorListener: BleSelectorListener,
     private val outputStream: FileOutputStream?,
     csvOutputStream: FileOutputStream?
 ) : DataPoller {
-
-    companion object {
-        private val SERVICE_CHARACTERISTIC_UUID = mapOf(Pair(UUID.fromString("0000ffe0-0000-1000-8000-00805f9b34fb"), UUID.fromString("0000ffe1-0000-1000-8000-00805f9b34fb")),
-            Pair(UUID.fromString("0000fff0-0000-1000-8000-00805f9b34fb"), UUID.fromString("0000fff4-0000-1000-8000-00805f9b34fb")))
-    }
 
     private lateinit var protocol: FrSkySportProtocol
     private val dataDecoder: DataDecoder = DataDecoder(listener)
@@ -70,20 +65,17 @@ class BluetoothLeDataPoller(
 
                 override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
                     super.onServicesDiscovered(gatt, status)
-                    var characteristic: BluetoothGattCharacteristic? = null
-                    for (service in SERVICE_CHARACTERISTIC_UUID) {
-                        characteristic = gatt?.getService(service.key)
-                            ?.getCharacteristic(service.value)
-                        break
-                    }
-                    if (characteristic != null) {
-                        runOnMainThread(Runnable {
-                            listener.onConnected()
-                        })
-                        protocol = FrSkySportProtocol(dataDecoder)
-                        gatt?.setCharacteristicNotification(characteristic, true)
+
+                    val list = gatt?.services?.flatMap { it.characteristics }
+                        ?.filter { it.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY == BluetoothGattCharacteristic.PROPERTY_NOTIFY }
+
+                    if (list != null && list.isNotEmpty()) {
+                        if (list.size == 1) {
+                            setCharacteristic(list.first())
+                        } else {
+                            bleSelectorListener.onCharacteristicsDiscovered(list)
+                        }
                     } else {
-                        closeConnection()
                         runOnMainThread(Runnable {
                             listener.onConnectionFailed()
                         })
@@ -92,7 +84,17 @@ class BluetoothLeDataPoller(
             })
     }
 
-    private fun closeConnection() {
+    fun setCharacteristic(characteristic: BluetoothGattCharacteristic) {
+        bluetoothGatt?.let {
+            runOnMainThread(Runnable {
+                listener.onConnected()
+            })
+            protocol = FrSkySportProtocol(dataDecoder)
+            bluetoothGatt?.setCharacteristicNotification(characteristic, true)
+        }
+    }
+
+    fun closeConnection() {
         bluetoothGatt?.close()
 
         try {
