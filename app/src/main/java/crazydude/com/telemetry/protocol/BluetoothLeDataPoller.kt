@@ -9,13 +9,14 @@ import androidx.annotation.RequiresApi
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.OutputStreamWriter
+import java.util.*
+import kotlin.collections.HashMap
 
 @RequiresApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
 class BluetoothLeDataPoller(
     context: Context,
     device: BluetoothDevice,
     private val listener: DataDecoder.Listener,
-    private val bleSelectorListener: BleSelectorListener,
     private val outputStream: FileOutputStream?,
     csvOutputStream: FileOutputStream?
 ) : DataPoller {
@@ -30,15 +31,31 @@ class BluetoothLeDataPoller(
         csvOutputStream?.let { outputStreamWriter = OutputStreamWriter(it) }
         bluetoothGatt = device.connectGatt(context, false,
             object : BluetoothGattCallback() {
+
+                private var serviceSelected = false
+                private val tempProtocols: HashMap<UUID, FrSkySportProtocol> = HashMap()
+                private val validPacketCount: HashMap<UUID, Int> = HashMap()
+
                 override fun onCharacteristicChanged(
                     gatt: BluetoothGatt?,
                     characteristic: BluetoothGattCharacteristic?
                 ) {
                     super.onCharacteristicChanged(gatt, characteristic)
-                    characteristic?.value?.let {
-                        outputStream?.write(it)
-                        it.forEach {
-                            protocol.process(it.toInt())
+
+                    characteristic?.let {
+                        if (serviceSelected) {
+                            characteristic.value?.let { bytes ->
+                                outputStream?.write(bytes)
+                                bytes.forEach {
+                                    protocol.process(it.toInt())
+                                }
+                            }
+                        } else {
+                            characteristic.value?.let { bytes ->
+                                bytes.forEach {
+                                    tempProtocols[characteristic.uuid]?.process(it.toInt())
+                                }
+                            }
                         }
                     }
                 }
@@ -46,8 +63,11 @@ class BluetoothLeDataPoller(
                 override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
                     super.onConnectionStateChange(gatt, status, newState)
                     if (newState == BluetoothProfile.STATE_CONNECTED) {
-                        gatt?.discoverServices()
                         connected = true
+                        serviceSelected = false
+                        tempProtocols.clear()
+                        validPacketCount.clear()
+                        gatt?.discoverServices()
                     } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                         if (connected) {
                             runOnMainThread(Runnable {
@@ -70,10 +90,33 @@ class BluetoothLeDataPoller(
                         ?.filter { it.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY == BluetoothGattCharacteristic.PROPERTY_NOTIFY }
 
                     if (list != null && list.isNotEmpty()) {
-                        if (list.size == 1) {
-                            setCharacteristic(list.first())
-                        } else {
-                            bleSelectorListener.onCharacteristicsDiscovered(list)
+                        list.forEach { characteristic ->
+                            val sportProtocol =
+                                FrSkySportProtocol(object : FrSkySportProtocol.Companion.DataListener {
+                                    override fun onNewData(data: FrSkySportProtocol.Companion.TelemetryData) {
+                                        validPacketCount[characteristic.uuid] =
+                                            validPacketCount[characteristic.uuid]!! + 1
+
+                                        val entry = validPacketCount.filterValues { it >= 10 }.entries.firstOrNull()
+
+                                        if (entry != null) {
+                                            list.filter { it.uuid != entry.key }.forEach {
+                                                gatt.setCharacteristicNotification(it, false)
+                                            }
+                                            protocol = FrSkySportProtocol(dataDecoder)
+                                            serviceSelected = true
+                                            runOnMainThread(Runnable {
+                                                listener.onConnected()
+                                            })
+                                            tempProtocols.clear()
+                                            validPacketCount.clear()
+                                        }
+                                    }
+                                })
+
+                            validPacketCount.put(characteristic.uuid, 0)
+                            tempProtocols.put(characteristic.uuid, sportProtocol)
+                            gatt.setCharacteristicNotification(characteristic, true)
                         }
                     } else {
                         runOnMainThread(Runnable {
@@ -82,16 +125,6 @@ class BluetoothLeDataPoller(
                     }
                 }
             })
-    }
-
-    fun setCharacteristic(characteristic: BluetoothGattCharacteristic) {
-        bluetoothGatt?.let {
-            runOnMainThread(Runnable {
-                listener.onConnected()
-            })
-            protocol = FrSkySportProtocol(dataDecoder)
-            bluetoothGatt?.setCharacteristicNotification(characteristic, true)
-        }
     }
 
     fun closeConnection() {

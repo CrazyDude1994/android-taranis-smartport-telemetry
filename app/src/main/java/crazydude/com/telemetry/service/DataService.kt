@@ -71,7 +71,7 @@ class DataService : Service(), DataDecoder.Listener {
     }
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
-    fun connect(device: BluetoothDevice, listener: BleSelectorListener) {
+    fun connect(device: BluetoothDevice) {
         var fileOutputStream: FileOutputStream? = null
         var csvFileOutputStream: FileOutputStream? = null
         if (preferenceManager.isLoggingEnabled()
@@ -101,7 +101,7 @@ class DataService : Service(), DataDecoder.Listener {
                 val socket = device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
                 dataPoller = BluetoothDataPoller(socket, this, fileOutputStream, csvFileOutputStream)
             } else {
-                dataPoller = BluetoothLeDataPoller(this, device, this, listener, fileOutputStream, csvFileOutputStream)
+                dataPoller = BluetoothLeDataPoller(this, device, this, fileOutputStream, csvFileOutputStream)
             }
         } catch (e: IOException) {
             Toast.makeText(this, "Failed to connect to bluetooth", Toast.LENGTH_LONG).show()
@@ -285,10 +285,5 @@ class DataService : Service(), DataDecoder.Listener {
         dataPoller = null
         satellites = 0
         hasGPSFix = false
-    }
-
-    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
-    fun setCharacteristic(bluetoothGattCharacteristic: BluetoothGattCharacteristic) {
-        (dataPoller as BluetoothLeDataPoller).setCharacteristic(bluetoothGattCharacteristic)
     }
 }

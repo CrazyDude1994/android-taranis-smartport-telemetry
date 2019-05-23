@@ -33,7 +33,6 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.maps.android.SphericalUtil
 import crazydude.com.telemetry.R
 import crazydude.com.telemetry.manager.PreferenceManager
-import crazydude.com.telemetry.protocol.BleSelectorListener
 import crazydude.com.telemetry.protocol.DataDecoder
 import crazydude.com.telemetry.protocol.LogPlayer
 import crazydude.com.telemetry.service.DataService
@@ -41,7 +40,7 @@ import java.io.File
 import kotlin.math.roundToInt
 
 
-class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listener, BleSelectorListener {
+class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listener {
 
     companion object {
         private const val REQUEST_ENABLE_BT: Int = 0
@@ -341,21 +340,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
-    override fun onCharacteristicsDiscovered(characteristics: List<BluetoothGattCharacteristic>) {
-        val deviceAdapter =
-            ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, characteristics.map { it.uuid.toString() })
-
-        runOnUiThread {
-            AlertDialog.Builder(this)
-                .setAdapter(deviceAdapter) { dialogInterface, i ->
-                    dataService?.setCharacteristic(characteristics[i])
-                }
-                .setCancelable(false)
-                .show()
-        }
-    }
-
     private fun connect() {
         val adapter = BluetoothAdapter.getDefaultAdapter()
         if (adapter == null) {
@@ -460,7 +444,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         dataService?.let {
             connectButton.text = getString(R.string.connecting)
             connectButton.isEnabled = false
-            it.connect(device, this)
+            it.connect(device)
         }
     }
 
