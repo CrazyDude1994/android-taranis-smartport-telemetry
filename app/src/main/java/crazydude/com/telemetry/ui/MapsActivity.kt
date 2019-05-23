@@ -106,7 +106,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
 
-        mapType = savedInstanceState?.getInt("map_type") ?: GoogleMap.MAP_TYPE_NORMAL
+        preferenceManager = PreferenceManager(this)
+
+        mapType = preferenceManager.getMapType()
         followMode = savedInstanceState?.getBoolean("follow_mode", true) ?: true
         replayFileString = savedInstanceState?.getString("replay_file_name")
 
@@ -130,8 +132,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         settingsButton.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
-
-        preferenceManager = PreferenceManager(this)
 
         followButton.setOnClickListener {
             followMode = true
@@ -315,7 +315,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
 
     override fun onSaveInstanceState(outState: Bundle?) {
         super.onSaveInstanceState(outState)
-        outState?.putInt("map_type", mapType)
         outState?.putBoolean("follow_mode", followMode)
         outState?.putString("replay_file_name", replayFileString)
     }
@@ -616,6 +615,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
                 else -> map?.mapType = GoogleMap.MAP_TYPE_NORMAL
             }
             mapType = map?.mapType ?: GoogleMap.MAP_TYPE_NORMAL
+            preferenceManager.setMapType(mapType)
             dialog.dismiss()
         }
 

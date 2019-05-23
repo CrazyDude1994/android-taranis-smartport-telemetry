@@ -1,6 +1,7 @@
 package crazydude.com.telemetry.manager
 
 import android.content.Context
+import com.google.android.gms.maps.GoogleMap
 import crazydude.com.telemetry.R
 
 class PreferenceManager(context: Context) {
@@ -52,5 +53,13 @@ class PreferenceManager(context: Context) {
 
     fun showArtificialHorizonView(): Boolean {
         return sharedPreferences.getBoolean("show_artificial_horizon", true)
+    }
+
+    fun getMapType(): Int {
+        return sharedPreferences.getInt("map_type", GoogleMap.MAP_TYPE_NORMAL)
+    }
+
+    fun setMapType(mapType: Int) {
+        sharedPreferences.edit().putInt("map_type", mapType).apply()
     }
 }
