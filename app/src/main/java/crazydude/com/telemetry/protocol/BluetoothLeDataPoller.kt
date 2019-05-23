@@ -2,6 +2,7 @@ package crazydude.com.telemetry.protocol
 
 import android.bluetooth.*
 import android.content.Context
+import android.os.AsyncTask
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -86,11 +87,11 @@ class BluetoothLeDataPoller(
                 override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
                     super.onServicesDiscovered(gatt, status)
 
-                    val list = gatt?.services?.flatMap { it.characteristics }
+                    val notifyCharacteristicList = gatt?.services?.flatMap { it.characteristics }
                         ?.filter { it.properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY == BluetoothGattCharacteristic.PROPERTY_NOTIFY }
 
-                    if (list != null && list.isNotEmpty()) {
-                        list.forEach { characteristic ->
+                    if (notifyCharacteristicList != null && notifyCharacteristicList.isNotEmpty()) {
+                        notifyCharacteristicList.forEach { characteristic ->
                             val sportProtocol =
                                 FrSkySportProtocol(object : FrSkySportProtocol.Companion.DataListener {
                                     override fun onNewData(data: FrSkySportProtocol.Companion.TelemetryData) {
@@ -100,7 +101,7 @@ class BluetoothLeDataPoller(
                                         val entry = validPacketCount.filterValues { it >= 10 }.entries.firstOrNull()
 
                                         if (entry != null) {
-                                            list.filter { it.uuid != entry.key }.forEach {
+                                            notifyCharacteristicList.filter { it.uuid != entry.key }.forEach {
                                                 gatt.setCharacteristicNotification(it, false)
                                             }
                                             protocol = FrSkySportProtocol(dataDecoder)
@@ -117,6 +118,19 @@ class BluetoothLeDataPoller(
                             validPacketCount.put(characteristic.uuid, 0)
                             tempProtocols.put(characteristic.uuid, sportProtocol)
                             gatt.setCharacteristicNotification(characteristic, true)
+                            AsyncTask.execute {
+                                Thread.sleep(5000)
+                                if (!serviceSelected) {
+                                    notifyCharacteristicList.forEach {
+                                        gatt.setCharacteristicNotification(it, false)
+                                        validPacketCount.clear()
+                                        tempProtocols.clear()
+                                        runOnMainThread(Runnable {
+                                            listener.onConnectionFailed()
+                                        })
+                                    }
+                                }
+                            }
                         }
                     } else {
                         runOnMainThread(Runnable {
