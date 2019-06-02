@@ -13,7 +13,7 @@ class PreferenceManager(context: Context) {
     fun isLoggingEnabled(): Boolean {
         return sharedPreferences.getBoolean("logging_enabled", true)
     }
-
+    
     fun isLoggingSet(): Boolean {
         return sharedPreferences.contains("logging_enabled")
     }
@@ -61,5 +61,17 @@ class PreferenceManager(context: Context) {
 
     fun setMapType(mapType: Int) {
         sharedPreferences.edit().putInt("map_type", mapType).apply()
+    }
+
+    fun isSendDataEnabled(): Boolean {
+        return sharedPreferences.getBoolean("send_telemetry_data", false)
+    }
+
+    fun getModel(): String {
+        return sharedPreferences.getString("model", "") ?: ""
+    }
+
+    fun getCallsign(): String {
+        return sharedPreferences.getString("callsign", "") ?: ""
     }
 }

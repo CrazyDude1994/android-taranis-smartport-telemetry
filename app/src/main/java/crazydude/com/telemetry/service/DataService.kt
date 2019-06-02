@@ -1,24 +1,30 @@
 package crazydude.com.telemetry.service
 
-import android.annotation.SuppressLint
 import android.annotation.TargetApi
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
-import android.bluetooth.*
+import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.*
+import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import android.widget.Toast
 import com.google.android.gms.maps.model.LatLng
 import crazydude.com.telemetry.R
+import crazydude.com.telemetry.api.*
 import crazydude.com.telemetry.manager.PreferenceManager
-import crazydude.com.telemetry.protocol.*
+import crazydude.com.telemetry.protocol.BluetoothDataPoller
+import crazydude.com.telemetry.protocol.BluetoothLeDataPoller
+import crazydude.com.telemetry.protocol.DataDecoder
+import crazydude.com.telemetry.protocol.DataPoller
 import crazydude.com.telemetry.ui.MapsActivity
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -32,7 +38,14 @@ class DataService : Service(), DataDecoder.Listener {
     private var dataListener: DataDecoder.Listener? = null
     private val dataBinder = DataBinder()
     private var hasGPSFix = false
+    private var isArmed = false
     private var satellites = 0
+    private var lastLatitude: Double = 0.0
+    private var lastLongitude: Double = 0.0
+    private var lastAltitude: Float = 0.0f
+    private var lastSpeed: Float = 0.0f
+    private var lastHeading: Float = 0.0f
+    private val apiHandler = Handler()
     private lateinit var preferenceManager: PreferenceManager
     val points: ArrayList<LatLng> = ArrayList()
 
@@ -98,7 +111,8 @@ class DataService : Service(), DataDecoder.Listener {
             }
 
             if (!isBle) {
-                val socket = device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
+                val socket =
+                    device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
                 dataPoller = BluetoothDataPoller(socket, this, fileOutputStream, csvFileOutputStream)
             } else {
                 dataPoller = BluetoothLeDataPoller(this, device, this, fileOutputStream, csvFileOutputStream)
@@ -152,12 +166,64 @@ class DataService : Service(), DataDecoder.Listener {
         runOnMainThread(Runnable {
             dataListener?.onConnected()
         })
+
+        if (preferenceManager.isSendDataEnabled()) {
+            createSession()
+        }
+    }
+
+    fun createSession() {
+        if (!isConnected()) {
+            return
+        }
+        ApiManager.apiService.createSession(
+            SessionCreateRequest(preferenceManager.getCallsign(), preferenceManager.getModel())
+        ).enqueue(object : Callback<SessionCreateResponse?> {
+            override fun onFailure(call: Call<SessionCreateResponse?>, t: Throwable) {
+                Handler()
+                    .postDelayed({ createSession() }, 5000)
+            }
+
+            override fun onResponse(
+                call: Call<SessionCreateResponse?>,
+                response: Response<SessionCreateResponse?>
+            ) {
+                response.body()?.let {
+                    sendTelemetryData(it.sessionId)
+                }
+            }
+        })
+    }
+
+    fun sendTelemetryData(sessionId: String) {
+        if (!isConnected()) {
+            return
+        }
+        apiHandler.postDelayed({
+            if (hasGPSFix && isArmed) {
+                ApiManager.apiService.sendData(
+                    AddLogRequest(sessionId, lastLatitude, lastLongitude, lastAltitude, lastHeading, lastSpeed)
+                ).enqueue(object : Callback<AddLogResponse?> {
+                    override fun onFailure(call: Call<AddLogResponse?>, t: Throwable) {
+                        sendTelemetryData(sessionId)
+                    }
+
+                    override fun onResponse(call: Call<AddLogResponse?>, response: Response<AddLogResponse?>) {
+                        sendTelemetryData(sessionId)
+                    }
+                })
+            } else {
+                sendTelemetryData(sessionId)
+            }
+        }, 5000)
     }
 
     override fun onGPSData(latitude: Double, longitude: Double) {
         if (hasGPSFix) {
             points.add(LatLng(latitude, longitude))
         }
+        lastLatitude = latitude
+        lastLongitude = longitude
         runOnMainThread(Runnable {
             dataListener?.onGPSData(latitude, longitude)
         })
@@ -186,12 +252,16 @@ class DataService : Service(), DataDecoder.Listener {
     }
 
     override fun onHeadingData(heading: Float) {
+        lastHeading = heading
         runOnMainThread(Runnable {
             dataListener?.onHeadingData(heading)
         })
     }
 
     override fun onAirSpeed(speed: Float) {
+        if (preferenceManager.usePitotTube()) {
+            lastSpeed = speed
+        }
         runOnMainThread(Runnable {
             dataListener?.onAirSpeed(speed)
         })
@@ -227,6 +297,7 @@ class DataService : Service(), DataDecoder.Listener {
     }
 
     override fun onAltitudeData(altitude: Float) {
+        lastAltitude = altitude
         runOnMainThread(Runnable {
             dataListener?.onAltitudeData(altitude)
         })
@@ -257,6 +328,9 @@ class DataService : Service(), DataDecoder.Listener {
     }
 
     override fun onGSpeedData(speed: Float) {
+        if (!preferenceManager.usePitotTube()) {
+            lastSpeed = speed
+        }
         runOnMainThread(Runnable { dataListener?.onGSpeedData(speed) })
     }
 
@@ -266,10 +340,10 @@ class DataService : Service(), DataDecoder.Listener {
         firstFlightMode: DataDecoder.Companion.FlyMode,
         secondFlightMode: DataDecoder.Companion.FlyMode?
     ) {
+        isArmed = armed
         runOnMainThread(Runnable {
             dataListener?.onFlyModeData(armed, heading, firstFlightMode, secondFlightMode)
         })
-
     }
 
     private fun runOnMainThread(runnable: Runnable) {

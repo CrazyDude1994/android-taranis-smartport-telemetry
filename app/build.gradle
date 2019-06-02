@@ -47,6 +47,8 @@ dependencies {
     implementation 'androidx.preference:preference:1.0.0'
     implementation 'com.google.firebase:firebase-core:16.0.9'
     implementation 'com.jaredrummler:colorpicker:1.1.0'
+    implementation 'com.squareup.retrofit2:retrofit:2.5.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.5.0'
     implementation 'com.google.maps.android:android-maps-utils:0.5+'
     releaseImplementation 'com.crashlytics.sdk.android:crashlytics:2.10.0'
 }

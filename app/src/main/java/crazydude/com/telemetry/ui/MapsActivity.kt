@@ -32,10 +32,16 @@ import com.google.android.gms.maps.model.*
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.maps.android.SphericalUtil
 import crazydude.com.telemetry.R
+import crazydude.com.telemetry.api.ApiManager
+import crazydude.com.telemetry.api.SessionCreateRequest
+import crazydude.com.telemetry.api.SessionCreateResponse
 import crazydude.com.telemetry.manager.PreferenceManager
 import crazydude.com.telemetry.protocol.DataDecoder
 import crazydude.com.telemetry.protocol.LogPlayer
 import crazydude.com.telemetry.service.DataService
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import java.io.File
 import kotlin.math.roundToInt
 
