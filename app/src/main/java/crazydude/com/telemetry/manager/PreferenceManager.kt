@@ -13,7 +13,7 @@ class PreferenceManager(context: Context) {
     fun isLoggingEnabled(): Boolean {
         return sharedPreferences.getBoolean("logging_enabled", true)
     }
-    
+
     fun isLoggingSet(): Boolean {
         return sharedPreferences.contains("logging_enabled")
     }
