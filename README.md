@@ -5,8 +5,7 @@ This android application let you view and record your taranis telemetry data in 
 ![alt text](https://raw.githubusercontent.com/CrazyDude1994/android-taranis-smartport-telemetry/master/screen.jpg "Screenshot")
 
 # Hardware and connection
-
-In order this to work you need additional hardware: inverter and bluetooth module (HC-05 or HC-06 or something else)
+In order this to work you need additional hardware: inverter and bluetooth module (HC-05 or HC-06 or something else, also you don't need module and inverter if your transmitter has internal one)
 One important thing: Module should be configured to work on 57600 baud rate, otherwise it won't work. 
 Connect inverter to your Smart Port and then connect bluetooth module to the inverter. You now can connect your phone to your bluetooth module and view data
 
@@ -14,7 +13,7 @@ Connect inverter to your Smart Port and then connect bluetooth module to the inv
 
 ## Tested modules
 
-Currently we support classic BL and BLE modules. We currently tested them on the HC-05, HC-06, HC-09, HC-10. Make sure that when using BLE module you should disable PIN code. For classic BL module to appear in the list, you should pair it to your Android device first.
+Currently we support classic BL,BLE and integrated bluetooth modules into your transmitter. We currently tested them on the HC-05, HC-06, HC-09, HM-10. Make sure that when using BLE module you should disable PIN code (if possible). For classic BL module to appear in the list, you should pair it to your Android device first.
 
 ## HC-06 With MOSFET inverter
 
