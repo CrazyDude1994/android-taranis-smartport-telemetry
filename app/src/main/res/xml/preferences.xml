@@ -62,5 +62,30 @@
 
     </PreferenceCategory>
 
+    <PreferenceCategory android:title="UAV Radar">
+        <SwitchPreference
+                android:title="Send data to uavradar server"
+                android:summary="Sends telemetry data to uavradar server. It allows other users to see your aircraft at the https://uavradar.org/ Data is sent when acquired valid GPS fix and aircraft is armed"
+                android:defaultValue="false"
+                android:key="send_telemetry_data"/>
+
+        <EditTextPreference
+                android:title="Callsign"
+                android:dependency="send_telemetry_data"
+                android:key="callsign"/>
+
+        <EditTextPreference
+                android:title="Model"
+                android:dependency="send_telemetry_data"
+                android:key="model"/>
+
+        <Preference android:title="Go to UAV radar">
+            <intent
+                    android:action="android.intent.action.VIEW"
+                    android:data="https://uavradar.org"/>
+        </Preference>
+
+    </PreferenceCategory>
+
 
 </PreferenceScreen>

@@ -62,4 +62,24 @@ class PreferenceManager(context: Context) {
     fun setMapType(mapType: Int) {
         sharedPreferences.edit().putInt("map_type", mapType).apply()
     }
+
+    fun isSendDataEnabled(): Boolean {
+        return sharedPreferences.getBoolean("send_telemetry_data", false)
+    }
+
+    fun isSendDataDialogShown(): Boolean {
+        return sharedPreferences.contains("send_telemetry_data")
+    }
+
+    fun getModel(): String {
+        return sharedPreferences.getString("model", "") ?: ""
+    }
+
+    fun getCallsign(): String {
+        return sharedPreferences.getString("callsign", "") ?: ""
+    }
+
+    fun setTelemetrySendingEnabled(enabled: Boolean) {
+        sharedPreferences.edit().putBoolean("send_telemetry_data", enabled).apply()
+    }
 }

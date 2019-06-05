@@ -16,6 +16,8 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.os.IBinder
+import android.text.Html
+import android.text.method.LinkMovementMethod
 import android.view.View
 import android.widget.*
 import androidx.annotation.DrawableRes
@@ -32,10 +34,16 @@ import com.google.android.gms.maps.model.*
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.maps.android.SphericalUtil
 import crazydude.com.telemetry.R
+import crazydude.com.telemetry.api.ApiManager
+import crazydude.com.telemetry.api.SessionCreateRequest
+import crazydude.com.telemetry.api.SessionCreateResponse
 import crazydude.com.telemetry.manager.PreferenceManager
 import crazydude.com.telemetry.protocol.DataDecoder
 import crazydude.com.telemetry.protocol.LogPlayer
 import crazydude.com.telemetry.service.DataService
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import java.io.File
 import kotlin.math.roundToInt
 
@@ -473,9 +481,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
             if (requestCode == REQUEST_LOCATION_PERMISSION) {
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     map?.isMyLocationEnabled = true
+                    checkSendDataDialogShown()
                 } else {
                     AlertDialog.Builder(this)
                         .setMessage("Location permission is needed in order to discover BLE devices and show your location on map")
+                        .setOnDismissListener { checkSendDataDialogShown() }
                         .setPositiveButton("OK", null)
                         .show()
                 }
@@ -577,6 +587,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         map?.mapType = mapType
         if (checkCallingOrSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             map?.isMyLocationEnabled = true
+            checkSendDataDialogShown()
         } else {
             ActivityCompat.requestPermissions(
                 this,
@@ -594,6 +605,25 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
             if (it == GoogleMap.OnCameraMoveStartedListener.REASON_GESTURE) {
                 followMode = false
             }
+        }
+    }
+
+    private fun checkSendDataDialogShown() {
+        if (!preferenceManager.isSendDataDialogShown()) {
+            val dialog = AlertDialog.Builder(this)
+                .setMessage(
+                    Html.fromHtml(
+                        "You can enable telemetry data sharing. Telemetry data sharing sends data to <a href='https://uavradar.org'>https://uavradar.org</a> at which" +
+                                "you can watch for other aicraft flights (just like flightradar24, but for UAV). You can assign" +
+                                " your callsign and your UAV model in the settings which will be used as your aircraft info. " +
+                                "Data sent when you arm your UAV and have valid 3D GPS Fix"
+                    )
+                )
+                .setPositiveButton("Enable") { _, i -> preferenceManager.setTelemetrySendingEnabled(true) }
+                .setNegativeButton("Disable") { _, i -> preferenceManager.setTelemetrySendingEnabled(false) }
+                .setCancelable(false)
+                .show()
+            dialog.findViewById<TextView>(android.R.id.message)?.movementMethod = LinkMovementMethod.getInstance()
         }
     }
 
