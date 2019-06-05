@@ -1,11 +1,9 @@
 package crazydude.com.telemetry.ui
 
 import android.annotation.SuppressLint
-import android.annotation.TargetApi
 import android.app.ProgressDialog
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothGattCharacteristic
 import android.content.*
 import android.content.pm.PackageManager
 import android.content.res.Configuration
@@ -32,18 +30,13 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.maps.android.SphericalUtil
 import crazydude.com.telemetry.R
-import crazydude.com.telemetry.api.ApiManager
-import crazydude.com.telemetry.api.SessionCreateRequest
-import crazydude.com.telemetry.api.SessionCreateResponse
 import crazydude.com.telemetry.manager.PreferenceManager
 import crazydude.com.telemetry.protocol.DataDecoder
 import crazydude.com.telemetry.protocol.LogPlayer
 import crazydude.com.telemetry.service.DataService
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 import java.io.File
 import kotlin.math.roundToInt
 
@@ -78,6 +71,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     private lateinit var topLayout: RelativeLayout
     private lateinit var horizonView: HorizonView
     private lateinit var preferenceManager: PreferenceManager
+    private lateinit var firebaseAnalytics: FirebaseAnalytics
     private var mapType = GoogleMap.MAP_TYPE_NORMAL
 
     private var lastGPS = LatLng(0.0, 0.0)
@@ -136,6 +130,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         replayButton = findViewById(R.id.replay_button)
         seekBar = findViewById(R.id.seekbar)
         horizonView = findViewById(R.id.horizon_view)
+
+        firebaseAnalytics = FirebaseAnalytics.getInstance(this)
 
         settingsButton.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
@@ -610,6 +606,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
 
     private fun checkSendDataDialogShown() {
         if (!preferenceManager.isSendDataDialogShown()) {
+            firebaseAnalytics.logEvent("send_data_dialog_shown", null)
             val dialog = AlertDialog.Builder(this)
                 .setMessage(
                     Html.fromHtml(
@@ -619,8 +616,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
                                 "Data sent when you arm your UAV and have valid 3D GPS Fix"
                     )
                 )
-                .setPositiveButton("Enable") { _, i -> preferenceManager.setTelemetrySendingEnabled(true) }
-                .setNegativeButton("Disable") { _, i -> preferenceManager.setTelemetrySendingEnabled(false) }
+                .setPositiveButton("Enable") { _, i ->
+                    preferenceManager.setTelemetrySendingEnabled(true)
+                    firebaseAnalytics.setUserProperty("telemetry_sharing_enable", "true")
+                    firebaseAnalytics.logEvent("telemetry_sharing_enabled", null)
+                }
+                .setNegativeButton("Disable") { _, i ->
+                    preferenceManager.setTelemetrySendingEnabled(false)
+                    firebaseAnalytics.setUserProperty("telemetry_sharing_enable", "false")
+                    firebaseAnalytics.logEvent("telemetry_sharing_disabled", null)
+                }
                 .setCancelable(false)
                 .show()
             dialog.findViewById<TextView>(android.R.id.message)?.movementMethod = LinkMovementMethod.getInstance()
