@@ -8,8 +8,11 @@ import retrofit2.Retrofit
 class ApiManager {
 
     companion object {
+
+        const val API_URL = "https://uavradar.org/"
+
         private val retrofit = Retrofit.Builder()
-            .baseUrl("http://149.154.71.100/")
+            .baseUrl(API_URL)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
 

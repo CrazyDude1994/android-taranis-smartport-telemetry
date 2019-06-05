@@ -64,8 +64,8 @@
 
     <PreferenceCategory android:title="UAV Radar">
         <SwitchPreference
-                android:title="Send data to uavradar24 server"
-                android:summary="Sends telemetry data to uavradar24 server. It allows other users to see your aircraft at the http://149.154.71.100/ Data is sent when acquired valid GPS fix and aircraft is armed"
+                android:title="Send data to uavradar server"
+                android:summary="Sends telemetry data to uavradar server. It allows other users to see your aircraft at the https://uavradar.org/ Data is sent when acquired valid GPS fix and aircraft is armed"
                 android:defaultValue="false"
                 android:key="send_telemetry_data"/>
 
@@ -82,7 +82,7 @@
         <Preference android:title="Go to UAV radar">
             <intent
                     android:action="android.intent.action.VIEW"
-                    android:data="http://149.154.71.100/"/>
+                    android:data="https://uavradar.org"/>
         </Preference>
 
     </PreferenceCategory>
