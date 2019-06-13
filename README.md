@@ -29,7 +29,7 @@ HC-06 module will expect that each command will be entered very fast (AFAIR max 
 
 1. `AT+NAMEyournamehere` - no spaces!
 1. `AT+PIN1234` - PIN, no spaces again
-1. `AT+ENABLEIND0`
+1. `AT+ENABLEIND0` (you can ommit this command if your module does not support it)
 1. `AT+BAUD7` - set port speed to 57600
 
 
