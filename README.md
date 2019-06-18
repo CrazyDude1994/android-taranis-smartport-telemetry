@@ -1,5 +1,7 @@
 # Android Taranis SmartPort Telemetry Viewer
 
+[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=PYBTCQE2E8DWU&source=url)
+
 This android application let you view and record your taranis telemetry data in realtime.
 
 ![alt text](https://raw.githubusercontent.com/CrazyDude1994/android-taranis-smartport-telemetry/master/screen.jpg "Screenshot")
@@ -46,8 +48,11 @@ Make sure you followed all the steps. If this doesn't help, you can ask for help
 https://t.me/joinchat/Gf03BFXI2e48WMvzjLeIjw
 
 # Say thanks
-If you want to help or say thanks, best way is just to follow my FPV youtube channel
+If you want to help or say thanks follow my yt channel:
 https://www.youtube.com/channel/UCjAhODF0Achhc1fynxEXQLg?view_as=subscriber
+
+or and you can donate (link at top)
+
 
 # Special thanks
 Alexey Stankevich - initial testing, feedback
