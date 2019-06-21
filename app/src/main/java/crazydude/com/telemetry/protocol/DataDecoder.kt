@@ -4,7 +4,7 @@ import android.util.Log
 import com.google.android.gms.maps.model.LatLng
 import java.io.IOException
 
-class DataDecoder(private val listener: Listener) : FrSkySportProtocol.Companion.DataListener {
+class DataDecoder(private val listener: Listener) : Protocol.Companion.DataListener {
 
     private var newLatitude = false
     private var newLongitude = false
@@ -19,12 +19,12 @@ class DataDecoder(private val listener: Listener) : FrSkySportProtocol.Companion
         }
     }
 
-    override fun onNewData(data: FrSkySportProtocol.Companion.TelemetryData) {
+    override fun onNewData(data: Protocol.Companion.TelemetryData) {
         when (data.telemetryType) {
-            FrSkySportProtocol.FUEL -> {
+            Protocol.FUEL -> {
                 listener.onFuelData(data.data)
             }
-            FrSkySportProtocol.GPS -> {
+            Protocol.GPS -> {
                 var gpsData = (data.data and 0x3FFFFFFF) / 10000.0 / 60.0
                 if (data.data and 0x40000000 > 0) {
                     gpsData = -gpsData
@@ -48,32 +48,32 @@ class DataDecoder(private val listener: Listener) : FrSkySportProtocol.Companion
 //                    Log.d(TAG, "Decoded GPS lat=$latitude long=$longitude")
                 }
             }
-            FrSkySportProtocol.VBAT -> {
+            Protocol.VBAT -> {
                 val value = data.data / 100f
                 listener.onVBATData(value)
 //                Log.d(TAG, "Decoded vbat $value")
             }
-            FrSkySportProtocol.CELL_VOLTAGE -> {
+            Protocol.CELL_VOLTAGE -> {
                 val value = data.data / 100f
                 listener.onCellVoltageData(value)
 //                Log.d(TAG, "Decoded cell voltage $value")
             }
-            FrSkySportProtocol.CURRENT -> {
+            Protocol.CURRENT -> {
                 val value = data.data / 10f
                 listener.onCurrentData(value)
 //                Log.d(TAG, "Decoded current $value")
             }
 
-            FrSkySportProtocol.HEADING -> {
+            Protocol.HEADING -> {
                 val value = data.data / 100f
                 listener.onHeadingData(value)
 //                Log.d(TAG, "Decoded heading $value")
             }
-            FrSkySportProtocol.RSSI -> {
+            Protocol.RSSI -> {
                 listener.onRSSIData(data.data)
             }
 
-            FrSkySportProtocol.FLYMODE -> {
+            Protocol.FLYMODE -> {
                 val modeA = data.data / 10000
                 val modeB = data.data / 1000 % 10
                 val modeC = data.data / 100 % 10
@@ -110,47 +110,47 @@ class DataDecoder(private val listener: Listener) : FrSkySportProtocol.Companion
 
                 listener.onFlyModeData(armed, heading, firstFlightMode, secondFlightMode)
             }
-            FrSkySportProtocol.GPS_STATE -> {
+            Protocol.GPS_STATE -> {
                 val satellites = data.data % 100
                 val isFix = data.data > 1000
                 listener.onGPSState(satellites, isFix)
 //                Log.d(TAG, "Decoded satellites $satellites isFix=$isFix")
             }
-            FrSkySportProtocol.VSPEED -> {
+            Protocol.VSPEED -> {
                 val value = data.data / 100f
                 listener.onVSpeedData(value)
 //                Log.d(TAG, "Decoded vspeed $value")
             }
-            FrSkySportProtocol.ALTITUDE -> {
+            Protocol.ALTITUDE -> {
                 val value = data.data / 100f
                 listener.onAltitudeData(value)
 //                Log.d(TAG, "Decoded altitutde $value")
             }
-            FrSkySportProtocol.GSPEED -> {
+            Protocol.GSPEED -> {
                 val value = (data.data / (1944f / 100f)) / 27.778f
                 listener.onGSpeedData(value)
 //                Log.d(TAG, "Decoded GSpeed $value")
             }
-            FrSkySportProtocol.DISTANCE -> {
+            Protocol.DISTANCE -> {
                 listener.onDistanceData(data.data)
 //                Log.d(TAG, "Decoded distance ${data.data}")
             }
-            FrSkySportProtocol.ROLL -> {
+            Protocol.ROLL -> {
                 val value = data.data / 10f
                 listener.onRollData(value)
 //                Log.d(TAG, "Decoded roll $value")
             }
-            FrSkySportProtocol.GALT -> {
+            Protocol.GALT -> {
                 val value = data.data / 100f
                 listener.onGPSAltitudeData(value)
 //                Log.d(TAG, "Decoded gps altitude $value")
             }
-            FrSkySportProtocol.PITCH -> {
+            Protocol.PITCH -> {
                 val value = data.data / 10f
                 listener.onPitchData(value)
 //                Log.d(TAG, "Decoded pitch $value")
             }
-            FrSkySportProtocol.ASPEED -> {
+            Protocol.ASPEED -> {
                 listener.onAirSpeed(data.data * 1.852f)
             }
             else -> {}

@@ -93,8 +93,8 @@ class BluetoothLeDataPoller(
                     if (notifyCharacteristicList != null && notifyCharacteristicList.isNotEmpty()) {
                         notifyCharacteristicList.forEach { characteristic ->
                             val sportProtocol =
-                                FrSkySportProtocol(object : FrSkySportProtocol.Companion.DataListener {
-                                    override fun onNewData(data: FrSkySportProtocol.Companion.TelemetryData) {
+                                FrSkySportProtocol(object : Protocol.Companion.DataListener {
+                                    override fun onNewData(data: Protocol.Companion.TelemetryData) {
                                         validPacketCount[characteristic.uuid] =
                                             validPacketCount[characteristic.uuid]!! + 1
 
