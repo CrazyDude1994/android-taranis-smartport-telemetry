@@ -1,5 +1,8 @@
 # Android Taranis SmartPort Telemetry Viewer
 
+[![Donate](https://img.shields.io/badge/Donate-Patreon-green.svg)](https://www.patreon.com/android_rc_telemetry)
+
+
 This android application let you view and record your taranis telemetry data in realtime.
 
 ![alt text](https://raw.githubusercontent.com/CrazyDude1994/android-taranis-smartport-telemetry/master/screen.jpg "Screenshot")
@@ -48,6 +51,8 @@ https://t.me/joinchat/Gf03BFXI2e48WMvzjLeIjw
 # Say thanks
 If you want to help or say thanks follow my yt channel:
 https://www.youtube.com/channel/UCjAhODF0Achhc1fynxEXQLg?view_as=subscriber
+
+or you can donate to my patreon: https://www.patreon.com/android_rc_telemetry
 
 
 # Special thanks
