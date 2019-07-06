@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import androidx.annotation.RequiresApi
+import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.OutputStreamWriter
@@ -23,7 +24,6 @@ class BluetoothLeDataPoller(
 ) : DataPoller {
 
     private lateinit var protocol: FrSkySportProtocol
-    private val dataDecoder: DataDecoder = DataDecoder(listener)
     private var outputStreamWriter: OutputStreamWriter? = null
     private var connected = false
     private var bluetoothGatt: BluetoothGatt?
@@ -93,8 +93,9 @@ class BluetoothLeDataPoller(
                     if (notifyCharacteristicList != null && notifyCharacteristicList.isNotEmpty()) {
                         notifyCharacteristicList.forEach { characteristic ->
                             val sportProtocol =
-                                FrSkySportProtocol(object : Protocol.Companion.DataListener {
-                                    override fun onNewData(data: Protocol.Companion.TelemetryData) {
+                                FrSkySportProtocol(object : DataDecoder.Companion.DefaultDecodeListener() {
+
+                                    override fun onSuccessDecode() {
                                         validPacketCount[characteristic.uuid] =
                                             validPacketCount[characteristic.uuid]!! + 1
 
@@ -104,7 +105,7 @@ class BluetoothLeDataPoller(
                                             notifyCharacteristicList.filter { it.uuid != entry.key }.forEach {
                                                 gatt.setCharacteristicNotification(it, false)
                                             }
-                                            protocol = FrSkySportProtocol(dataDecoder)
+                                            protocol = FrSkySportProtocol(listener)
                                             serviceSelected = true
                                             runOnMainThread(Runnable {
                                                 listener.onConnected()

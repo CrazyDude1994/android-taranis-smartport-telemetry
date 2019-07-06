@@ -1,25 +1,17 @@
-package crazydude.com.telemetry.protocol
+package crazydude.com.telemetry.protocol.decoder
 
-import android.util.Log
-import com.google.android.gms.maps.model.LatLng
+import crazydude.com.telemetry.protocol.Protocol
 import java.io.IOException
 
-class DataDecoder(private val listener: Listener) : Protocol.Companion.DataListener {
+class FrskyDataDecoder(listener: Listener) : DataDecoder(listener) {
 
     private var newLatitude = false
     private var newLongitude = false
     private var latitude: Double = 0.0
     private var longitude: Double = 0.0
 
-    companion object {
-        private const val TAG = "DataDecoder"
-
-        enum class FlyMode {
-            ACRO, HORIZON, ANGLE, FAILSAFE, RTH, WAYPOINT, MANUAL, CRUISE
-        }
-    }
-
-    override fun onNewData(data: Protocol.Companion.TelemetryData) {
+    override fun decodeData(data: Protocol.Companion.TelemetryData) {
+        var decoded = true
         when (data.telemetryType) {
             Protocol.FUEL -> {
                 listener.onFuelData(data.data)
@@ -80,30 +72,30 @@ class DataDecoder(private val listener: Listener) : Protocol.Companion.DataListe
                 val modeD = data.data / 10 % 10
                 val modeE = data.data % 10
 
-                val firstFlightMode: FlyMode
-                val secondFlightMode: FlyMode?
+                val firstFlightMode: Companion.FlyMode
+                val secondFlightMode: Companion.FlyMode?
 
                 if (modeD and 2 == 2) {
-                    firstFlightMode = FlyMode.HORIZON
+                    firstFlightMode = Companion.FlyMode.HORIZON
                 } else if (modeD and 1 == 1) {
-                    firstFlightMode = FlyMode.ANGLE
+                    firstFlightMode = Companion.FlyMode.ANGLE
                 } else {
-                    firstFlightMode = FlyMode.ACRO
+                    firstFlightMode = Companion.FlyMode.ACRO
                 }
 
                 val armed = modeE and 4 == 4
                 val heading = modeC and 1 == 1
 
                 if (modeA and 4 == 4) {
-                    secondFlightMode = FlyMode.FAILSAFE
+                    secondFlightMode = Companion.FlyMode.FAILSAFE
                 } else if (modeB and 1 == 1) {
-                    secondFlightMode = FlyMode.RTH
+                    secondFlightMode = Companion.FlyMode.RTH
                 } else if (modeD and 4 == 4) {
-                    secondFlightMode = FlyMode.MANUAL
+                    secondFlightMode = Companion.FlyMode.MANUAL
                 } else if (modeB and 2 == 2) {
-                    secondFlightMode = FlyMode.WAYPOINT
+                    secondFlightMode = Companion.FlyMode.WAYPOINT
                 } else if (modeB and 8 == 8) {
-                    secondFlightMode = FlyMode.CRUISE
+                    secondFlightMode = Companion.FlyMode.CRUISE
                 } else {
                     secondFlightMode = null
                 }
@@ -153,36 +145,22 @@ class DataDecoder(private val listener: Listener) : Protocol.Companion.DataListe
             Protocol.ASPEED -> {
                 listener.onAirSpeed(data.data * 1.852f)
             }
-            else -> {}
-        }
-    }
+            Protocol.GPS_LONGITUDE -> {
 
-    interface Listener {
-        fun onConnectionFailed()
-        fun onFuelData(fuel: Int)
-        fun onConnected()
-        fun onGPSData(latitude: Double, longitude: Double)
-        fun onGPSData(list: List<LatLng>, addToEnd: Boolean)
-        fun onVBATData(voltage: Float)
-        fun onCellVoltageData(voltage: Float)
-        fun onCurrentData(current: Float)
-        fun onHeadingData(heading: Float)
-        fun onRSSIData(rssi: Int)
-        fun onDisconnected()
-        fun onGPSState(satellites: Int, gpsFix: Boolean)
-        fun onVSpeedData(vspeed: Float)
-        fun onAltitudeData(altitude: Float)
-        fun onGPSAltitudeData(altitude: Float)
-        fun onDistanceData(distance: Int)
-        fun onRollData(rollAngle: Float)
-        fun onPitchData(pitchAngle: Float)
-        fun onGSpeedData(speed: Float)
-        fun onFlyModeData(
-            armed: Boolean,
-            heading: Boolean,
-            firstFlightMode: FlyMode,
-            secondFlightMode: FlyMode?
-        )
-        fun onAirSpeed(speed: Float)
+            }
+            Protocol.GPS_LATITUDE -> {
+
+            }
+            Protocol.GPS_SATELLITES -> {
+                listener.onGPSState(data.data, true)
+            }
+            else -> {
+                decoded = false
+            }
+        }
+
+        if (decoded) {
+            listener.onSuccessDecode()
+        }
     }
 }

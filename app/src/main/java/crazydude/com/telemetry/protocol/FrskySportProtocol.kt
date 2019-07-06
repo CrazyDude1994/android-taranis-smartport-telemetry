@@ -1,12 +1,13 @@
 package crazydude.com.telemetry.protocol
 
 import android.util.Log
-import androidx.annotation.IntDef
+import crazydude.com.telemetry.protocol.decoder.DataDecoder
+import crazydude.com.telemetry.protocol.decoder.FrskyDataDecoder
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
 
-class FrSkySportProtocol(dataListener: Protocol.Companion.DataListener) : Protocol(dataListener) {
+class FrSkySportProtocol(dataListener: DataDecoder.Listener) : Protocol(FrskyDataDecoder(dataListener)) {
 
     private var state: State = Companion.State.IDLE
     private var bufferIndex: Int = 0
@@ -86,7 +87,7 @@ class FrSkySportProtocol(dataListener: Protocol.Companion.DataListener) : Protoc
                 when (dataType.toInt()) {
                     FUEL_SENSOR -> {
                         //Log.d(TAG, "Fuel: $rawData")
-                        dataListener.onNewData(
+                        dataDecoder.decodeData(
                             Protocol.Companion.TelemetryData(
                                 FUEL,
                                 rawData
@@ -95,7 +96,7 @@ class FrSkySportProtocol(dataListener: Protocol.Companion.DataListener) : Protoc
                     }
                     GPS_SENSOR -> {
                         //Log.d(TAG, "GPS: $rawData")
-                        dataListener.onNewData(
+                        dataDecoder.decodeData(
                             Protocol.Companion.TelemetryData(
                                 GPS,
                                 rawData
@@ -104,7 +105,7 @@ class FrSkySportProtocol(dataListener: Protocol.Companion.DataListener) : Protoc
                     }
                     VFAS_SENSOR -> {
                         //Log.d(TAG, "VBAT: $rawData")
-                        dataListener.onNewData(
+                        dataDecoder.decodeData(
                             Protocol.Companion.TelemetryData(
                                 VBAT,
                                 rawData
@@ -113,7 +114,7 @@ class FrSkySportProtocol(dataListener: Protocol.Companion.DataListener) : Protoc
                     }
                     CELL_SENSOR -> {
                         //Log.d(TAG, "Cell voltage: $rawData")
-                        dataListener.onNewData(
+                        dataDecoder.decodeData(
                             Protocol.Companion.TelemetryData(
                                 CELL_VOLTAGE,
                                 rawData
@@ -122,7 +123,7 @@ class FrSkySportProtocol(dataListener: Protocol.Companion.DataListener) : Protoc
                     }
                     CURRENT_SENSOR -> {
                         //Log.d(TAG, "Current: $rawData")
-                        dataListener.onNewData(
+                        dataDecoder.decodeData(
                             Protocol.Companion.TelemetryData(
                                 CURRENT,
                                 rawData
@@ -131,7 +132,7 @@ class FrSkySportProtocol(dataListener: Protocol.Companion.DataListener) : Protoc
                     }
                     HEADING_SENSOR -> {
                         //Log.d(TAG, "Heading: $rawData")
-                        dataListener.onNewData(
+                        dataDecoder.decodeData(
                             Protocol.Companion.TelemetryData(
                                 HEADING,
                                 rawData
@@ -140,7 +141,7 @@ class FrSkySportProtocol(dataListener: Protocol.Companion.DataListener) : Protoc
                     }
                     RSSI_SENSOR -> {
                         //Log.d(TAG, "RSSI: $rawData")
-                        dataListener.onNewData(
+                        dataDecoder.decodeData(
                             Protocol.Companion.TelemetryData(
                                 RSSI,
                                 rawData
@@ -149,7 +150,7 @@ class FrSkySportProtocol(dataListener: Protocol.Companion.DataListener) : Protoc
                     }
                     FLYMODE_SENSOR -> {
                         //Log.d(TAG, "Fly mode: $rawData")
-                        dataListener.onNewData(
+                        dataDecoder.decodeData(
                             Protocol.Companion.TelemetryData(
                                 FLYMODE,
                                 rawData
@@ -158,7 +159,7 @@ class FrSkySportProtocol(dataListener: Protocol.Companion.DataListener) : Protoc
                     }
                     GPS_STATE_SENSOR -> {
                         //Log.d(TAG, "GPS State: $rawData")
-                        dataListener.onNewData(
+                        dataDecoder.decodeData(
                             Protocol.Companion.TelemetryData(
                                 GPS_STATE,
                                 rawData
@@ -167,7 +168,7 @@ class FrSkySportProtocol(dataListener: Protocol.Companion.DataListener) : Protoc
                     }
                     VSPEED_SENSOR -> {
                         //Log.d(TAG, "VSpeed: $rawData")
-                        dataListener.onNewData(
+                        dataDecoder.decodeData(
                             Protocol.Companion.TelemetryData(
                                 VSPEED,
                                 rawData
@@ -176,7 +177,7 @@ class FrSkySportProtocol(dataListener: Protocol.Companion.DataListener) : Protoc
                     }
                     GALT_SENSOR -> {
                         //Log.d(TAG, "GAlt: $rawData")
-                        dataListener.onNewData(
+                        dataDecoder.decodeData(
                             Protocol.Companion.TelemetryData(
                                 GALT,
                                 rawData
@@ -185,7 +186,7 @@ class FrSkySportProtocol(dataListener: Protocol.Companion.DataListener) : Protoc
                     }
                     GSPEED_SENSOR -> {
                         //Log.d(TAG, "GSpeed: $rawData")
-                        dataListener.onNewData(
+                        dataDecoder.decodeData(
                             Protocol.Companion.TelemetryData(
                                 GSPEED,
                                 rawData
@@ -194,7 +195,7 @@ class FrSkySportProtocol(dataListener: Protocol.Companion.DataListener) : Protoc
                     }
                     DISTANCE_SENSOR -> {
                         //Log.d(TAG, "Distance: $rawData")
-                        dataListener.onNewData(
+                        dataDecoder.decodeData(
                             Protocol.Companion.TelemetryData(
                                 DISTANCE,
                                 rawData
@@ -203,7 +204,7 @@ class FrSkySportProtocol(dataListener: Protocol.Companion.DataListener) : Protoc
                     }
                     ALT_SENSOR -> {
                         //Log.d(TAG, "Altitutde: $rawData")
-                        dataListener.onNewData(
+                        dataDecoder.decodeData(
                             Protocol.Companion.TelemetryData(
                                 ALTITUDE,
                                 rawData
@@ -212,7 +213,7 @@ class FrSkySportProtocol(dataListener: Protocol.Companion.DataListener) : Protoc
                     }
                     PITCH_SENSOR -> {
                         //Log.d(TAG, "Pitch: $rawData")
-                        dataListener.onNewData(
+                        dataDecoder.decodeData(
                             Protocol.Companion.TelemetryData(
                                 PITCH,
                                 rawData
@@ -221,7 +222,7 @@ class FrSkySportProtocol(dataListener: Protocol.Companion.DataListener) : Protoc
                     }
                     ROLL_SENSOR -> {
                         //Log.d(TAG, "Roll: $rawData")
-                        dataListener.onNewData(
+                        dataDecoder.decodeData(
                             Protocol.Companion.TelemetryData(
                                 ROLL,
                                 rawData
@@ -229,7 +230,7 @@ class FrSkySportProtocol(dataListener: Protocol.Companion.DataListener) : Protoc
                         )
                     }
                     AIRSPEED_SENSOR -> {
-                        dataListener.onNewData(
+                        dataDecoder.decodeData(
                             Protocol.Companion.TelemetryData(ASPEED, rawData)
                         )
                     }

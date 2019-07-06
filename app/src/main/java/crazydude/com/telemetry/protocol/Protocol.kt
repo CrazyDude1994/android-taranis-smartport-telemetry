@@ -1,13 +1,11 @@
 package crazydude.com.telemetry.protocol
 
 import androidx.annotation.IntDef
+import crazydude.com.telemetry.protocol.decoder.DataDecoder
 
-abstract class Protocol(var dataListener: DataListener) {
+abstract class Protocol(val dataDecoder: DataDecoder) {
 
     companion object {
-        interface DataListener {
-            fun onNewData(data: TelemetryData)
-        }
 
         const val FUEL = 0
         const val GPS = 1
@@ -26,6 +24,9 @@ abstract class Protocol(var dataListener: DataListener) {
         const val PITCH = 14
         const val GALT = 15
         const val ASPEED = 16
+        const val GPS_LATITUDE = 17
+        const val GPS_LONGITUDE = 18
+        const val GPS_SATELLITES = 19
 
         @Retention(AnnotationRetention.SOURCE)
         @IntDef(

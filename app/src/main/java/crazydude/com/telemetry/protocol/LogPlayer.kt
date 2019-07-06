@@ -3,6 +3,7 @@ package crazydude.com.telemetry.protocol
 import android.annotation.SuppressLint
 import android.os.AsyncTask
 import com.google.android.gms.maps.model.LatLng
+import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import java.io.File
 import java.io.FileInputStream
 import java.util.*
@@ -14,8 +15,8 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
     private var decodedCoordinates = ArrayList<LatLng>()
     private var dataReadyListener: DataReadyListener? = null
     private var currentPosition: Int = 0
-    private var dataDecoder: DataDecoder = DataDecoder(this)
     private var uniqueData = HashMap<Int, Int>()
+    private var protocol = FrSkySportProtocol(originalListener)
 
     private val task = @SuppressLint("StaticFieldLeak") object :
         AsyncTask<File, Long, ArrayList<Protocol.Companion.TelemetryData>>() {
@@ -23,11 +24,6 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
         override fun doInBackground(vararg file: File): ArrayList<Protocol.Companion.TelemetryData> {
             val logFile = FileInputStream(file[0])
             val arrayList = ArrayList<Protocol.Companion.TelemetryData>()
-            val protocol = CrsfProtocol(object : Protocol.Companion.DataListener {
-                override fun onNewData(data: Protocol.Companion.TelemetryData) {
-                    arrayList.add(data)
-                }
-            })
 
             val size = (file[0].length() / 100).toInt()
             val bytes = ByteArray(size)
@@ -35,7 +31,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
             var allBytes = bytesRead
             while (bytesRead == size) {
                 for (i in 0 until bytesRead) {
-                    protocol.process(bytes[i].toInt())
+                    protocol.process(bytes[i].toUByte().toInt())
                 }
                 publishProgress(((allBytes / file[0].length().toFloat()) * 100).toLong())
                 bytesRead = logFile.read(bytes)
@@ -56,10 +52,6 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
 
     }
 
-    companion object {
-        private const val TAG = "LogPlayer"
-    }
-
     fun load(file: File, dataReadyListener: DataReadyListener) {
         this.dataReadyListener = dataReadyListener
         task.execute(file)
@@ -72,7 +64,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
         if (position > currentPosition) {
             for (i in currentPosition until position) {
                 if (cachedData[i].telemetryType == Protocol.GPS) {
-                    dataDecoder.onNewData(cachedData[i])
+                    protocol.dataDecoder.decodeData(cachedData[i])
                 } else {
                     uniqueData[cachedData[i].telemetryType] = i
                 }
@@ -82,7 +74,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
         } else {
             for (i in 0 until position) {
                 if (cachedData[i].telemetryType == Protocol.GPS) {
-                    dataDecoder.onNewData(cachedData[i])
+                    protocol.dataDecoder.decodeData(cachedData[i])
                 } else {
                     uniqueData[cachedData[i].telemetryType] = i
                 }
@@ -91,7 +83,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
             addToEnd = false
         }
         uniqueData.entries.forEach {
-            dataDecoder.onNewData(cachedData[it.value])
+            protocol.dataDecoder.decodeData(cachedData[it.value])
         }
         originalListener.onGPSData(decodedCoordinates, addToEnd)
     }
@@ -171,6 +163,10 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
 
     override fun onGSpeedData(speed: Float) {
         originalListener.onGSpeedData(speed)
+    }
+
+    override fun onSuccessDecode() {
+        originalListener.onSuccessDecode()
     }
 
     override fun onFlyModeData(

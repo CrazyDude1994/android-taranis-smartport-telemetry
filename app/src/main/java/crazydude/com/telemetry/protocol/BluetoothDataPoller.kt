@@ -3,6 +3,7 @@ package crazydude.com.telemetry.protocol
 import android.bluetooth.BluetoothSocket
 import android.os.Handler
 import android.os.Looper
+import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.OutputStreamWriter
@@ -16,7 +17,6 @@ class BluetoothDataPoller(
 
     private lateinit var protocol: FrSkySportProtocol
     private lateinit var thread: Thread
-    private val dataDecoder: DataDecoder = DataDecoder(listener)
     private var outputStreamWriter: OutputStreamWriter? = null
 
     init {
@@ -29,7 +29,7 @@ class BluetoothDataPoller(
                         listener.onConnected()
                     })
                 }
-                protocol = FrSkySportProtocol(dataDecoder)
+                protocol = FrSkySportProtocol(listener)
                 val buffer = ByteArray(1024)
                 while (!thread.isInterrupted && bluetoothSocket.isConnected) {
                     val size = bluetoothSocket.inputStream.read(buffer)
