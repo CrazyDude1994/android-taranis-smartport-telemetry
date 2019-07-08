@@ -16,7 +16,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
     private var dataReadyListener: DataReadyListener? = null
     private var currentPosition: Int = 0
     private var uniqueData = HashMap<Int, Int>()
-    private var protocol = FrSkySportProtocol(originalListener)
+    private var protocol: Protocol = FrSkySportProtocol(originalListener)
 
     private val task = @SuppressLint("StaticFieldLeak") object :
         AsyncTask<File, Long, ArrayList<Protocol.Companion.TelemetryData>>() {
@@ -25,13 +25,19 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
             val logFile = FileInputStream(file[0])
             val arrayList = ArrayList<Protocol.Companion.TelemetryData>()
 
+            val tempProtocol = FrSkySportProtocol(this@LogPlayer, object : DataDecoder(this@LogPlayer) {
+                override fun decodeData(data: Protocol.Companion.TelemetryData) {
+                    arrayList.add(data)
+                }
+            })
+
             val size = (file[0].length() / 100).toInt()
             val bytes = ByteArray(size)
             var bytesRead = logFile.read(bytes)
             var allBytes = bytesRead
             while (bytesRead == size) {
                 for (i in 0 until bytesRead) {
-                    protocol.process(bytes[i].toUByte().toInt())
+                    tempProtocol.process(bytes[i].toUByte().toInt())
                 }
                 publishProgress(((allBytes / file[0].length().toFloat()) * 100).toLong())
                 bytesRead = logFile.read(bytes)

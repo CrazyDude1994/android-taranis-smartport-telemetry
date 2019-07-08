@@ -7,7 +7,10 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
 
-class FrSkySportProtocol(dataListener: DataDecoder.Listener) : Protocol(FrskyDataDecoder(dataListener)) {
+class FrSkySportProtocol(
+    dataListener: DataDecoder.Listener,
+    dataDecoder: DataDecoder = FrskyDataDecoder(dataListener)
+) : Protocol(dataDecoder) {
 
     private var state: State = Companion.State.IDLE
     private var bufferIndex: Int = 0
