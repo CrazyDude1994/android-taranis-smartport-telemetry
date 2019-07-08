@@ -2,6 +2,7 @@ package crazydude.com.telemetry.protocol
 
 import android.annotation.SuppressLint
 import android.os.AsyncTask
+import android.util.Log
 import com.google.android.gms.maps.model.LatLng
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import java.io.File
@@ -16,7 +17,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
     private var dataReadyListener: DataReadyListener? = null
     private var currentPosition: Int = 0
     private var uniqueData = HashMap<Int, Int>()
-    private var protocol: Protocol = FrSkySportProtocol(originalListener)
+    private var protocol: Protocol = FrSkySportProtocol(this)
 
     private val task = @SuppressLint("StaticFieldLeak") object :
         AsyncTask<File, Long, ArrayList<Protocol.Companion.TelemetryData>>() {
