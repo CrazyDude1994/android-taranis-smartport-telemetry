@@ -1,5 +1,8 @@
 # Android Taranis SmartPort Telemetry Viewer
 
+[![Donate](https://img.shields.io/badge/Donate-Patreon-green.svg)](https://www.patreon.com/android_rc_telemetry)
+
+
 This android application let you view and record your taranis telemetry data in realtime.
 
 ![alt text](https://raw.githubusercontent.com/CrazyDude1994/android-taranis-smartport-telemetry/master/screen.jpg "Screenshot")
@@ -29,7 +32,7 @@ HC-06 module will expect that each command will be entered very fast (AFAIR max 
 
 1. `AT+NAMEyournamehere` - no spaces!
 1. `AT+PIN1234` - PIN, no spaces again
-1. `AT+ENABLEIND0`
+1. `AT+ENABLEIND0` (you can ommit this command if your module does not support it)
 1. `AT+BAUD7` - set port speed to 57600
 
 
@@ -46,8 +49,11 @@ Make sure you followed all the steps. If this doesn't help, you can ask for help
 https://t.me/joinchat/Gf03BFXI2e48WMvzjLeIjw
 
 # Say thanks
-If you want to help or say thanks, best way is just to follow my FPV youtube channel
+If you want to help or say thanks follow my yt channel:
 https://www.youtube.com/channel/UCjAhODF0Achhc1fynxEXQLg?view_as=subscriber
+
+or you can donate to my patreon: https://www.patreon.com/android_rc_telemetry
+
 
 # Special thanks
 Alexey Stankevich - initial testing, feedback
