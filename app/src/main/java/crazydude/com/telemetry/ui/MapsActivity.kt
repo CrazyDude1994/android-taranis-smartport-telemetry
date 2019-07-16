@@ -67,6 +67,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     private lateinit var mode: TextView
     private lateinit var followButton: FloatingActionButton
     private lateinit var mapTypeButton: FloatingActionButton
+    private lateinit var fullscreenButton: FloatingActionButton
     private lateinit var settingsButton: ImageView
     private lateinit var topLayout: RelativeLayout
     private lateinit var horizonView: HorizonView
@@ -130,11 +131,20 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         replayButton = findViewById(R.id.replay_button)
         seekBar = findViewById(R.id.seekbar)
         horizonView = findViewById(R.id.horizon_view)
+        fullscreenButton = findViewById(R.id.fullscreen_button)
 
         firebaseAnalytics = FirebaseAnalytics.getInstance(this)
 
         settingsButton.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
+        }
+
+        fullscreenButton.setOnClickListener {
+            if (window.decorView.systemUiVisibility == (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)) {
+                window.decorView.systemUiVisibility = 0
+            } else {
+                window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
+            }
         }
 
         followButton.setOnClickListener {
