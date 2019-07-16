@@ -29,8 +29,12 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
+import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.iid.FirebaseInstanceId
+import com.google.firebase.messaging.FirebaseMessaging
+import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.maps.android.SphericalUtil
 import crazydude.com.telemetry.R
 import crazydude.com.telemetry.manager.PreferenceManager
@@ -285,37 +289,56 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
                 mode.text = mode.text.toString() + " | Heading"
             }
 
-            if (secondFlightMode == null) {
-                when (firstFlightMode) {
-                    DataDecoder.Companion.FlyMode.ACRO -> {
-                        mode.text = mode.text.toString() + " | Acro"
-                    }
-                    DataDecoder.Companion.FlyMode.HORIZON -> {
-                        mode.text = mode.text.toString() + " | Horizon"
-                    }
-                    DataDecoder.Companion.FlyMode.ANGLE -> {
-                        mode.text = mode.text.toString() + " | Angle"
-                    }
-                }
-            } else {
-                when (secondFlightMode) {
-                    DataDecoder.Companion.FlyMode.FAILSAFE -> {
-                        mode.text = mode.text.toString() + " | Failsafe"
-                    }
-                    DataDecoder.Companion.FlyMode.RTH -> {
-                        mode.text = mode.text.toString() + " | RTH"
-                    }
-                    DataDecoder.Companion.FlyMode.WAYPOINT -> {
-                        mode.text = mode.text.toString() + " | Waypoint"
-                    }
-                    DataDecoder.Companion.FlyMode.MANUAL -> {
-                        mode.text = mode.text.toString() + " | Manual"
-                    }
-                    DataDecoder.Companion.FlyMode.CRUISE -> {
-                        mode.text = mode.text.toString() + " | Cruise"
-                    }
-                }
+            decodeMode(firstFlightMode)
+            decodeMode(secondFlightMode)
+        }
+    }
+
+    private fun decodeMode(flyMode: DataDecoder.Companion.FlyMode?) {
+        when (flyMode) {
+            DataDecoder.Companion.FlyMode.ACRO -> {
+                mode.text = mode.text.toString() + " | Acro"
             }
+            DataDecoder.Companion.FlyMode.HORIZON -> {
+                mode.text = mode.text.toString() + " | Horizon"
+            }
+            DataDecoder.Companion.FlyMode.ANGLE -> {
+                mode.text = mode.text.toString() + " | Angle"
+            }
+            DataDecoder.Companion.FlyMode.FAILSAFE -> {
+                mode.text = mode.text.toString() + " | Failsafe"
+            }
+            DataDecoder.Companion.FlyMode.RTH -> {
+                mode.text = mode.text.toString() + " | RTH"
+            }
+            DataDecoder.Companion.FlyMode.WAYPOINT -> {
+                mode.text = mode.text.toString() + " | Waypoint"
+            }
+            DataDecoder.Companion.FlyMode.MANUAL -> {
+                mode.text = mode.text.toString() + " | Manual"
+            }
+            DataDecoder.Companion.FlyMode.CRUISE -> {
+                mode.text = mode.text.toString() + " | Cruise"
+            }
+            DataDecoder.Companion.FlyMode.HOLD -> {
+                mode.text = mode.text.toString() + " | Hold"
+            }
+            DataDecoder.Companion.FlyMode.HOME_RESET -> {
+                mode.text = mode.text.toString() + " | Home reset"
+            }
+            DataDecoder.Companion.FlyMode.CRUISE3D -> {
+                mode.text = mode.text.toString() + " | 3D Cruise"
+            }
+            DataDecoder.Companion.FlyMode.ALTHOLD -> {
+                mode.text = mode.text.toString() + " | Alt hold"
+            }
+            DataDecoder.Companion.FlyMode.ERROR -> {
+                mode.text = mode.text.toString() + " | !ERROR!"
+            }
+            DataDecoder.Companion.FlyMode.WAIT -> {
+                mode.text = mode.text.toString() + " | GPS wait"
+            }
+            null -> {}
         }
     }
 

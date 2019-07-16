@@ -23,7 +23,7 @@ class BluetoothLeDataPoller(
     csvOutputStream: FileOutputStream?
 ) : DataPoller {
 
-    private lateinit var protocol: FrSkySportProtocol
+    private lateinit var protocol: CrsfProtocol
     private var outputStreamWriter: OutputStreamWriter? = null
     private var connected = false
     private var bluetoothGatt: BluetoothGatt?
@@ -34,7 +34,7 @@ class BluetoothLeDataPoller(
             object : BluetoothGattCallback() {
 
                 private var serviceSelected = false
-                private val tempProtocols: HashMap<UUID, FrSkySportProtocol> = HashMap()
+                private val tempProtocols: HashMap<UUID, CrsfProtocol> = HashMap()
                 private val validPacketCount: HashMap<UUID, Int> = HashMap()
 
                 override fun onCharacteristicChanged(
@@ -93,7 +93,7 @@ class BluetoothLeDataPoller(
                     if (notifyCharacteristicList != null && notifyCharacteristicList.isNotEmpty()) {
                         notifyCharacteristicList.forEach { characteristic ->
                             val sportProtocol =
-                                FrSkySportProtocol(object : DataDecoder.Companion.DefaultDecodeListener() {
+                                CrsfProtocol(object : DataDecoder.Companion.DefaultDecodeListener() {
 
                                     override fun onSuccessDecode() {
                                         validPacketCount[characteristic.uuid] =
@@ -105,7 +105,7 @@ class BluetoothLeDataPoller(
                                             notifyCharacteristicList.filter { it.uuid != entry.key }.forEach {
                                                 gatt.setCharacteristicNotification(it, false)
                                             }
-                                            protocol = FrSkySportProtocol(listener)
+                                            protocol = CrsfProtocol(listener)
                                             serviceSelected = true
                                             runOnMainThread(Runnable {
                                                 listener.onConnected()

@@ -8,7 +8,8 @@ abstract class DataDecoder(protected val listener: Listener) {
     companion object {
 
         enum class FlyMode {
-            ACRO, HORIZON, ANGLE, FAILSAFE, RTH, WAYPOINT, MANUAL, CRUISE
+            ACRO, HORIZON, ANGLE, FAILSAFE, RTH, WAYPOINT, MANUAL, CRUISE, HOLD, HOME_RESET, CRUISE3D, ALTHOLD, ERROR,
+            WAIT
         }
 
         open class DefaultDecodeListener: Listener {

@@ -1,6 +1,5 @@
 package crazydude.com.telemetry.protocol
 
-import androidx.annotation.IntDef
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
 
 abstract class Protocol(val dataDecoder: DataDecoder) {
@@ -28,29 +27,7 @@ abstract class Protocol(val dataDecoder: DataDecoder) {
         const val GPS_LONGITUDE = 18
         const val GPS_SATELLITES = 19
 
-        @Retention(AnnotationRetention.SOURCE)
-        @IntDef(
-            FUEL,
-            GPS,
-            VBAT,
-            CELL_VOLTAGE,
-            CURRENT,
-            HEADING,
-            RSSI,
-            FLYMODE,
-            GPS_STATE,
-            VSPEED,
-            ALTITUDE,
-            GSPEED,
-            DISTANCE,
-            ROLL,
-            PITCH,
-            GALT,
-            ASPEED
-        )
-        annotation class TelemetryType
-
-        data class TelemetryData(@TelemetryType val telemetryType: Int, val data: Int)
+        class TelemetryData(val telemetryType: Int, val data: Int, val rawData: ByteArray? = null)
     }
 
     abstract fun process(data: Int)

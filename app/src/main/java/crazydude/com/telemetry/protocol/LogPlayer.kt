@@ -2,7 +2,6 @@ package crazydude.com.telemetry.protocol
 
 import android.annotation.SuppressLint
 import android.os.AsyncTask
-import android.util.Log
 import com.google.android.gms.maps.model.LatLng
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import java.io.File
@@ -17,7 +16,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
     private var dataReadyListener: DataReadyListener? = null
     private var currentPosition: Int = 0
     private var uniqueData = HashMap<Int, Int>()
-    private var protocol: Protocol = FrSkySportProtocol(this)
+    private var protocol: Protocol = CrsfProtocol(this)
 
     private val task = @SuppressLint("StaticFieldLeak") object :
         AsyncTask<File, Long, ArrayList<Protocol.Companion.TelemetryData>>() {
@@ -26,7 +25,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
             val logFile = FileInputStream(file[0])
             val arrayList = ArrayList<Protocol.Companion.TelemetryData>()
 
-            val tempProtocol = FrSkySportProtocol(this@LogPlayer, object : DataDecoder(this@LogPlayer) {
+            val tempProtocol = CrsfProtocol(this@LogPlayer, object : DataDecoder(this@LogPlayer) {
                 override fun decodeData(data: Protocol.Companion.TelemetryData) {
                     arrayList.add(data)
                 }
@@ -70,7 +69,9 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
         val addToEnd: Boolean
         if (position > currentPosition) {
             for (i in currentPosition until position) {
-                if (cachedData[i].telemetryType == Protocol.GPS) {
+                if (cachedData[i].telemetryType == Protocol.GPS || cachedData[i].telemetryType == Protocol.GPS_LATITUDE
+                    || cachedData[i].telemetryType == Protocol.GPS_LONGITUDE
+                ) {
                     protocol.dataDecoder.decodeData(cachedData[i])
                 } else {
                     uniqueData[cachedData[i].telemetryType] = i
