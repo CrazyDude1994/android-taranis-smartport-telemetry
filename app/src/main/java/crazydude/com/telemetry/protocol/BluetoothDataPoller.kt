@@ -35,7 +35,7 @@ class BluetoothDataPoller(
                     val size = bluetoothSocket.inputStream.read(buffer)
                     outputStream?.write(buffer, 0, size)
                     for (i in 0 until size) {
-                        protocol.process(buffer[i].toInt())
+                        protocol.process(buffer[i].toUByte().toInt())
                     }
                 }
             } catch (e: IOException) {

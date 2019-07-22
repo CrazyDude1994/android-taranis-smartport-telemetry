@@ -48,13 +48,13 @@ class BluetoothLeDataPoller(
                             characteristic.value?.let { bytes ->
                                 outputStream?.write(bytes)
                                 bytes.forEach {
-                                    protocol.process(it.toInt())
+                                    protocol.process(it.toUByte().toInt())
                                 }
                             }
                         } else {
                             characteristic.value?.let { bytes ->
                                 bytes.forEach {
-                                    tempProtocols[characteristic.uuid]?.process(it.toInt())
+                                    tempProtocols[characteristic.uuid]?.process(it.toUByte().toInt())
                                 }
                             }
                         }
@@ -120,7 +120,7 @@ class BluetoothLeDataPoller(
                             tempProtocols.put(characteristic.uuid, sportProtocol)
                             gatt.setCharacteristicNotification(characteristic, true)
                             AsyncTask.execute {
-                                Thread.sleep(5000)
+                                Thread.sleep(20000)
                                 if (!serviceSelected) {
                                     notifyCharacteristicList.forEach {
                                         gatt.setCharacteristicNotification(it, false)

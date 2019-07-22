@@ -23,6 +23,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -64,6 +65,8 @@ class MainActivity : AppCompatActivity() {
     private fun startBleServer(data: Uri) {
         val inputStream = contentResolver.openInputStream(data) ?: return
 
+        logFile = inputStream.readBytes()
+
         var openGattServer: BluetoothGattServer? = null
 
         val bluetoothGattService = BluetoothGattService(UUID.randomUUID(), BluetoothGattService.SERVICE_TYPE_PRIMARY)
@@ -101,10 +104,11 @@ class MainActivity : AppCompatActivity() {
         openGattServer.addService(bluetoothGattService)
         Thread(Runnable {
             val buffer = ByteArray(256)
+            val stream = logFile?.inputStream() ?: return@Runnable
             while (!isFinishing) {
-                val read = inputStream.read(buffer)
+                val read = stream.read(buffer)
                 if (read < 256) {
-                    inputStream.reset()
+                    stream.reset()
                 }
                 characteristic.value = buffer
                 devices.forEach { openGattServer?.notifyCharacteristicChanged(it, characteristic, false) }
