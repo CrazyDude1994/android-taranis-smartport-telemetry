@@ -68,6 +68,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     private lateinit var followButton: FloatingActionButton
     private lateinit var mapTypeButton: FloatingActionButton
     private lateinit var fullscreenButton: FloatingActionButton
+    private lateinit var directionsButton: FloatingActionButton
     private lateinit var settingsButton: ImageView
     private lateinit var topLayout: RelativeLayout
     private lateinit var horizonView: HorizonView
@@ -132,6 +133,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         seekBar = findViewById(R.id.seekbar)
         horizonView = findViewById(R.id.horizon_view)
         fullscreenButton = findViewById(R.id.fullscreen_button)
+        directionsButton = findViewById(R.id.directions_button)
 
         firebaseAnalytics = FirebaseAnalytics.getInstance(this)
 
@@ -143,7 +145,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
             if (window.decorView.systemUiVisibility == (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)) {
                 window.decorView.systemUiVisibility = 0
             } else {
-                window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
+                window.decorView.systemUiVisibility =
+                    (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
             }
         }
 
@@ -156,6 +159,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
 
         mapTypeButton.setOnClickListener {
             showMapTypeSelectorDialog()
+        }
+
+        directionsButton.setOnClickListener {
+            showDirectionsToCurrentLocation()
+        }
+
+        directionsButton.setOnLongClickListener {
+            showAndCopyCurrentGPSLocation()
+            true
         }
 
         if (isInReplayMode()) {
@@ -171,6 +183,27 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         startDataService()
 
         checkAppInstallDate()
+    }
+
+    private fun showAndCopyCurrentGPSLocation() {
+        marker?.let {
+            val posString = "${it.position.latitude},${it.position.longitude}"
+            val clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            clipboardManager.primaryClip = ClipData.newPlainText("Location", posString)
+            Toast.makeText(this, "Current plane location copied to clipboard ($posString)", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun showDirectionsToCurrentLocation() {
+        marker?.let {
+            val posString = "${it.position.latitude},${it.position.longitude}"
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("http://maps.google.com/maps?daddr=$posString"))
+            try {
+                startActivity(intent)
+            } catch (e: ActivityNotFoundException) {
+                Toast.makeText(this, "Cannot build directions", Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     private fun checkAppInstallDate() {
@@ -728,6 +761,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     private fun switchToReplayMode() {
         seekBar.setOnSeekBarChangeListener(null)
         seekBar.progress = 0
+        directionsButton.show()
         connectButton.visibility = View.GONE
         replayButton.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_close))
         replayButton.setOnClickListener {
@@ -738,6 +772,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
 
     private fun switchToIdleState() {
         resetUI()
+        directionsButton.hide()
         seekBar.visibility = View.GONE
         connectButton.visibility = View.VISIBLE
         connectButton.text = getString(R.string.connect)

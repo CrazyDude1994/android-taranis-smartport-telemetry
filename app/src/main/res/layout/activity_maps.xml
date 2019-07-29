@@ -2,6 +2,7 @@
 <androidx.coordinatorlayout.widget.CoordinatorLayout
         xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:keepScreenOn="true"
         android:layout_height="match_parent">
@@ -73,6 +74,19 @@
                 android:layout_margin="8dp"
                 android:layout_width="wrap_content"
                 android:layout_above="@id/follow_button"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"/>
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+                app:fabSize="mini"
+                tools:visibility="visible"
+                android:visibility="gone"
+                android:id="@+id/directions_button"
+                android:layout_alignParentEnd="true"
+                android:src="@drawable/ic_directions"
+                android:layout_margin="8dp"
+                android:layout_width="wrap_content"
+                android:layout_above="@id/fullscreen_button"
                 android:layout_height="wrap_content"
                 android:layout_alignParentRight="true"/>
 
