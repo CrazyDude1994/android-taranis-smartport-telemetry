@@ -1,6 +1,7 @@
 package crazydude.com.telemetry.ui
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.app.ProgressDialog
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
@@ -399,6 +400,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         if (!adapter.isEnabled) {
             val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
+            return
         }
         if (preferenceManager.isLoggingEnabled()) {
             if (ContextCompat.checkSelfPermission(
@@ -547,6 +549,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
                         .show()
                 }
             }
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_ENABLE_BT && resultCode == Activity.RESULT_OK) {
+            connect()
         }
     }
 
