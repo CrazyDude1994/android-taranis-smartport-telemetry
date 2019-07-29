@@ -253,6 +253,10 @@ class MainActivity : AppCompatActivity() {
     private fun connectBl(bluetoothDevice: BluetoothDevice) {
         bluetoothAdapter.cancelDiscovery()
         try {
+/*
+            val bluetoothSocket =
+                bluetoothDevice.createRfcommSocketToServiceRecord(UUID.fromString("00000000-deca-fade-deca-deafdecaff"))
+*/
             val bluetoothSocket =
                 bluetoothDevice.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
             try {
