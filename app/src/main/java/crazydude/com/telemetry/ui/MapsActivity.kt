@@ -726,6 +726,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     }
 
     private fun switchToReplayMode() {
+        seekBar.setOnSeekBarChangeListener(null)
+        seekBar.progress = 0
         connectButton.visibility = View.GONE
         replayButton.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_close))
         replayButton.setOnClickListener {
@@ -749,6 +751,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
             connect()
         }
         marker?.remove()
+        marker = null
         val points = polyLine?.points
         points?.clear()
         polyLine?.points = points
