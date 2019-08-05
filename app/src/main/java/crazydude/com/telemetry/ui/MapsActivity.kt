@@ -30,13 +30,17 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
+import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.iid.FirebaseInstanceId
+import com.google.firebase.messaging.FirebaseMessaging
+import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.maps.android.SphericalUtil
 import crazydude.com.telemetry.R
 import crazydude.com.telemetry.manager.PreferenceManager
-import crazydude.com.telemetry.protocol.DataDecoder
 import crazydude.com.telemetry.protocol.LogPlayer
+import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import crazydude.com.telemetry.service.DataService
 import java.io.File
 import kotlin.math.roundToInt
@@ -318,46 +322,67 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         firstFlightMode: DataDecoder.Companion.FlyMode,
         secondFlightMode: DataDecoder.Companion.FlyMode?
     ) {
-        if (armed) {
-            mode.text = "Armed"
-        } else {
-            mode.text = "Disarmed"
-        }
-
-        if (heading) {
-            mode.text = mode.text.toString() + " | Heading"
-        }
-
-        if (secondFlightMode == null) {
-            when (firstFlightMode) {
-                DataDecoder.Companion.FlyMode.ACRO -> {
-                    mode.text = mode.text.toString() + " | Acro"
-                }
-                DataDecoder.Companion.FlyMode.HORIZON -> {
-                    mode.text = mode.text.toString() + " | Horizon"
-                }
-                DataDecoder.Companion.FlyMode.ANGLE -> {
-                    mode.text = mode.text.toString() + " | Angle"
-                }
+        runOnUiThread {
+            if (armed) {
+                mode.text = "Armed"
+            } else {
+                mode.text = "Disarmed"
             }
-        } else {
-            when (secondFlightMode) {
-                DataDecoder.Companion.FlyMode.FAILSAFE -> {
-                    mode.text = mode.text.toString() + " | Failsafe"
-                }
-                DataDecoder.Companion.FlyMode.RTH -> {
-                    mode.text = mode.text.toString() + " | RTH"
-                }
-                DataDecoder.Companion.FlyMode.WAYPOINT -> {
-                    mode.text = mode.text.toString() + " | Waypoint"
-                }
-                DataDecoder.Companion.FlyMode.MANUAL -> {
-                    mode.text = mode.text.toString() + " | Manual"
-                }
-                DataDecoder.Companion.FlyMode.CRUISE -> {
-                    mode.text = mode.text.toString() + " | Cruise"
-                }
+
+            if (heading) {
+                mode.text = mode.text.toString() + " | Heading"
             }
+
+            decodeMode(firstFlightMode)
+            decodeMode(secondFlightMode)
+        }
+    }
+
+    private fun decodeMode(flyMode: DataDecoder.Companion.FlyMode?) {
+        when (flyMode) {
+            DataDecoder.Companion.FlyMode.ACRO -> {
+                mode.text = mode.text.toString() + " | Acro"
+            }
+            DataDecoder.Companion.FlyMode.HORIZON -> {
+                mode.text = mode.text.toString() + " | Horizon"
+            }
+            DataDecoder.Companion.FlyMode.ANGLE -> {
+                mode.text = mode.text.toString() + " | Angle"
+            }
+            DataDecoder.Companion.FlyMode.FAILSAFE -> {
+                mode.text = mode.text.toString() + " | Failsafe"
+            }
+            DataDecoder.Companion.FlyMode.RTH -> {
+                mode.text = mode.text.toString() + " | RTH"
+            }
+            DataDecoder.Companion.FlyMode.WAYPOINT -> {
+                mode.text = mode.text.toString() + " | Waypoint"
+            }
+            DataDecoder.Companion.FlyMode.MANUAL -> {
+                mode.text = mode.text.toString() + " | Manual"
+            }
+            DataDecoder.Companion.FlyMode.CRUISE -> {
+                mode.text = mode.text.toString() + " | Cruise"
+            }
+            DataDecoder.Companion.FlyMode.HOLD -> {
+                mode.text = mode.text.toString() + " | Hold"
+            }
+            DataDecoder.Companion.FlyMode.HOME_RESET -> {
+                mode.text = mode.text.toString() + " | Home reset"
+            }
+            DataDecoder.Companion.FlyMode.CRUISE3D -> {
+                mode.text = mode.text.toString() + " | 3D Cruise"
+            }
+            DataDecoder.Companion.FlyMode.ALTHOLD -> {
+                mode.text = mode.text.toString() + " | Alt hold"
+            }
+            DataDecoder.Companion.FlyMode.ERROR -> {
+                mode.text = mode.text.toString() + " | !ERROR!"
+            }
+            DataDecoder.Companion.FlyMode.WAIT -> {
+                mode.text = mode.text.toString() + " | GPS wait"
+            }
+            null -> {}
         }
     }
 
@@ -564,7 +589,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     }
 
     override fun onAltitudeData(altitude: Float) {
-        this.altitude.text = "$altitude m"
+        runOnUiThread {
+            this.altitude.text = "$altitude m"
+        }
     }
 
     override fun onGPSAltitudeData(altitude: Float) {
@@ -572,26 +599,36 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     }
 
     override fun onDistanceData(distance: Int) {
-        this.distance.text = "$distance m"
+        runOnUiThread {
+            this.distance.text = "$distance m"
+        }
     }
 
     override fun onRollData(rollAngle: Float) {
-        horizonView.setRoll(rollAngle)
+        runOnUiThread {
+            horizonView.setRoll(rollAngle)
+        }
     }
 
     override fun onPitchData(pitchAngle: Float) {
-        horizonView.setPitch(pitchAngle)
+        runOnUiThread {
+            horizonView.setPitch(pitchAngle)
+        }
     }
 
     override fun onGSpeedData(speed: Float) {
-        if (!preferenceManager.usePitotTube()) {
-            updateSpeed(speed)
+        runOnUiThread {
+            if (!preferenceManager.usePitotTube()) {
+                updateSpeed(speed)
+            }
         }
     }
 
     override fun onAirSpeed(speed: Float) {
-        if (preferenceManager.usePitotTube()) {
-            updateSpeed(speed)
+        runOnUiThread {
+            if (preferenceManager.usePitotTube()) {
+                updateSpeed(speed)
+            }
         }
     }
 
@@ -600,22 +637,24 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     }
 
     override fun onGPSState(satellites: Int, gpsFix: Boolean) {
-        this.hasGPSFix = gpsFix
-        if (gpsFix && marker == null) {
-            marker = map?.addMarker(
-                MarkerOptions().icon(
-                    bitmapDescriptorFromVector(
-                        this,
-                        R.drawable.ic_plane, preferenceManager.getPlaneColor()
-                    )
-                ).position(lastGPS)
-            )
-            if (headingPolyline == null && preferenceManager.isHeadingLineEnabled()) {
-                headingPolyline = createHeadingPolyline()
+        runOnUiThread {
+            this.hasGPSFix = gpsFix
+            if (gpsFix && marker == null) {
+                marker = map?.addMarker(
+                    MarkerOptions().icon(
+                        bitmapDescriptorFromVector(
+                            this,
+                            R.drawable.ic_plane, preferenceManager.getPlaneColor()
+                        )
+                    ).position(lastGPS)
+                )
+                if (headingPolyline == null && preferenceManager.isHeadingLineEnabled()) {
+                    headingPolyline = createHeadingPolyline()
+                }
+                map?.moveCamera(CameraUpdateFactory.newLatLngZoom(lastGPS, 15f))
             }
-            map?.moveCamera(CameraUpdateFactory.newLatLngZoom(lastGPS, 15f))
+            this.satellites.text = satellites.toString()
         }
-        this.satellites.text = satellites.toString()
     }
 
     private fun createHeadingPolyline(): Polyline? {
@@ -729,18 +768,24 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
 
     override fun onVBATData(voltage: Float) {
         lastVBAT = voltage
-        updateVoltage()
+        runOnUiThread {
+            updateVoltage()
+        }
     }
 
     override fun onCurrentData(current: Float) {
-        this.current.text = "$current A"
+        runOnUiThread {
+            this.current.text = "$current A"
+        }
     }
 
     override fun onHeadingData(heading: Float) {
         lastHeading = heading
-        marker?.let {
-            it.rotation = heading
-            updateHeading()
+        runOnUiThread {
+            marker?.let {
+                it.rotation = heading
+                updateHeading()
+            }
         }
     }
 
@@ -755,7 +800,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
 
     override fun onCellVoltageData(voltage: Float) {
         lastCellVoltage = voltage
-        updateVoltage()
+        runOnUiThread {
+            updateVoltage()
+        }
     }
 
     private fun updateVoltage() {
@@ -814,89 +861,101 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     }
 
     override fun onConnectionFailed() {
-        Toast.makeText(this, "Connection failed", Toast.LENGTH_SHORT).show()
-        connectButton.text = getString(R.string.connect)
-        connectButton.isEnabled = true
-        connectButton.setOnClickListener {
-            connect()
+        runOnUiThread {
+            Toast.makeText(this, "Connection failed", Toast.LENGTH_SHORT).show()
+            connectButton.text = getString(R.string.connect)
+            connectButton.isEnabled = true
+            connectButton.setOnClickListener {
+                connect()
+            }
         }
     }
 
     override fun onFuelData(fuel: Int) {
-        val batteryUnits = preferenceManager.getBatteryUnits()
-        var realFuel = fuel
+        runOnUiThread {
+            val batteryUnits = preferenceManager.getBatteryUnits()
+            var realFuel = fuel
 
-        when (batteryUnits) {
-            "mAh", "mWh" -> {
-                this.fuel.text = "$fuel $batteryUnits"
-                realFuel = ((1 - (4.2f - lastCellVoltage)).coerceIn(0f, 1f) * 100).toInt()
+            when (batteryUnits) {
+                "mAh", "mWh" -> {
+                    this.fuel.text = "$fuel $batteryUnits"
+                    realFuel = ((1 - (4.2f - lastCellVoltage)).coerceIn(0f, 1f) * 100).toInt()
+                }
+                "Percentage" -> {
+                    this.fuel.text = "$fuel%"
+                }
             }
-            "Percentage" -> {
-                this.fuel.text = "$fuel%"
+
+            when (realFuel) {
+                in 91..100 -> R.drawable.ic_battery_full
+                in 81..90 -> R.drawable.ic_battery_90
+                in 61..80 -> R.drawable.ic_battery_80
+                in 51..60 -> R.drawable.ic_battery_60
+                in 31..50 -> R.drawable.ic_battery_50
+                in 21..30 -> R.drawable.ic_battery_30
+                in 0..20 -> R.drawable.ic_battery_alert
+                else -> R.drawable.ic_battery_unknown
+            }.let {
+                if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                    this.fuel.setCompoundDrawablesWithIntrinsicBounds(
+                        ContextCompat.getDrawable(this, it),
+                        null,
+                        null,
+                        null
+                    )
+                } else {
+                    this.fuel.setCompoundDrawablesWithIntrinsicBounds(
+                        null,
+                        ContextCompat.getDrawable(this, it),
+                        null,
+                        null
+                    )
+                }
             }
         }
+    }
 
-        when (realFuel) {
-            in 91..100 -> R.drawable.ic_battery_full
-            in 81..90 -> R.drawable.ic_battery_90
-            in 61..80 -> R.drawable.ic_battery_80
-            in 51..60 -> R.drawable.ic_battery_60
-            in 31..50 -> R.drawable.ic_battery_50
-            in 21..30 -> R.drawable.ic_battery_30
-            in 0..20 -> R.drawable.ic_battery_alert
-            else -> R.drawable.ic_battery_unknown
-        }.let {
-            if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                this.fuel.setCompoundDrawablesWithIntrinsicBounds(
-                    ContextCompat.getDrawable(this, it),
-                    null,
-                    null,
-                    null
-                )
-            } else {
-                this.fuel.setCompoundDrawablesWithIntrinsicBounds(
-                    null,
-                    ContextCompat.getDrawable(this, it),
-                    null,
-                    null
-                )
-            }
-        }
-
+    override fun onSuccessDecode() {
 
     }
 
     override fun onGPSData(list: List<LatLng>, addToEnd: Boolean) {
-        if (hasGPSFix && list.isNotEmpty()) {
-            val points = polyLine?.points
-            if (!addToEnd) {
-                points?.clear()
+        runOnUiThread {
+            if (hasGPSFix && list.isNotEmpty()) {
+                val points = polyLine?.points
+                if (!addToEnd) {
+                    points?.clear()
+                }
+                points?.addAll(list)
+                points?.removeAt(points.size - 1)
+                polyLine?.points = points
+                onGPSData(list[list.size - 1].latitude, list[list.size - 1].longitude)
             }
-            points?.addAll(list)
-            points?.removeAt(points.size - 1)
-            polyLine?.points = points
-            onGPSData(list[list.size - 1].latitude, list[list.size - 1].longitude)
         }
     }
 
     override fun onGPSData(latitude: Double, longitude: Double) {
-        if (LatLng(latitude, longitude) != lastGPS) {
-            lastGPS = LatLng(latitude, longitude)
-            marker?.let { it.position = lastGPS }
-            updateHeading()
-            if (followMode) {
-                map?.moveCamera(CameraUpdateFactory.newLatLng(lastGPS))
-            }
-            if (hasGPSFix) {
-                val points = polyLine?.points
-                points?.add(lastGPS)
-                polyLine?.points = points
+        runOnUiThread {
+            if (LatLng(latitude, longitude) != lastGPS) {
+                lastGPS = LatLng(latitude, longitude)
+                marker?.let { it.position = lastGPS }
+                updateHeading()
+                if (followMode) {
+                    map?.moveCamera(CameraUpdateFactory.newLatLng(lastGPS))
+                }
+                if (hasGPSFix) {
+                    val points = polyLine?.points
+                    points?.add(lastGPS)
+                    polyLine?.points = points
+                }
             }
         }
     }
 
     override fun onConnected() {
-        Toast.makeText(this, "Connected!", Toast.LENGTH_SHORT).show()
-        switchToConnectedState()
+        runOnUiThread {
+            Toast.makeText(this, "Connected!", Toast.LENGTH_SHORT).show()
+            switchToConnectedState()
+        }
     }
 }

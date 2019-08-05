@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
 import android.view.View
@@ -22,19 +23,23 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.util.*
+import kotlin.collections.HashSet
 
 class MainActivity : AppCompatActivity() {
 
     private val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
     private var broadcastReceiver: BroadcastReceiver? = null
+    private var logFile: ByteArray? = null
 
     companion object {
         private const val REQUEST_ENABLE_BT_BL: Int = 0
         private const val REQUEST_ENABLE_BT_BLE: Int = 1
+        private const val REQUEST_SELECT_FILE: Int = 2
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,6 +53,68 @@ class MainActivity : AppCompatActivity() {
         bleConnectButton.setOnClickListener {
             connectBle()
         }
+
+        bleEmulator.setOnClickListener {
+            val intent = Intent(Intent.ACTION_GET_CONTENT)
+            intent.type = "*/*"
+            startActivityForResult(intent, REQUEST_SELECT_FILE)
+        }
+    }
+
+    @SuppressLint("NewApi")
+    private fun startBleServer(data: Uri) {
+        val inputStream = contentResolver.openInputStream(data) ?: return
+
+        logFile = inputStream.readBytes()
+
+        var openGattServer: BluetoothGattServer? = null
+
+        val bluetoothGattService = BluetoothGattService(UUID.randomUUID(), BluetoothGattService.SERVICE_TYPE_PRIMARY)
+        val characteristic = BluetoothGattCharacteristic(
+            UUID.randomUUID(),
+            BluetoothGattCharacteristic.PROPERTY_READ or BluetoothGattCharacteristic.PROPERTY_NOTIFY,
+            BluetoothGattCharacteristic.PERMISSION_READ
+        )
+        bluetoothGattService.addCharacteristic(characteristic)
+
+        val devices = HashSet<BluetoothDevice>()
+
+        openGattServer = (getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).openGattServer(this,
+            object : BluetoothGattServerCallback() {
+
+                override fun onCharacteristicReadRequest(
+                    device: BluetoothDevice?,
+                    requestId: Int,
+                    offset: Int,
+                    characteristic: BluetoothGattCharacteristic?
+                ) {
+                    super.onCharacteristicReadRequest(device, requestId, offset, characteristic)
+                    openGattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, "LOL".toByteArray())
+                }
+
+                override fun onConnectionStateChange(device: BluetoothDevice?, status: Int, newState: Int) {
+                    super.onConnectionStateChange(device, status, newState)
+                    if (newState == BluetoothProfile.STATE_CONNECTED) {
+                        device?.let { devices.add(it) }
+                    } else {
+                        devices.remove(device)
+                    }
+                }
+            })
+        openGattServer.addService(bluetoothGattService)
+        Thread(Runnable {
+            val buffer = ByteArray(256)
+            val stream = logFile?.inputStream() ?: return@Runnable
+            while (!isFinishing) {
+                val read = stream.read(buffer)
+                if (read < 256) {
+                    stream.reset()
+                }
+                characteristic.value = buffer
+                devices.forEach { openGattServer?.notifyCharacteristicChanged(it, characteristic, false) }
+                Thread.sleep(250)
+            }
+        }).start()
     }
 
     @SuppressLint("NewApi")
@@ -186,6 +253,10 @@ class MainActivity : AppCompatActivity() {
     private fun connectBl(bluetoothDevice: BluetoothDevice) {
         bluetoothAdapter.cancelDiscovery()
         try {
+/*
+            val bluetoothSocket =
+                bluetoothDevice.createRfcommSocketToServiceRecord(UUID.fromString("00000000-deca-fade-deca-deafdecaff"))
+*/
             val bluetoothSocket =
                 bluetoothDevice.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
             try {
@@ -304,6 +375,9 @@ class MainActivity : AppCompatActivity() {
                 }
                 REQUEST_ENABLE_BT_BLE -> {
                     connectBle()
+                }
+                REQUEST_SELECT_FILE -> {
+                    data?.data?.let { startBleServer(it) }
                 }
             }
         }

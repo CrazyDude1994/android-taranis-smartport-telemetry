@@ -3,6 +3,7 @@ package crazydude.com.telemetry.protocol
 import android.annotation.SuppressLint
 import android.os.AsyncTask
 import com.google.android.gms.maps.model.LatLng
+import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import java.io.File
 import java.io.FileInputStream
 import java.util.*
@@ -10,21 +11,22 @@ import kotlin.collections.ArrayList
 
 class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listener {
 
-    private var cachedData = ArrayList<FrSkySportProtocol.Companion.TelemetryData>()
+    private var cachedData = ArrayList<Protocol.Companion.TelemetryData>()
     private var decodedCoordinates = ArrayList<LatLng>()
     private var dataReadyListener: DataReadyListener? = null
     private var currentPosition: Int = 0
-    private var dataDecoder: DataDecoder = DataDecoder(this)
     private var uniqueData = HashMap<Int, Int>()
+    private var protocol: Protocol = CrsfProtocol(this)
 
     private val task = @SuppressLint("StaticFieldLeak") object :
-        AsyncTask<File, Long, ArrayList<FrSkySportProtocol.Companion.TelemetryData>>() {
+        AsyncTask<File, Long, ArrayList<Protocol.Companion.TelemetryData>>() {
 
-        override fun doInBackground(vararg file: File): ArrayList<FrSkySportProtocol.Companion.TelemetryData> {
+        override fun doInBackground(vararg file: File): ArrayList<Protocol.Companion.TelemetryData> {
             val logFile = FileInputStream(file[0])
-            val arrayList = ArrayList<FrSkySportProtocol.Companion.TelemetryData>()
-            val protocol = FrSkySportProtocol(object : FrSkySportProtocol.Companion.DataListener {
-                override fun onNewData(data: FrSkySportProtocol.Companion.TelemetryData) {
+            val arrayList = ArrayList<Protocol.Companion.TelemetryData>()
+
+            val tempProtocol = CrsfProtocol(this@LogPlayer, object : DataDecoder(this@LogPlayer) {
+                override fun decodeData(data: Protocol.Companion.TelemetryData) {
                     arrayList.add(data)
                 }
             })
@@ -35,7 +37,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
             var allBytes = bytesRead
             while (bytesRead == size) {
                 for (i in 0 until bytesRead) {
-                    protocol.process(bytes[i].toInt())
+                    tempProtocol.process(bytes[i].toUByte().toInt())
                 }
                 publishProgress(((allBytes / file[0].length().toFloat()) * 100).toLong())
                 bytesRead = logFile.read(bytes)
@@ -49,15 +51,11 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
             values.let { dataReadyListener?.onUpdate(values[0]?.toInt() ?: 0) }
         }
 
-        override fun onPostExecute(result: ArrayList<FrSkySportProtocol.Companion.TelemetryData>) {
+        override fun onPostExecute(result: ArrayList<Protocol.Companion.TelemetryData>) {
             cachedData = result
             dataReadyListener?.onDataReady(result.size)
         }
 
-    }
-
-    companion object {
-        private const val TAG = "LogPlayer"
     }
 
     fun load(file: File, dataReadyListener: DataReadyListener) {
@@ -71,8 +69,10 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
         val addToEnd: Boolean
         if (position > currentPosition) {
             for (i in currentPosition until position) {
-                if (cachedData[i].telemetryType == FrSkySportProtocol.GPS) {
-                    dataDecoder.onNewData(cachedData[i])
+                if (cachedData[i].telemetryType == Protocol.GPS || cachedData[i].telemetryType == Protocol.GPS_LATITUDE
+                    || cachedData[i].telemetryType == Protocol.GPS_LONGITUDE
+                ) {
+                    protocol.dataDecoder.decodeData(cachedData[i])
                 } else {
                     uniqueData[cachedData[i].telemetryType] = i
                 }
@@ -81,8 +81,8 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
             currentPosition = position
         } else {
             for (i in 0 until position) {
-                if (cachedData[i].telemetryType == FrSkySportProtocol.GPS) {
-                    dataDecoder.onNewData(cachedData[i])
+                if (cachedData[i].telemetryType == Protocol.GPS) {
+                    protocol.dataDecoder.decodeData(cachedData[i])
                 } else {
                     uniqueData[cachedData[i].telemetryType] = i
                 }
@@ -91,7 +91,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
             addToEnd = false
         }
         uniqueData.entries.forEach {
-            dataDecoder.onNewData(cachedData[it.value])
+            protocol.dataDecoder.decodeData(cachedData[it.value])
         }
         originalListener.onGPSData(decodedCoordinates, addToEnd)
     }
@@ -171,6 +171,10 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
 
     override fun onGSpeedData(speed: Float) {
         originalListener.onGSpeedData(speed)
+    }
+
+    override fun onSuccessDecode() {
+        originalListener.onSuccessDecode()
     }
 
     override fun onFlyModeData(

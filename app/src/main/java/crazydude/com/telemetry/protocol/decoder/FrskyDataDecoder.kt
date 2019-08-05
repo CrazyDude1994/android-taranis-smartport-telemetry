@@ -1,30 +1,22 @@
-package crazydude.com.telemetry.protocol
+package crazydude.com.telemetry.protocol.decoder
 
-import android.util.Log
-import com.google.android.gms.maps.model.LatLng
+import crazydude.com.telemetry.protocol.Protocol
 import java.io.IOException
 
-class DataDecoder(private val listener: Listener) : FrSkySportProtocol.Companion.DataListener {
+class FrskyDataDecoder(listener: Listener) : DataDecoder(listener) {
 
     private var newLatitude = false
     private var newLongitude = false
     private var latitude: Double = 0.0
     private var longitude: Double = 0.0
 
-    companion object {
-        private const val TAG = "DataDecoder"
-
-        enum class FlyMode {
-            ACRO, HORIZON, ANGLE, FAILSAFE, RTH, WAYPOINT, MANUAL, CRUISE
-        }
-    }
-
-    override fun onNewData(data: FrSkySportProtocol.Companion.TelemetryData) {
+    override fun decodeData(data: Protocol.Companion.TelemetryData) {
+        var decoded = true
         when (data.telemetryType) {
-            FrSkySportProtocol.FUEL -> {
+            Protocol.FUEL -> {
                 listener.onFuelData(data.data)
             }
-            FrSkySportProtocol.GPS -> {
+            Protocol.GPS -> {
                 var gpsData = (data.data and 0x3FFFFFFF) / 10000.0 / 60.0
                 if (data.data and 0x40000000 > 0) {
                     gpsData = -gpsData
@@ -48,141 +40,127 @@ class DataDecoder(private val listener: Listener) : FrSkySportProtocol.Companion
 //                    Log.d(TAG, "Decoded GPS lat=$latitude long=$longitude")
                 }
             }
-            FrSkySportProtocol.VBAT -> {
+            Protocol.VBAT -> {
                 val value = data.data / 100f
                 listener.onVBATData(value)
 //                Log.d(TAG, "Decoded vbat $value")
             }
-            FrSkySportProtocol.CELL_VOLTAGE -> {
+            Protocol.CELL_VOLTAGE -> {
                 val value = data.data / 100f
                 listener.onCellVoltageData(value)
 //                Log.d(TAG, "Decoded cell voltage $value")
             }
-            FrSkySportProtocol.CURRENT -> {
+            Protocol.CURRENT -> {
                 val value = data.data / 10f
                 listener.onCurrentData(value)
 //                Log.d(TAG, "Decoded current $value")
             }
 
-            FrSkySportProtocol.HEADING -> {
+            Protocol.HEADING -> {
                 val value = data.data / 100f
                 listener.onHeadingData(value)
 //                Log.d(TAG, "Decoded heading $value")
             }
-            FrSkySportProtocol.RSSI -> {
+            Protocol.RSSI -> {
                 listener.onRSSIData(data.data)
             }
 
-            FrSkySportProtocol.FLYMODE -> {
+            Protocol.FLYMODE -> {
                 val modeA = data.data / 10000
                 val modeB = data.data / 1000 % 10
                 val modeC = data.data / 100 % 10
                 val modeD = data.data / 10 % 10
                 val modeE = data.data % 10
 
-                val firstFlightMode: FlyMode
-                val secondFlightMode: FlyMode?
+                val firstFlightMode: Companion.FlyMode
+                val secondFlightMode: Companion.FlyMode?
 
                 if (modeD and 2 == 2) {
-                    firstFlightMode = FlyMode.HORIZON
+                    firstFlightMode = Companion.FlyMode.HORIZON
                 } else if (modeD and 1 == 1) {
-                    firstFlightMode = FlyMode.ANGLE
+                    firstFlightMode = Companion.FlyMode.ANGLE
                 } else {
-                    firstFlightMode = FlyMode.ACRO
+                    firstFlightMode = Companion.FlyMode.ACRO
                 }
 
                 val armed = modeE and 4 == 4
                 val heading = modeC and 1 == 1
 
                 if (modeA and 4 == 4) {
-                    secondFlightMode = FlyMode.FAILSAFE
+                    secondFlightMode = Companion.FlyMode.FAILSAFE
                 } else if (modeB and 1 == 1) {
-                    secondFlightMode = FlyMode.RTH
+                    secondFlightMode = Companion.FlyMode.RTH
                 } else if (modeD and 4 == 4) {
-                    secondFlightMode = FlyMode.MANUAL
+                    secondFlightMode = Companion.FlyMode.MANUAL
                 } else if (modeB and 2 == 2) {
-                    secondFlightMode = FlyMode.WAYPOINT
+                    secondFlightMode = Companion.FlyMode.WAYPOINT
                 } else if (modeB and 8 == 8) {
-                    secondFlightMode = FlyMode.CRUISE
+                    secondFlightMode = Companion.FlyMode.CRUISE
                 } else {
                     secondFlightMode = null
                 }
 
                 listener.onFlyModeData(armed, heading, firstFlightMode, secondFlightMode)
             }
-            FrSkySportProtocol.GPS_STATE -> {
+            Protocol.GPS_STATE -> {
                 val satellites = data.data % 100
                 val isFix = data.data > 1000
                 listener.onGPSState(satellites, isFix)
 //                Log.d(TAG, "Decoded satellites $satellites isFix=$isFix")
             }
-            FrSkySportProtocol.VSPEED -> {
+            Protocol.VSPEED -> {
                 val value = data.data / 100f
                 listener.onVSpeedData(value)
 //                Log.d(TAG, "Decoded vspeed $value")
             }
-            FrSkySportProtocol.ALTITUDE -> {
+            Protocol.ALTITUDE -> {
                 val value = data.data / 100f
                 listener.onAltitudeData(value)
 //                Log.d(TAG, "Decoded altitutde $value")
             }
-            FrSkySportProtocol.GSPEED -> {
+            Protocol.GSPEED -> {
                 val value = (data.data / (1944f / 100f)) / 27.778f
                 listener.onGSpeedData(value)
 //                Log.d(TAG, "Decoded GSpeed $value")
             }
-            FrSkySportProtocol.DISTANCE -> {
+            Protocol.DISTANCE -> {
                 listener.onDistanceData(data.data)
 //                Log.d(TAG, "Decoded distance ${data.data}")
             }
-            FrSkySportProtocol.ROLL -> {
+            Protocol.ROLL -> {
                 val value = data.data / 10f
                 listener.onRollData(value)
 //                Log.d(TAG, "Decoded roll $value")
             }
-            FrSkySportProtocol.GALT -> {
+            Protocol.GALT -> {
                 val value = data.data / 100f
                 listener.onGPSAltitudeData(value)
 //                Log.d(TAG, "Decoded gps altitude $value")
             }
-            FrSkySportProtocol.PITCH -> {
+            Protocol.PITCH -> {
                 val value = data.data / 10f
                 listener.onPitchData(value)
 //                Log.d(TAG, "Decoded pitch $value")
             }
-            FrSkySportProtocol.ASPEED -> {
+            Protocol.ASPEED -> {
                 listener.onAirSpeed(data.data * 1.852f)
             }
-            else -> {}
-        }
-    }
+            Protocol.GPS_LONGITUDE -> {
 
-    interface Listener {
-        fun onConnectionFailed()
-        fun onFuelData(fuel: Int)
-        fun onConnected()
-        fun onGPSData(latitude: Double, longitude: Double)
-        fun onGPSData(list: List<LatLng>, addToEnd: Boolean)
-        fun onVBATData(voltage: Float)
-        fun onCellVoltageData(voltage: Float)
-        fun onCurrentData(current: Float)
-        fun onHeadingData(heading: Float)
-        fun onRSSIData(rssi: Int)
-        fun onDisconnected()
-        fun onGPSState(satellites: Int, gpsFix: Boolean)
-        fun onVSpeedData(vspeed: Float)
-        fun onAltitudeData(altitude: Float)
-        fun onGPSAltitudeData(altitude: Float)
-        fun onDistanceData(distance: Int)
-        fun onRollData(rollAngle: Float)
-        fun onPitchData(pitchAngle: Float)
-        fun onGSpeedData(speed: Float)
-        fun onFlyModeData(
-            armed: Boolean,
-            heading: Boolean,
-            firstFlightMode: FlyMode,
-            secondFlightMode: FlyMode?
-        )
-        fun onAirSpeed(speed: Float)
+            }
+            Protocol.GPS_LATITUDE -> {
+
+            }
+            Protocol.GPS_SATELLITES -> {
+                listener.onGPSState(data.data, true)
+            }
+            else -> {
+                decoded = false
+            }
+        }
+
+        if (decoded) {
+            listener.onSuccessDecode()
+        }
     }
 }

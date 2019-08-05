@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import androidx.annotation.RequiresApi
+import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.OutputStreamWriter
@@ -22,8 +23,7 @@ class BluetoothLeDataPoller(
     csvOutputStream: FileOutputStream?
 ) : DataPoller {
 
-    private lateinit var protocol: FrSkySportProtocol
-    private val dataDecoder: DataDecoder = DataDecoder(listener)
+    private lateinit var protocol: CrsfProtocol
     private var outputStreamWriter: OutputStreamWriter? = null
     private var connected = false
     private var bluetoothGatt: BluetoothGatt?
@@ -34,7 +34,7 @@ class BluetoothLeDataPoller(
             object : BluetoothGattCallback() {
 
                 private var serviceSelected = false
-                private val tempProtocols: HashMap<UUID, FrSkySportProtocol> = HashMap()
+                private val tempProtocols: HashMap<UUID, CrsfProtocol> = HashMap()
                 private val validPacketCount: HashMap<UUID, Int> = HashMap()
 
                 override fun onCharacteristicChanged(
@@ -48,13 +48,13 @@ class BluetoothLeDataPoller(
                             characteristic.value?.let { bytes ->
                                 outputStream?.write(bytes)
                                 bytes.forEach {
-                                    protocol.process(it.toInt())
+                                    protocol.process(it.toUByte().toInt())
                                 }
                             }
                         } else {
                             characteristic.value?.let { bytes ->
                                 bytes.forEach {
-                                    tempProtocols[characteristic.uuid]?.process(it.toInt())
+                                    tempProtocols[characteristic.uuid]?.process(it.toUByte().toInt())
                                 }
                             }
                         }
@@ -93,8 +93,9 @@ class BluetoothLeDataPoller(
                     if (notifyCharacteristicList != null && notifyCharacteristicList.isNotEmpty()) {
                         notifyCharacteristicList.forEach { characteristic ->
                             val sportProtocol =
-                                FrSkySportProtocol(object : FrSkySportProtocol.Companion.DataListener {
-                                    override fun onNewData(data: FrSkySportProtocol.Companion.TelemetryData) {
+                                CrsfProtocol(object : DataDecoder.Companion.DefaultDecodeListener() {
+
+                                    override fun onSuccessDecode() {
                                         validPacketCount[characteristic.uuid] =
                                             validPacketCount[characteristic.uuid]!! + 1
 
@@ -104,7 +105,7 @@ class BluetoothLeDataPoller(
                                             notifyCharacteristicList.filter { it.uuid != entry.key }.forEach {
                                                 gatt.setCharacteristicNotification(it, false)
                                             }
-                                            protocol = FrSkySportProtocol(dataDecoder)
+                                            protocol = CrsfProtocol(listener)
                                             serviceSelected = true
                                             runOnMainThread(Runnable {
                                                 listener.onConnected()
@@ -119,7 +120,7 @@ class BluetoothLeDataPoller(
                             tempProtocols.put(characteristic.uuid, sportProtocol)
                             gatt.setCharacteristicNotification(characteristic, true)
                             AsyncTask.execute {
-                                Thread.sleep(5000)
+                                Thread.sleep(20000)
                                 if (!serviceSelected) {
                                     notifyCharacteristicList.forEach {
                                         gatt.setCharacteristicNotification(it, false)
