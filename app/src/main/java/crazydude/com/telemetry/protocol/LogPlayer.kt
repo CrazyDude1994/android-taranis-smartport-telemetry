@@ -16,7 +16,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
     private var dataReadyListener: DataReadyListener? = null
     private var currentPosition: Int = 0
     private var uniqueData = HashMap<Int, Int>()
-    private var protocol: Protocol = CrsfProtocol(this)
+    private var protocol: Protocol = FrSkySportProtocol(this)
 
     private val task = @SuppressLint("StaticFieldLeak") object :
         AsyncTask<File, Long, ArrayList<Protocol.Companion.TelemetryData>>() {
@@ -25,7 +25,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
             val logFile = FileInputStream(file[0])
             val arrayList = ArrayList<Protocol.Companion.TelemetryData>()
 
-            val tempProtocol = CrsfProtocol(this@LogPlayer, object : DataDecoder(this@LogPlayer) {
+            val tempProtocol = FrSkySportProtocol(this@LogPlayer, object : DataDecoder(this@LogPlayer) {
                 override fun decodeData(data: Protocol.Companion.TelemetryData) {
                     arrayList.add(data)
                 }

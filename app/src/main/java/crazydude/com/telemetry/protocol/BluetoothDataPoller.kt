@@ -15,7 +15,7 @@ class BluetoothDataPoller(
     csvOutputStream: FileOutputStream?
 ) : DataPoller {
 
-    private lateinit var protocol: CrsfProtocol
+    private lateinit var protocol: Protocol
     private lateinit var thread: Thread
     private var outputStreamWriter: OutputStreamWriter? = null
 
@@ -29,7 +29,7 @@ class BluetoothDataPoller(
                         listener.onConnected()
                     })
                 }
-                protocol = CrsfProtocol(listener)
+                protocol = FrSkySportProtocol(listener)
                 val buffer = ByteArray(1024)
                 while (!thread.isInterrupted && bluetoothSocket.isConnected) {
                     val size = bluetoothSocket.inputStream.read(buffer)
