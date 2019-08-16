@@ -1,6 +1,5 @@
 package crazydude.com.telemetry.service
 
-import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
@@ -20,7 +19,11 @@ class PushService : FirebaseMessagingService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             var channel = notificationManager.getNotificationChannel("fcm_fallback_notification_channel")
             if (channel == null) {
-                channel = NotificationChannel("fcm_fallback_notification_channel", "Miscellaneous", NotificationManager.IMPORTANCE_DEFAULT)
+                channel = NotificationChannel(
+                    "fcm_fallback_notification_channel",
+                    "Miscellaneous",
+                    NotificationManager.IMPORTANCE_DEFAULT
+                )
                 notificationManager.createNotificationChannel(channel)
             }
         }

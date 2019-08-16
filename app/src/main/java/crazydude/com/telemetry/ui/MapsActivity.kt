@@ -259,10 +259,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
             } else {
                 val dir = Environment.getExternalStoragePublicDirectory("TelemetryLogs")
                 if (dir.exists()) {
-                    val files = dir.listFiles { file -> file.extension == "log" && file.length() > 0 }
+                    val files = dir.listFiles { file -> file.extension == "log" && file.length() > 0 }.reversed()
                     AlertDialog.Builder(this)
                         .setAdapter(
-                            ArrayAdapter<String>(
+                            ArrayAdapter(
                                 this,
                                 android.R.layout.simple_list_item_1,
                                 files.map { i -> "${i.nameWithoutExtension} (${i.length() / 1024} Kb)" })
