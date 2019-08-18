@@ -9,6 +9,7 @@ class PreferenceManager(context: Context) {
     private val sharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
     private val defaultHeadlineColor = context.resources.getColor(R.color.colorHeadline)
     private val defaultPlaneColor = context.resources.getColor(R.color.colorPlane)
+    private val defaultRouteColor = context.resources.getColor(R.color.colorPlane)
 
     fun isLoggingEnabled(): Boolean {
         return sharedPreferences.getBoolean("logging_enabled", true)
@@ -81,5 +82,9 @@ class PreferenceManager(context: Context) {
 
     fun setTelemetrySendingEnabled(enabled: Boolean) {
         sharedPreferences.edit().putBoolean("send_telemetry_data", enabled).apply()
+    }
+
+    fun getRouteColor(): Int {
+        return sharedPreferences.getInt("route_color", defaultRouteColor)
     }
 }

@@ -394,6 +394,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
 
     override fun onStart() {
         super.onStart()
+        polyLine?.let { it.color = preferenceManager.getRouteColor() }
         if (!isIdle()) {
             headingPolyline?.let { it.color = preferenceManager.getHeadLineColor() }
             if (preferenceManager.isHeadingLineEnabled() && headingPolyline == null) {
@@ -687,7 +688,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         }
         topLayout.measure(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT)
         map?.setPadding(0, topLayout.measuredHeight, 0, 0)
-        polyLine = map?.addPolyline(PolylineOptions())
+        polyLine = map?.addPolyline(PolylineOptions().color(preferenceManager.getRouteColor()))
         map?.setOnCameraMoveStartedListener {
             if (it == GoogleMap.OnCameraMoveStartedListener.REASON_GESTURE) {
                 followMode = false

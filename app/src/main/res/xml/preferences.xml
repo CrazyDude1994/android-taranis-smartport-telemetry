@@ -37,6 +37,19 @@
 
     </PreferenceCategory>
 
+    <PreferenceCategory android:title="Route line">
+
+        <com.jaredrummler.android.colorpicker.ColorPreferenceCompat
+                android:defaultValue="@color/colorRoute"
+                android:key="route_color"
+                app:cpv_showAlphaSlider="false"
+                app:cpv_allowPresets="false"
+                app:cpv_allowCustom="true"
+                android:summary="Color of the route line on the map"
+                android:title="Route line color"/>
+
+    </PreferenceCategory>
+
     <PreferenceCategory android:title="Sensors">
 
 
