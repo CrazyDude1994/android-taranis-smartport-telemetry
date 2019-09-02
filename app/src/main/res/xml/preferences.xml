@@ -52,6 +52,13 @@
 
     <PreferenceCategory android:title="Sensors">
 
+        <Preference
+                android:title="Sensor display settings"
+                android:summary="Changes which data is shown and changes data format">
+            <intent android:targetClass="crazydude.com.telemetry.ui.SensorsActivity"
+                    android:targetPackage="crazydude.com.telemetry"
+                    android:action="android.intent.action.VIEW"/>
+        </Preference>
 
         <ListPreference
                 android:title="Battery units (CLI smartport_fuel_unit)"

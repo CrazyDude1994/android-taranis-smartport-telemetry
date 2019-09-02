@@ -74,7 +74,7 @@ abstract class DataDecoder(protected val listener: Listener) {
             override fun onFlyModeData(
                 armed: Boolean,
                 heading: Boolean,
-                firstFlightMode: FlyMode,
+                firstFlightMode: FlyMode?,
                 secondFlightMode: FlyMode?
             ) {
             }
@@ -113,7 +113,7 @@ abstract class DataDecoder(protected val listener: Listener) {
         fun onFlyModeData(
             armed: Boolean,
             heading: Boolean,
-            firstFlightMode: FlyMode,
+            firstFlightMode: FlyMode?,
             secondFlightMode: FlyMode?
         )
 

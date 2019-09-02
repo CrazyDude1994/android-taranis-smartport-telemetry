@@ -180,7 +180,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
     override fun onFlyModeData(
         armed: Boolean,
         heading: Boolean,
-        firstFlightMode: DataDecoder.Companion.FlyMode,
+        firstFlightMode: DataDecoder.Companion.FlyMode?,
         secondFlightMode: DataDecoder.Companion.FlyMode?
     ) {
         originalListener.onFlyModeData(armed, heading, firstFlightMode, secondFlightMode)

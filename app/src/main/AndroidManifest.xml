@@ -58,6 +58,7 @@
                 android:label="Settings"
                 android:name=".ui.SettingsActivity"
                 android:theme="@style/AppTheme"/>
+        <activity android:name=".ui.SensorsActivity"/>
 
         <service android:name=".service.DataService"/>
 

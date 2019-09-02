@@ -93,7 +93,7 @@ class BluetoothLeDataPoller(
                     if (notifyCharacteristicList != null && notifyCharacteristicList.isNotEmpty()) {
                         notifyCharacteristicList.forEach { characteristic ->
                             val sportProtocol =
-                                FrSkySportProtocol(object : DataDecoder.Companion.DefaultDecodeListener() {
+                                LTMProtocol(object : DataDecoder.Companion.DefaultDecodeListener() {
 
                                     override fun onSuccessDecode() {
                                         validPacketCount[characteristic.uuid] =
@@ -105,7 +105,7 @@ class BluetoothLeDataPoller(
                                             notifyCharacteristicList.filter { it.uuid != entry.key }.forEach {
                                                 gatt.setCharacteristicNotification(it, false)
                                             }
-                                            protocol = FrSkySportProtocol(listener)
+                                            protocol = LTMProtocol(listener)
                                             serviceSelected = true
                                             runOnMainThread(Runnable {
                                                 listener.onConnected()

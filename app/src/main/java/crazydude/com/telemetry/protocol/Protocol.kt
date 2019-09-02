@@ -26,6 +26,7 @@ abstract class Protocol(val dataDecoder: DataDecoder) {
         const val GPS_LATITUDE = 17
         const val GPS_LONGITUDE = 18
         const val GPS_SATELLITES = 19
+        const val ATTITUDE = 20
 
         class TelemetryData(val telemetryType: Int, val data: Int, val rawData: ByteArray? = null)
     }

@@ -10,6 +10,9 @@ class PreferenceManager(context: Context) {
     private val defaultHeadlineColor = context.resources.getColor(R.color.colorHeadline)
     private val defaultPlaneColor = context.resources.getColor(R.color.colorPlane)
     private val defaultRouteColor = context.resources.getColor(R.color.colorPlane)
+    private val sensors = setOf(SensorSetting("satellites", 0), SensorSetting("battery", 1),
+        SensorSetting("voltage", 2), SensorSetting("amperage", 3), SensorSetting("speed", 0, "bottom"),
+        SensorSetting("distance", 1, "bottom"), SensorSetting("altitude", 2, "bottom"))
 
     fun isLoggingEnabled(): Boolean {
         return sharedPreferences.getBoolean("logging_enabled", true)
@@ -87,4 +90,13 @@ class PreferenceManager(context: Context) {
     fun getRouteColor(): Int {
         return sharedPreferences.getInt("route_color", defaultRouteColor)
     }
+
+    fun getSensorsSettings(): List<SensorSetting> {
+        return sensors.map {
+            SensorSetting(it.name, it.index, sharedPreferences.getString(it.name + "_position", it.position),
+                sharedPreferences.getBoolean(it.name + "_shown", it.shown))
+        }
+    }
+
+    data class SensorSetting(val name: String, val index: Int, val position: String = "top", val shown: Boolean = true)
 }
