@@ -1,7 +1,9 @@
 package crazydude.com.telemetry.protocol
 
+import android.util.Log
 import crazydude.com.telemetry.protocol.decoder.CrsfDataDecoder
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
+import java.nio.BufferUnderflowException
 import java.nio.ByteBuffer
 
 
@@ -51,53 +53,103 @@ class CrsfProtocol(dataListener: DataDecoder.Listener, dataDecoder: DataDecoder 
                 if (bufferIndex < buffer[0] - 1) {
                     buffer[++bufferIndex] = data.toByte()
                 } else {
-                    if (bufferIndex == buffer[0].toInt()) {
+                    if (bufferIndex == buffer[0].toInt() - 1) {
                         state = Companion.State.IDLE
                         val data = ByteBuffer.wrap(buffer, 1, buffer[0].toInt())
-                        val type = data.get()
-                        when (type) {
-                            BATTERY_TYPE.toByte() -> {
-                                val voltage = data.short
-                                val current = data.short
-                                val byteArray = ByteArray(3)
-                                data.get(byteArray)
-                                val byteBuffer = ByteBuffer.wrap(byteArray)
+                        try {
+                            val type = data.get()
+                            when (type) {
+                                BATTERY_TYPE.toByte() -> {
+                                    val voltage = data.short
+                                    val current = data.short
+                                    val byteArray = ByteArray(3)
+                                    data.get(byteArray)
+                                    val byteBuffer = ByteBuffer.wrap(byteArray)
 //                            val capacity = byteBuffer.int
-                                val percentage = data.get()
-                                dataDecoder.decodeData(Protocol.Companion.TelemetryData(VBAT, voltage.toInt()))
-                                dataDecoder.decodeData(Protocol.Companion.TelemetryData(CURRENT, current.toInt()))
-//                            dataDecoder.decodeData(Protocol.Companion.TelemetryData(FUEL, capacity))
-                                dataDecoder.decodeData(Protocol.Companion.TelemetryData(FUEL, percentage.toInt()))
-                            }
-                            GPS_TYPE.toByte() -> {
-                                val latitude = data.int
-                                val longitude = data.int
-                                val groundSpeed = data.short
-                                val heading = data.short
-                                val altitude = data.short
-                                val satellites = data.get()
-                                dataDecoder.decodeData(
-                                    Protocol.Companion.TelemetryData(
-                                        GPS_SATELLITES,
-                                        satellites.toInt()
+                                    val percentage = data.get()
+                                    dataDecoder.decodeData(
+                                        Protocol.Companion.TelemetryData(
+                                            VBAT,
+                                            voltage.toInt()
+                                        )
                                     )
-                                )
-                                dataDecoder.decodeData(Protocol.Companion.TelemetryData(GPS_LATITUDE, latitude))
-                                dataDecoder.decodeData(Protocol.Companion.TelemetryData(GPS_LONGITUDE, longitude))
-                                dataDecoder.decodeData(Protocol.Companion.TelemetryData(GSPEED, groundSpeed.toInt()))
-                                dataDecoder.decodeData(Protocol.Companion.TelemetryData(HEADING, heading.toInt()))
-                                dataDecoder.decodeData(Protocol.Companion.TelemetryData(ALTITUDE, altitude.toInt()))
+                                    dataDecoder.decodeData(
+                                        Protocol.Companion.TelemetryData(
+                                            CURRENT,
+                                            current.toInt()
+                                        )
+                                    )
+//                            dataDecoder.decodeData(Protocol.Companion.TelemetryData(FUEL, capacity))
+                                    dataDecoder.decodeData(
+                                        Protocol.Companion.TelemetryData(
+                                            FUEL,
+                                            percentage.toInt()
+                                        )
+                                    )
+                                }
+                                GPS_TYPE.toByte() -> {
+                                    val latitude = data.int
+                                    val longitude = data.int
+                                    val groundSpeed = data.short
+                                    val heading = data.short
+                                    val altitude = data.short
+                                    val satellites = data.get()
+                                    dataDecoder.decodeData(
+                                        Protocol.Companion.TelemetryData(
+                                            GPS_SATELLITES,
+                                            satellites.toInt()
+                                        )
+                                    )
+                                    dataDecoder.decodeData(
+                                        Protocol.Companion.TelemetryData(
+                                            GPS_LATITUDE,
+                                            latitude
+                                        )
+                                    )
+                                    dataDecoder.decodeData(
+                                        Protocol.Companion.TelemetryData(
+                                            GPS_LONGITUDE,
+                                            longitude
+                                        )
+                                    )
+                                    dataDecoder.decodeData(
+                                        Protocol.Companion.TelemetryData(
+                                            GSPEED,
+                                            groundSpeed.toInt()
+                                        )
+                                    )
+                                    dataDecoder.decodeData(
+                                        Protocol.Companion.TelemetryData(
+                                            HEADING,
+                                            heading.toInt()
+                                        )
+                                    )
+                                    dataDecoder.decodeData(
+                                        Protocol.Companion.TelemetryData(
+                                            ALTITUDE,
+                                            altitude.toInt()
+                                        )
+                                    )
+                                }
+                                FLIGHT_MODE.toByte() -> {
+                                    val byteArray = ByteArray(255)
+                                    var pos = 0
+                                    do {
+                                        val byte = data.get()
+                                        byteArray[pos] = byte
+                                        pos++
+                                    } while (byte != 0x00.toByte())
+                                    dataDecoder.decodeData(
+                                        Protocol.Companion.TelemetryData(
+                                            FLYMODE,
+                                            0,
+                                            byteArray
+                                        )
+                                    )
+                                }
                             }
-                            FLIGHT_MODE.toByte() -> {
-                                val byteArray = ByteArray(255)
-                                var pos = 0
-                                do {
-                                    val byte = data.get()
-                                    byteArray[pos] = byte
-                                    pos++
-                                } while (byte != 0x00.toByte())
-                                dataDecoder.decodeData(Protocol.Companion.TelemetryData(FLYMODE, 0, byteArray))
-                            }
+                        } catch (e : BufferUnderflowException) {
+                            Log.d("CRSF", "BufferUnderflowException")
                         }
                     } else {
                         state = Companion.State.IDLE

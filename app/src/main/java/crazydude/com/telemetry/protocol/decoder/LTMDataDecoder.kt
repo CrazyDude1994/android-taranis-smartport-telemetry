@@ -1,5 +1,6 @@
 package crazydude.com.telemetry.protocol.decoder
 
+import android.util.Log
 import crazydude.com.telemetry.protocol.Protocol
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -14,13 +15,14 @@ class LTMDataDecoder(listener: Listener) : DataDecoder(listener) {
             Protocol.GPS -> {
                 val latitude = byteBuffer.int / 10000000.toDouble()
                 val longitude = byteBuffer.int / 10000000.toDouble()
+                Log.d("LTMDecoder", "GPS: $latitude, $longitude")
                 val speed = byteBuffer.get()
                 val altitude = byteBuffer.int
                 val gpsState = byteBuffer.get()
+                listener.onGPSState(((gpsState.toUInt() shr 1) and 0xFF.toUInt()).toInt(), ((gpsState.toUInt() shr 0) and 1.toUInt()) == 1.toUInt())
                 listener.onGPSData(latitude, longitude)
                 listener.onGSpeedData(speed.toUByte().toByte() * (18 / 5f))
                 listener.onAltitudeData(altitude / 100f)
-                listener.onGPSState(((gpsState.toUInt() shr 1) and 0xFF.toUInt()).toInt(), ((gpsState.toUInt() shr 0) and 1.toUInt()) == 1.toUInt())
             }
 
             Protocol.ATTITUDE -> {

@@ -86,7 +86,6 @@ class DataService : Service(), DataDecoder.Listener {
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
     fun connect(device: BluetoothDevice) {
         var fileOutputStream: FileOutputStream? = null
-        var csvFileOutputStream: FileOutputStream? = null
         if (preferenceManager.isLoggingEnabled()
             && ContextCompat.checkSelfPermission(
                 this,
@@ -97,9 +96,7 @@ class DataService : Service(), DataDecoder.Listener {
             val dir = Environment.getExternalStoragePublicDirectory("TelemetryLogs")
             dir.mkdirs()
             val file = File(dir, "$name.log")
-            val csvFile = File(dir, "$name.csv")
             fileOutputStream = FileOutputStream(file)
-            csvFileOutputStream = FileOutputStream(csvFile)
         }
         try {
             dataPoller?.disconnect()
@@ -113,9 +110,9 @@ class DataService : Service(), DataDecoder.Listener {
             if (!isBle) {
                 val socket =
                     device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
-                dataPoller = BluetoothDataPoller(socket, this, fileOutputStream, csvFileOutputStream)
+                dataPoller = BluetoothDataPoller(socket, this, fileOutputStream)
             } else {
-                dataPoller = BluetoothLeDataPoller(this, device, this, fileOutputStream, csvFileOutputStream)
+                dataPoller = BluetoothLeDataPoller(this, device, this, fileOutputStream)
             }
         } catch (e: IOException) {
             Toast.makeText(this, "Failed to connect to bluetooth", Toast.LENGTH_LONG).show()

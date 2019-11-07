@@ -19,23 +19,20 @@ class BluetoothLeDataPoller(
     context: Context,
     device: BluetoothDevice,
     private val listener: DataDecoder.Listener,
-    private val outputStream: FileOutputStream?,
-    csvOutputStream: FileOutputStream?
+    private val outputStream: FileOutputStream?
 ) : DataPoller {
 
-    private lateinit var protocol: Protocol
+    private lateinit var selectedProtocol: Protocol
     private var outputStreamWriter: OutputStreamWriter? = null
     private var connected = false
     private var bluetoothGatt: BluetoothGatt?
 
     init {
-        csvOutputStream?.let { outputStreamWriter = OutputStreamWriter(it) }
         bluetoothGatt = device.connectGatt(context, false,
             object : BluetoothGattCallback() {
 
                 private var serviceSelected = false
-                private val tempProtocols: HashMap<UUID, Protocol> = HashMap()
-                private val validPacketCount: HashMap<UUID, Int> = HashMap()
+                private val protocolDetectors: HashMap<UUID, ProtocolDetector> = HashMap()
 
                 override fun onCharacteristicChanged(
                     gatt: BluetoothGatt?,
@@ -48,13 +45,13 @@ class BluetoothLeDataPoller(
                             characteristic.value?.let { bytes ->
                                 outputStream?.write(bytes)
                                 bytes.forEach {
-                                    protocol.process(it.toUByte().toInt())
+                                    selectedProtocol.process(it.toUByte().toInt())
                                 }
                             }
                         } else {
                             characteristic.value?.let { bytes ->
                                 bytes.forEach {
-                                    tempProtocols[characteristic.uuid]?.process(it.toUByte().toInt())
+                                    protocolDetectors[characteristic.uuid]?.feedData(it.toUByte().toInt())
                                 }
                             }
                         }
@@ -66,8 +63,7 @@ class BluetoothLeDataPoller(
                     if (newState == BluetoothProfile.STATE_CONNECTED) {
                         connected = true
                         serviceSelected = false
-                        tempProtocols.clear()
-                        validPacketCount.clear()
+                        protocolDetectors.clear()
                         gatt?.discoverServices()
                     } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                         if (connected) {
@@ -92,40 +88,43 @@ class BluetoothLeDataPoller(
 
                     if (notifyCharacteristicList != null && notifyCharacteristicList.isNotEmpty()) {
                         notifyCharacteristicList.forEach { characteristic ->
-                            val sportProtocol =
-                                LTMProtocol(object : DataDecoder.Companion.DefaultDecodeListener() {
-
-                                    override fun onSuccessDecode() {
-                                        validPacketCount[characteristic.uuid] =
-                                            validPacketCount[characteristic.uuid]!! + 1
-
-                                        val entry = validPacketCount.filterValues { it >= 10 }.entries.firstOrNull()
-
-                                        if (entry != null) {
-                                            notifyCharacteristicList.filter { it.uuid != entry.key }.forEach {
-                                                gatt.setCharacteristicNotification(it, false)
-                                            }
-                                            protocol = LTMProtocol(listener)
-                                            serviceSelected = true
-                                            runOnMainThread(Runnable {
-                                                listener.onConnected()
-                                            })
-                                            tempProtocols.clear()
-                                            validPacketCount.clear()
+                            val protocolDetector = ProtocolDetector(object : ProtocolDetector.Callback {
+                                override fun onProtocolDetected(protocol: Protocol?) {
+                                    if (protocol != null) {
+                                        notifyCharacteristicList.filter { it.uuid != characteristic.uuid }.forEach {
+                                            gatt.setCharacteristicNotification(it, false)
                                         }
-                                    }
-                                })
+                                        when (protocol) {
+                                            is FrSkySportProtocol -> {
+                                                selectedProtocol =
+                                                    FrSkySportProtocol(listener)
+                                            }
 
-                            validPacketCount.put(characteristic.uuid, 0)
-                            tempProtocols.put(characteristic.uuid, sportProtocol)
+                                            is CrsfProtocol -> {
+                                                selectedProtocol =
+                                                    CrsfProtocol(listener)
+                                            }
+
+                                            is LTMProtocol -> {
+                                                selectedProtocol = LTMProtocol(listener)
+                                            }
+                                        }
+                                        serviceSelected = true
+                                        runOnMainThread(Runnable {
+                                            listener.onConnected()
+                                        })
+                                        protocolDetectors.clear()
+                                    }
+                                }
+                            })
+                            protocolDetectors.put(characteristic.uuid, protocolDetector)
                             gatt.setCharacteristicNotification(characteristic, true)
                             AsyncTask.execute {
-                                Thread.sleep(20000)
+                                Thread.sleep(5000)
                                 if (!serviceSelected) {
                                     notifyCharacteristicList.forEach {
                                         gatt.setCharacteristicNotification(it, false)
-                                        validPacketCount.clear()
-                                        tempProtocols.clear()
+                                        protocolDetectors.clear()
                                         runOnMainThread(Runnable {
                                             listener.onConnectionFailed()
                                         })

@@ -1,5 +1,6 @@
 package crazydude.com.telemetry.protocol.decoder
 
+import android.util.Log
 import crazydude.com.telemetry.protocol.Protocol
 
 class CrsfDataDecoder(listener: Listener) : DataDecoder(listener) {

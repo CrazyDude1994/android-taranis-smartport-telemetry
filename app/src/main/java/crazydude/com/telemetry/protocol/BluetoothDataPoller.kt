@@ -11,31 +11,54 @@ import java.io.OutputStreamWriter
 class BluetoothDataPoller(
     private val bluetoothSocket: BluetoothSocket,
     private val listener: DataDecoder.Listener,
-    outputStream: FileOutputStream?,
-    csvOutputStream: FileOutputStream?
+    outputStream: FileOutputStream?
 ) : DataPoller {
 
-    private lateinit var protocol: Protocol
+    private var selectedProtocol: Protocol? = null
     private lateinit var thread: Thread
     private var outputStreamWriter: OutputStreamWriter? = null
 
     init {
         thread = Thread(Runnable {
             try {
-                csvOutputStream?.let { outputStreamWriter = OutputStreamWriter(it) }
                 bluetoothSocket.connect()
                 if (bluetoothSocket.isConnected) {
                     runOnMainThread(Runnable {
                         listener.onConnected()
                     })
                 }
-                protocol = FrSkySportProtocol(listener)
+                val protocolDetector = ProtocolDetector(object : ProtocolDetector.Callback {
+                    override fun onProtocolDetected(protocol: Protocol?) {
+                        when (protocol) {
+                            is FrSkySportProtocol -> {
+                                selectedProtocol =
+                                    FrSkySportProtocol(listener)
+                            }
+
+                            is CrsfProtocol -> {
+                                selectedProtocol =
+                                    CrsfProtocol(listener)
+                            }
+
+                            is LTMProtocol -> {
+                                selectedProtocol = LTMProtocol(listener)
+                            }
+                            else -> {
+                                thread.interrupt()
+                            }
+                        }
+                    }
+                })
                 val buffer = ByteArray(1024)
                 while (!thread.isInterrupted && bluetoothSocket.isConnected) {
                     val size = bluetoothSocket.inputStream.read(buffer)
                     outputStream?.write(buffer, 0, size)
                     for (i in 0 until size) {
-                        protocol.process(buffer[i].toUByte().toInt())
+                        if (selectedProtocol == null) {
+                            protocolDetector.feedData(buffer[i].toUByte().toInt())
+                        } else {
+                            selectedProtocol?.process(buffer[i].toUByte().toInt())
+                        }
                     }
                 }
             } catch (e: IOException) {

@@ -16,32 +16,74 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
     private var dataReadyListener: DataReadyListener? = null
     private var currentPosition: Int = 0
     private var uniqueData = HashMap<Int, Int>()
-    private var protocol: Protocol = FrSkySportProtocol(this)
+    private lateinit var protocol: Protocol
+    private var armed = false
 
     private val task = @SuppressLint("StaticFieldLeak") object :
         AsyncTask<File, Long, ArrayList<Protocol.Companion.TelemetryData>>() {
 
         override fun doInBackground(vararg file: File): ArrayList<Protocol.Companion.TelemetryData> {
-            val logFile = FileInputStream(file[0])
+            var logFile = FileInputStream(file[0])
             val arrayList = ArrayList<Protocol.Companion.TelemetryData>()
+            var tempProtocol: Protocol? = null
 
-            val tempProtocol = FrSkySportProtocol(this@LogPlayer, object : DataDecoder(this@LogPlayer) {
+            val tempDecoder = object : DataDecoder(this@LogPlayer) {
                 override fun decodeData(data: Protocol.Companion.TelemetryData) {
                     arrayList.add(data)
                 }
+            }
+
+            val protocolDetector = ProtocolDetector(object : ProtocolDetector.Callback {
+                override fun onProtocolDetected(detectedProtocol: Protocol?) {
+                    when (detectedProtocol) {
+                        is FrSkySportProtocol -> {
+                            tempProtocol =
+                                FrSkySportProtocol(this@LogPlayer, tempDecoder)
+                            protocol = FrSkySportProtocol(this@LogPlayer)
+                        }
+
+                        is CrsfProtocol -> {
+                            tempProtocol =
+                                CrsfProtocol(this@LogPlayer, tempDecoder)
+                            protocol = CrsfProtocol(this@LogPlayer)
+                        }
+
+                        is LTMProtocol -> {
+                            tempProtocol = LTMProtocol(this@LogPlayer, tempDecoder)
+                            protocol = LTMProtocol(this@LogPlayer)
+                        }
+                    }
+                }
             })
 
-            val size = (file[0].length() / 100).toInt()
-            val bytes = ByteArray(size)
-            var bytesRead = logFile.read(bytes)
-            var allBytes = bytesRead
-            while (bytesRead == size) {
-                for (i in 0 until bytesRead) {
-                    tempProtocol.process(bytes[i].toUByte().toInt())
+            val buffer = ByteArray(1024)
+
+            while (logFile.read(buffer) == buffer.size && tempProtocol == null) {
+                for (byte in buffer) {
+                    if (tempProtocol == null) {
+                        protocolDetector.feedData(byte.toUByte().toInt())
+                    } else {
+                        break
+                    }
                 }
-                publishProgress(((allBytes / file[0].length().toFloat()) * 100).toLong())
-                bytesRead = logFile.read(bytes)
-                allBytes += bytesRead
+            }
+
+            if (tempProtocol == null) {
+                publishProgress(100)
+            } else {
+                logFile = FileInputStream(file[0])
+                val size = (file[0].length() / 100).toInt()
+                val bytes = ByteArray(size)
+                var bytesRead = logFile.read(bytes)
+                var allBytes = bytesRead
+                while (bytesRead == size) {
+                    for (i in 0 until bytesRead) {
+                        tempProtocol?.process(bytes[i].toUByte().toInt())
+                    }
+                    publishProgress(((allBytes / file[0].length().toFloat()) * 100).toLong())
+                    bytesRead = logFile.read(bytes)
+                    allBytes += bytesRead
+                }
             }
 
             return arrayList
@@ -72,6 +114,10 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
                 if (cachedData[i].telemetryType == Protocol.GPS || cachedData[i].telemetryType == Protocol.GPS_LATITUDE
                     || cachedData[i].telemetryType == Protocol.GPS_LONGITUDE
                 ) {
+                    if (armed) {
+                        protocol.dataDecoder.decodeData(cachedData[i])
+                    }
+                } else if (cachedData[i].telemetryType == Protocol.FLYMODE) {
                     protocol.dataDecoder.decodeData(cachedData[i])
                 } else {
                     uniqueData[cachedData[i].telemetryType] = i
@@ -81,7 +127,13 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
             currentPosition = position
         } else {
             for (i in 0 until position) {
-                if (cachedData[i].telemetryType == Protocol.GPS) {
+                if (cachedData[i].telemetryType == Protocol.GPS || cachedData[i].telemetryType == Protocol.GPS_LATITUDE
+                    || cachedData[i].telemetryType == Protocol.GPS_LONGITUDE
+                ) {
+                    if (armed) {
+                        protocol.dataDecoder.decodeData(cachedData[i])
+                    }
+                } else if (cachedData[i].telemetryType == Protocol.FLYMODE) {
                     protocol.dataDecoder.decodeData(cachedData[i])
                 } else {
                     uniqueData[cachedData[i].telemetryType] = i
@@ -107,7 +159,9 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
     }
 
     override fun onGPSData(latitude: Double, longitude: Double) {
-        decodedCoordinates.add(LatLng(latitude, longitude))
+        if (latitude != 0.0 && longitude != 0.0) {
+            decodedCoordinates.add(LatLng(latitude, longitude))
+        }
     }
 
     override fun onVBATData(voltage: Float) {
@@ -183,6 +237,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
         firstFlightMode: DataDecoder.Companion.FlyMode?,
         secondFlightMode: DataDecoder.Companion.FlyMode?
     ) {
+        this.armed = armed
         originalListener.onFlyModeData(armed, heading, firstFlightMode, secondFlightMode)
     }
 
