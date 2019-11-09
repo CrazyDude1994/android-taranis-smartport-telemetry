@@ -9,11 +9,13 @@ import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.hardware.usb.UsbDeviceConnection
 import android.os.*
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.google.android.gms.maps.model.LatLng
+import com.hoho.android.usbserial.driver.UsbSerialPort
 import crazydude.com.telemetry.R
 import crazydude.com.telemetry.api.*
 import crazydude.com.telemetry.manager.PreferenceManager
@@ -21,6 +23,7 @@ import crazydude.com.telemetry.protocol.BluetoothDataPoller
 import crazydude.com.telemetry.protocol.BluetoothLeDataPoller
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import crazydude.com.telemetry.protocol.DataPoller
+import crazydude.com.telemetry.protocol.UsbDataPoller
 import crazydude.com.telemetry.ui.MapsActivity
 import retrofit2.Call
 import retrofit2.Callback
@@ -85,6 +88,30 @@ class DataService : Service(), DataDecoder.Listener {
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
     fun connect(device: BluetoothDevice) {
+        try {
+            dataPoller?.disconnect()
+
+            var isBle = false
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                isBle = device.type == BluetoothDevice.DEVICE_TYPE_DUAL || device.type == BluetoothDevice.DEVICE_TYPE_LE
+            }
+
+            val logFile = createLogFile()
+
+            if (!isBle) {
+                val socket =
+                    device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
+                dataPoller = BluetoothDataPoller(socket, this, logFile)
+            } else {
+                dataPoller = BluetoothLeDataPoller(this, device, this, logFile)
+            }
+        } catch (e: IOException) {
+            Toast.makeText(this, "Failed to connect to bluetooth", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun createLogFile() : FileOutputStream? {
         var fileOutputStream: FileOutputStream? = null
         if (preferenceManager.isLoggingEnabled()
             && ContextCompat.checkSelfPermission(
@@ -98,25 +125,13 @@ class DataService : Service(), DataDecoder.Listener {
             val file = File(dir, "$name.log")
             fileOutputStream = FileOutputStream(file)
         }
-        try {
-            dataPoller?.disconnect()
 
-            var isBle = false
+        return fileOutputStream
+    }
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-                isBle = device.type == BluetoothDevice.DEVICE_TYPE_DUAL || device.type == BluetoothDevice.DEVICE_TYPE_LE
-            }
-
-            if (!isBle) {
-                val socket =
-                    device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
-                dataPoller = BluetoothDataPoller(socket, this, fileOutputStream)
-            } else {
-                dataPoller = BluetoothLeDataPoller(this, device, this, fileOutputStream)
-            }
-        } catch (e: IOException) {
-            Toast.makeText(this, "Failed to connect to bluetooth", Toast.LENGTH_LONG).show()
-        }
+    fun connect(serialPort: UsbSerialPort, connection: UsbDeviceConnection) {
+        val logFile = createLogFile()
+        dataPoller = UsbDataPoller(this, serialPort, connection, logFile)
     }
 
     fun setDataListener(dataListener: DataDecoder.Listener?) {

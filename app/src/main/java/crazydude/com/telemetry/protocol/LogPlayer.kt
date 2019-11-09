@@ -38,18 +38,18 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
                     when (detectedProtocol) {
                         is FrSkySportProtocol -> {
                             tempProtocol =
-                                FrSkySportProtocol(this@LogPlayer, tempDecoder)
+                                FrSkySportProtocol(tempDecoder)
                             protocol = FrSkySportProtocol(this@LogPlayer)
                         }
 
                         is CrsfProtocol -> {
                             tempProtocol =
-                                CrsfProtocol(this@LogPlayer, tempDecoder)
+                                CrsfProtocol(tempDecoder)
                             protocol = CrsfProtocol(this@LogPlayer)
                         }
 
                         is LTMProtocol -> {
-                            tempProtocol = LTMProtocol(this@LogPlayer, tempDecoder)
+                            tempProtocol = LTMProtocol(tempDecoder)
                             protocol = LTMProtocol(this@LogPlayer)
                         }
                     }

@@ -1,22 +1,18 @@
 package crazydude.com.telemetry.protocol
 
-import android.util.Log
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
-import crazydude.com.telemetry.protocol.decoder.FrskyDataDecoder
 import crazydude.com.telemetry.protocol.decoder.LTMDataDecoder
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 
 
-class LTMProtocol(
-    dataListener: DataDecoder.Listener,
-    dataDecoder: DataDecoder = LTMDataDecoder(dataListener)
-) : Protocol(dataDecoder) {
+class LTMProtocol : Protocol {
+
+    constructor(dataListener: DataDecoder.Listener) : super(LTMDataDecoder(dataListener))
+    constructor(dataDecoder: DataDecoder) : super(dataDecoder)
 
     private var state: State = Companion.State.HEADER
     private var bufferIndex: Int = 0
     private var buffer: ByteArray = ByteArray(MAX_PACKET_SIZE)
-    private lateinit var packetType : PacketType
+    private lateinit var packetType: PacketType
     private var packetSize = 0
 
     companion object {
@@ -47,7 +43,7 @@ class LTMProtocol(
                 }
             }
             Companion.State.TYPE -> {
-                when(data.toChar()) {
+                when (data.toChar()) {
                     'G' -> {
                         packetSize = 14
                         state = Companion.State.DATA
@@ -93,16 +89,43 @@ class LTMProtocol(
                             dataDecoder.decodeData(Protocol.Companion.TelemetryData(GPS, 0, buffer))
                         }
                         Companion.PacketType.ATTITUDE -> {
-                            dataDecoder.decodeData(Protocol.Companion.TelemetryData(ATTITUDE, 0, buffer))
+                            dataDecoder.decodeData(
+                                Protocol.Companion.TelemetryData(
+                                    ATTITUDE,
+                                    0,
+                                    buffer
+                                )
+                            )
                         }
                         Companion.PacketType.STATUS -> {
-                            dataDecoder.decodeData(Protocol.Companion.TelemetryData(VBAT, 0, buffer.copyOfRange(0, 2)))
-                            dataDecoder.decodeData(Protocol.Companion.TelemetryData(FUEL, 0, buffer.copyOfRange(2, 4)))
-                            dataDecoder.decodeData(Protocol.Companion.TelemetryData(FLYMODE, 0, buffer.copyOfRange(6, 7)))
+                            dataDecoder.decodeData(
+                                Protocol.Companion.TelemetryData(
+                                    VBAT,
+                                    0,
+                                    buffer.copyOfRange(0, 2)
+                                )
+                            )
+                            dataDecoder.decodeData(
+                                Protocol.Companion.TelemetryData(
+                                    FUEL,
+                                    0,
+                                    buffer.copyOfRange(2, 4)
+                                )
+                            )
+                            dataDecoder.decodeData(
+                                Protocol.Companion.TelemetryData(
+                                    FLYMODE,
+                                    0,
+                                    buffer.copyOfRange(6, 7)
+                                )
+                            )
                         }
-                        Companion.PacketType.ORIGIN -> {}
-                        Companion.PacketType.NAVIGATION -> {}
-                        Companion.PacketType.EXTRA -> {}
+                        Companion.PacketType.ORIGIN -> {
+                        }
+                        Companion.PacketType.NAVIGATION -> {
+                        }
+                        Companion.PacketType.EXTRA -> {
+                        }
                     }
                     state = Companion.State.HEADER
                 }

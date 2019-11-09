@@ -28,7 +28,31 @@ abstract class Protocol(val dataDecoder: DataDecoder) {
         const val GPS_SATELLITES = 19
         const val ATTITUDE = 20
 
-        class TelemetryData(val telemetryType: Int, val data: Int, val rawData: ByteArray? = null)
+        class TelemetryData(val telemetryType: Int, val data: Int, val rawData: ByteArray? = null) {
+            override fun equals(other: Any?): Boolean {
+                if (this === other) return true
+                if (javaClass != other?.javaClass) return false
+
+                other as TelemetryData
+
+                if (telemetryType != other.telemetryType) return false
+                if (data != other.data) return false
+                if (rawData != null) {
+                    if (other.rawData == null) return false
+                    if (!rawData.contentEquals(other.rawData)) return false
+                } else if (other.rawData != null) return false
+
+                return true
+            }
+
+            override fun hashCode(): Int {
+                var result = telemetryType
+                result = 31 * result + data
+                result = 31 * result + (rawData?.contentHashCode() ?: 0)
+                return result
+            }
+
+        }
     }
 
     abstract fun process(data: Int)

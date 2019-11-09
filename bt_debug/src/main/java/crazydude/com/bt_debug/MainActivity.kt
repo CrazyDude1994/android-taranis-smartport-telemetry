@@ -8,9 +8,11 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.hardware.usb.UsbManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
+import android.util.Log
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.Toast
@@ -18,16 +20,21 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.hoho.android.usbserial.driver.UsbSerialPort
+import com.hoho.android.usbserial.driver.UsbSerialProber
+import com.hoho.android.usbserial.util.SerialInputOutputManager
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.lang.Exception
+import java.nio.charset.Charset
 import java.util.*
+import java.util.concurrent.Executors
 import kotlin.collections.HashSet
 
 class MainActivity : AppCompatActivity() {
@@ -58,6 +65,30 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(Intent.ACTION_GET_CONTENT)
             intent.type = "*/*"
             startActivityForResult(intent, REQUEST_SELECT_FILE)
+        }
+
+        usbConnect.setOnClickListener {
+            val usbManager = getSystemService(Context.USB_SERVICE) as UsbManager
+            val drivers = UsbSerialProber.getDefaultProber().findAllDrivers(usbManager)
+            val driver = drivers.first()
+            val connection = usbManager.openDevice(driver.device)
+            if (connection != null) {
+                val port = driver.ports.first()
+                port.open(connection)
+                port.setParameters(57600, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE)
+                val outputManager =
+                    SerialInputOutputManager(port, object : SerialInputOutputManager.Listener {
+                        override fun onRunError(e: Exception?) {
+                        }
+
+                        override fun onNewData(data: ByteArray?) {
+                            Log.d("USBSerial", data?.toString(Charset.forName("utf8")))
+                        }
+                    })
+                Executors.newSingleThreadExecutor().submit(outputManager)
+            } else {
+                usbManager.requestPermission(driver.device, null)
+            }
         }
     }
 

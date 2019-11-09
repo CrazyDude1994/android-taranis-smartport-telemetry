@@ -2,6 +2,7 @@ package crazydude.com.telemetry.ui
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.PendingIntent
 import android.app.ProgressDialog
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
@@ -10,6 +11,9 @@ import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.hardware.usb.UsbDevice
+import android.hardware.usb.UsbDeviceConnection
+import android.hardware.usb.UsbManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -30,13 +34,11 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
-import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.analytics.FirebaseAnalytics
-import com.google.firebase.iid.FirebaseInstanceId
-import com.google.firebase.messaging.FirebaseMessaging
-import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.maps.android.SphericalUtil
+import com.hoho.android.usbserial.driver.UsbSerialPort
+import com.hoho.android.usbserial.driver.UsbSerialProber
 import crazydude.com.telemetry.R
 import crazydude.com.telemetry.manager.PreferenceManager
 import crazydude.com.telemetry.protocol.LogPlayer
@@ -53,6 +55,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         private const val REQUEST_LOCATION_PERMISSION: Int = 1
         private const val REQUEST_WRITE_PERMISSION: Int = 2
         private const val REQUEST_READ_PERMISSION: Int = 3
+        private const val ACTION_USB_DEVICE = "action_usb_device"
         private val MAP_TYPE_ITEMS = arrayOf("Road Map", "Satellite", "Terrain", "Hybrid")
     }
 
@@ -414,6 +417,59 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     }
 
     private fun connect() {
+        AlertDialog.Builder(this)
+            .setItems(arrayOf("Bluetooth", "USB Serial")) { dialogInterface, i ->
+                when(i) {
+                    0 -> connectBluetooth()
+                    1 -> connectUSB()
+                }
+            }
+            .setTitle("Choose connection method")
+            .show()
+    }
+
+    private fun connectUSB() {
+        val usbManager = getSystemService(Context.USB_SERVICE) as UsbManager
+        val drivers = UsbSerialProber.getDefaultProber().findAllDrivers(usbManager)
+        val driver = drivers.firstOrNull()
+        if (driver == null) {
+            Toast.makeText(this, "No valid usb driver has been found", Toast.LENGTH_SHORT).show()
+        } else {
+            val connection = usbManager.openDevice(driver.device)
+            if (connection != null) {
+                val port = driver.ports.firstOrNull()
+                if (port == null) {
+                    Toast.makeText(this, "No valid usb port has been found", Toast.LENGTH_SHORT).show()
+                } else {
+                    connectToUSBDevice(port, connection)
+                }
+            } else {
+                val pendingIntent = PendingIntent.getBroadcast(this, 0, Intent(ACTION_USB_DEVICE), 0)
+                registerReceiver(object : BroadcastReceiver() {
+                    override fun onReceive(context: Context?, intent: Intent?) {
+                        if (ACTION_USB_DEVICE == intent?.action) {
+                            synchronized(this) {
+                                val device: UsbDevice? = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE)
+
+                                if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+                                    device?.apply {
+                                        connectUSB()
+                                    }
+                                } else {
+                                    Toast.makeText(this@MapsActivity, "You need to allow permission in order to connect with a usb", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
+
+                        unregisterReceiver(this)
+                    }
+                }, IntentFilter(ACTION_USB_DEVICE))
+                usbManager.requestPermission(driver.device, pendingIntent)
+            }
+        }
+    }
+
+    private fun connectBluetooth() {
         val adapter = BluetoothAdapter.getDefaultAdapter()
         if (adapter == null) {
             AlertDialog.Builder(this)
@@ -474,7 +530,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
                 adapter.stopLeScan(callback)
             }
             runOnUiThread {
-                connectToDevice(devices[i])
+                connectToBluetoothDevice(devices[i])
             }
         }.show()
     }
@@ -513,12 +569,25 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
             android.Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
 
-    private fun connectToDevice(device: BluetoothDevice) {
+
+    private fun connectToBluetoothDevice(device: BluetoothDevice) {
         startDataService()
         dataService?.let {
             connectButton.text = getString(R.string.connecting)
             connectButton.isEnabled = false
             it.connect(device)
+        }
+    }
+
+    private fun connectToUSBDevice(
+        port: UsbSerialPort,
+        connection: UsbDeviceConnection
+    ) {
+        startDataService()
+        dataService?.let {
+            connectButton.text = getString(R.string.connecting)
+            connectButton.isEnabled = false
+            it.connect(port, connection)
         }
     }
 
@@ -581,7 +650,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_ENABLE_BT && resultCode == Activity.RESULT_OK) {
-            connect()
+            connectBluetooth()
         }
     }
 

@@ -7,8 +7,11 @@ import java.nio.BufferUnderflowException
 import java.nio.ByteBuffer
 
 
-class CrsfProtocol(dataListener: DataDecoder.Listener, dataDecoder: DataDecoder = CrsfDataDecoder(dataListener)) :
-    Protocol(dataDecoder) {
+class CrsfProtocol : Protocol {
+
+    constructor(dataListener: DataDecoder.Listener) : super(CrsfDataDecoder(dataListener))
+    constructor(dataDecoder: DataDecoder) : super(dataDecoder)
+
 
     private var bufferIndex = 0
     private var buffer: ByteArray = ByteArray(MAX_PACKET_SIZE)
@@ -148,7 +151,7 @@ class CrsfProtocol(dataListener: DataDecoder.Listener, dataDecoder: DataDecoder 
                                     )
                                 }
                             }
-                        } catch (e : BufferUnderflowException) {
+                        } catch (e: BufferUnderflowException) {
                             Log.d("CRSF", "BufferUnderflowException")
                         }
                     } else {
