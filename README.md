@@ -14,6 +14,8 @@ Connect inverter to your Smart Port and then connect bluetooth module to the inv
 
 ![alt text](https://raw.githubusercontent.com/CrazyDude1994/android-taranis-smartport-telemetry/master/connection.jpg "Connection example")
 
+**upd: ** now you can use usb serial connection. More info here https://github.com/CrazyDude1994/android-taranis-smartport-telemetry/issues/47
+
 ## Tested modules
 
 Currently we support classic BL,BLE and integrated bluetooth modules into your transmitter. We currently tested them on the HC-05, HC-06, HC-09, HM-10. Make sure that when using BLE module you should disable PIN code (if possible). For classic BL module to appear in the list, you should pair it to your Android device first.
@@ -38,6 +40,13 @@ HC-06 module will expect that each command will be entered very fast (AFAIR max 
 
 # Google Play
 https://play.google.com/store/apps/details?id=crazydude.com.telemetry
+
+# Beta program
+I'm happy to announce that now you can apply for an open beta program, to test and use the most newest features as soon as possible.
+
+You can apply for a beta here https://play.google.com/apps/testing/crazydude.com.telemetry
+
+Please leave your feedback at [#47](https://github.com/CrazyDude1994/android-taranis-smartport-telemetry/issues/47)
 
 # RCGroups Thread
 https://www.rcgroups.com/forums/showthread.php?3284789-iNav-SmartPort-telemetry-viewer-and-logger
@@ -64,3 +73,4 @@ Paweł Spychalski - project contribute, made a great video about the app (https:
 
 AeroSIM RC - for sending their simulator for testing app from home (they have plugin to connect my app with their sim)
 
+usb-serial-for-android - library creators (https://github.com/mik3y/usb-serial-for-android)
