@@ -23,6 +23,7 @@ class UsbDataPoller(
             serialPort.open(connection)
         } catch (e: IOException) {
             listener.onConnectionFailed()
+            logFile?.close()
         }
             serialPort.setParameters(
                 57600,
@@ -48,6 +49,7 @@ class UsbDataPoller(
                         selectedProtocol = LTMProtocol(listener)
                     }
                     else -> {
+                        logFile?.close()
                         listener.onConnectionFailed()
                         outputManager?.stop()
                         return
@@ -62,6 +64,7 @@ class UsbDataPoller(
             SerialInputOutputManager(serialPort, object : SerialInputOutputManager.Listener {
                 override fun onRunError(e: Exception?) {
                     listener.onDisconnected()
+                    logFile?.close()
                 }
 
                 override fun onNewData(data: ByteArray?) {
@@ -85,6 +88,7 @@ class UsbDataPoller(
 
     override fun disconnect() {
         outputManager?.stop()
+        logFile?.close()
         listener.onDisconnected()
     }
 }
