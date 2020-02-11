@@ -31,7 +31,7 @@ class CrsfProtocol : Protocol {
         if (buffer[0] == RADIO_ADDRESS) {
             if (buffer.size > 5) {
                 val frameLength = buffer[1]
-                if (frameLength < buffer.size - 1) {
+                if (frameLength > 3 && frameLength < buffer.size - 1) {
                     val payload = buffer.subList(2, frameLength + 1)
                     val frameCrc = buffer[frameLength + 1]
                     crC8.reset()
