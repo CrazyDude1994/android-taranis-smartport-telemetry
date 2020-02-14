@@ -28,6 +28,7 @@ class CrsfProtocol : Protocol {
         private const val MAX_BUFFER_FILL_LIMIT = 256
         private const val MIN_BUFFER_FILL_LEVEL_BEFORE_LOOKING_FOR_VALID_PACKETS = 20 //aribitrary number which is probably bigger than most packets
         private const val MAX_PAYLOAD_SIZE = 62
+        private const val MIN_PAYLOAD_SIZE = 6
         private const val MIN_FLIGHT_MODE_PACKET_LEN = 6
         private const val GPS_PACKET_LEN = 16
         private const val ATTITUDE_PACKET_LEN = 7
@@ -61,8 +62,8 @@ class CrsfProtocol : Protocol {
                     val packetLen = buffer[pos + 1]
                     // is the input buffer big enough to include the whole packet (as specified by the length field)
                     if ((pos + 1 + packetLen < buffer.size) &&
-                        (packetLen <= MAX_PAYLOAD_SIZE) ) {//&&
-                        //(packetLen > MIN_PAYLOAD_SIZE)) {
+                        (packetLen <= MAX_PAYLOAD_SIZE) &&
+                        (packetLen >= MIN_PAYLOAD_SIZE)) {
                         // Get the CRC from the packet and check it against what we think it should be
                         val frameCrc = buffer[pos + 1 + packetLen]
                         val payload  = buffer.subList(pos + 2, pos + 1 + packetLen)
@@ -84,7 +85,7 @@ class CrsfProtocol : Protocol {
                         // a valid packet, so keep looking for another start character
                         if (packetLen <= MAX_PAYLOAD_SIZE) {
                             // This is potentially a valid packet, but there is not enough data in the input buffer
-                            // to process it yet. Remove any data infront of the last processed start character
+                            // to process it yet. Remove any data in front of the last processed start character
                             if (startCharPos > 0) {
                                 buffer.subList(0, startCharPos).clear()
                             }
@@ -92,7 +93,7 @@ class CrsfProtocol : Protocol {
                         }
                     }
                 } else {
-                    // remove any data infront of the last processed start character
+                    // remove any data in front of the last processed start character
                     if (startCharPos > 0) {
                         buffer.subList(0, startCharPos).clear()
                     }
@@ -101,7 +102,7 @@ class CrsfProtocol : Protocol {
             }
             pos++
         }
-        // remove any data infront of the last processed start character
+        // remove any data in front of the last processed start character
         if (startCharPos > 0) {
             buffer.subList(0, startCharPos).clear()
         }
@@ -189,14 +190,16 @@ class CrsfProtocol : Protocol {
                             val byte = data.get()
                             byteArray[pos] = byte
                             pos++
-                        } while ((byte != 0x00.toByte()) && (pos < inputData.size))
-                        dataDecoder.decodeData(
-                            Protocol.Companion.TelemetryData(
-                                FLYMODE,
-                                0,
-                                byteArray
+                        } while ((byte != 0x00.toByte()) && (pos < inputData.size - 1))
+                        if (byteArray[pos - 1] == 0x00.toByte()) {
+                            dataDecoder.decodeData(
+                                Protocol.Companion.TelemetryData(
+                                    FLYMODE,
+                                    0,
+                                    byteArray
+                                )
                             )
-                        )
+                        }
                     }
                 }
                 ATTITUDE_TYPE.toByte() -> {
