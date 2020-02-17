@@ -35,23 +35,20 @@ class CrsfProtocol : Protocol {
         private const val BATTERY_PACKET_LEN = 8
     }
 
-
     override fun process(data: Int) {
         buffer.add(data)
         if (buffer.size > MAX_BUFFER_FILL_LIMIT) {
             buffer.removeAt(0)
         }
-
         if (buffer.size > MIN_BUFFER_FILL_LEVEL_BEFORE_LOOKING_FOR_VALID_PACKETS) {
             //Get and process any valid packets in the input buffer, removing data from the input buffer as we go
             getAndProcessValidPackets()
         }
     }
 
-
     private fun getAndProcessValidPackets() {
         var startCharPos = 0
-        var pos          = 0
+        var pos = 0
         // Scan the whole input buffer
         while (pos < buffer.size) {
             // look for start characters
@@ -66,7 +63,7 @@ class CrsfProtocol : Protocol {
                         (packetLen >= MIN_PAYLOAD_SIZE)) {
                         // Get the CRC from the packet and check it against what we think it should be
                         val frameCrc = buffer[pos + 1 + packetLen]
-                        val payload  = buffer.subList(pos + 2, pos + 1 + packetLen)
+                        val payload = buffer.subList(pos + 2, pos + 1 + packetLen)
                         crC8.reset()
                         payload.map { it.toByte() }.forEach { crC8.update(it) }
                         val calculatedCrc = crC8.value.toUByte().toInt()
@@ -107,7 +104,6 @@ class CrsfProtocol : Protocol {
             buffer.subList(0, startCharPos).clear()
         }
     }
-
 
     private fun proccessFrame(inputData: ByteArray) {
         if (inputData.size > 0) {
