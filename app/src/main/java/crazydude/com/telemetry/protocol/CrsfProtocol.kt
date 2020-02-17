@@ -25,8 +25,8 @@ class CrsfProtocol : Protocol {
         private const val ATTITUDE_TYPE = 0x1E
         private const val FLIGHT_MODE = 0x21
 
-        private const val MAX_BUFFER_FILL_LIMIT = 256
-        private const val MIN_BUFFER_FILL_LEVEL_BEFORE_LOOKING_FOR_VALID_PACKETS = 20 //aribitrary number which is probably bigger than most packets
+        private const val MAX_BUFFER_FILL_LIMIT = 128
+        private const val MIN_BUFFER_FILL_LEVEL_BEFORE_LOOKING_FOR_VALID_PACKETS = 20 //arbitrary number which is probably bigger than most packets
         private const val MAX_PAYLOAD_SIZE = 62
         private const val MIN_PAYLOAD_SIZE = 6
         private const val MIN_FLIGHT_MODE_PACKET_LEN = 6
@@ -57,44 +57,28 @@ class CrsfProtocol : Protocol {
                 // is the input buffer big enough to include a length field for this start of packet
                 if (pos + 1 < buffer.size) {
                     val packetLen = buffer[pos + 1]
-                    // is the input buffer big enough to include the whole packet (as specified by the length field)
-                    if ((pos + 1 + packetLen < buffer.size) &&
-                        (packetLen <= MAX_PAYLOAD_SIZE) &&
-                        (packetLen >= MIN_PAYLOAD_SIZE)) {
-                        // Get the CRC from the packet and check it against what we think it should be
-                        val frameCrc = buffer[pos + 1 + packetLen]
-                        val payload = buffer.subList(pos + 2, pos + 1 + packetLen)
-                        crC8.reset()
-                        payload.map { it.toByte() }.forEach { crC8.update(it) }
-                        val calculatedCrc = crC8.value.toUByte().toInt()
-                        if (frameCrc == calculatedCrc) {
-                            // We got one!!!
-                            proccessFrame(payload.map { it.toByte() }.toByteArray())
-                            Log.d("CrsfProtocol", "Good frame $payload")
-                            buffer.subList(0, pos + 2 + packetLen).clear()
-                            return
-                        } else {
-                            Log.d("CrsfProtocol", "Bad CRC")
-                            // keep looking through the input buffer for start characters
-                        }
-                    } else {
-                        // If the payload length is greater than MAX_PAYLOAD_SIZE this is not the start of 
-                        // a valid packet, so keep looking for another start character
-                        if (packetLen <= MAX_PAYLOAD_SIZE) {
-                            // This is potentially a valid packet, but there is not enough data in the input buffer
-                            // to process it yet. Remove any data in front of the last processed start character
-                            if (startCharPos > 0) {
-                                buffer.subList(0, startCharPos).clear()
+                    if ((packetLen <= MAX_PAYLOAD_SIZE) && (packetLen >= MIN_PAYLOAD_SIZE)) {
+                        // is the input buffer big enough to include the whole packet (as specified by the length field)
+                        if (pos + 1 + packetLen < buffer.size) {
+                            // Get the CRC from the packet and check it against what we think it should be
+                            val frameCrc = buffer[pos + 1 + packetLen]
+                            val payload = buffer.subList(pos + 2, pos + 1 + packetLen)
+                            crC8.reset()
+                            payload.map { it.toByte() }.forEach { crC8.update(it) }
+                            val calculatedCrc = crC8.value.toUByte().toInt()
+                            if (frameCrc == calculatedCrc) {
+                                //Log.d("CrsfProtocol", "Good frame $payload")
+                                proccessFrame(payload.map { it.toByte() }.toByteArray())
+                                buffer.subList(0, pos + 2 + packetLen).clear()
+                                return
                             }
-                            return
+                        } else {
+                            // potential valid packet, but there is not enough data in the input buffer to process it yet
+                            break
                         }
                     }
                 } else {
-                    // remove any data in front of the last processed start character
-                    if (startCharPos > 0) {
-                        buffer.subList(0, startCharPos).clear()
-                    }
-                    return
+                    break
                 }
             }
             pos++
