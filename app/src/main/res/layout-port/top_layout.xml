@@ -9,96 +9,93 @@
 
         <Button
                 android:id="@+id/connect_button"
-                android:text="@string/connect"
-                android:layout_centerVertical="true"
-                android:textColor="@android:color/white"
                 style="@style/Base.Widget.AppCompat.Button.Borderless"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
-
-        <TextView
-                android:layout_toEndOf="@id/connect_button"
-                android:layout_centerVertical="true"
-                android:id="@+id/satellites"
-                android:textColor="@android:color/white"
-                android:layout_margin="4dp"
-                android:text="-"
-                android:drawablePadding="4dp"
-                android:textSize="16sp"
-                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_toRightOf="@id/connect_button"
-                android:textAlignment="center"
-                android:drawableTop="@drawable/ic_satellite"/>
-
-
-        <TextView
                 android:layout_centerVertical="true"
-                android:layout_toEndOf="@id/satellites"
-                android:id="@+id/fuel"
-                android:textColor="@android:color/white"
-                android:layout_margin="4dp"
-                android:text="-"
-                android:textSize="16sp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_toRightOf="@id/satellites"
-                android:textAlignment="center"
-                android:drawableTop="@drawable/ic_battery_unknown"/>
+                android:text="@string/connect"
+                android:textColor="@android:color/white" />
 
-        <TextView
-                android:layout_centerVertical="true"
-                android:layout_toEndOf="@id/fuel"
-                android:id="@+id/current"
-                android:textColor="@android:color/white"
-                android:layout_margin="4dp"
-                android:text="-"
-                android:drawablePadding="4dp"
-                android:textSize="16sp"
-                android:layout_width="wrap_content"
+        <LinearLayout
+                android:id="@+id/top_list"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_toRightOf="@id/fuel"
-                android:textAlignment="center"
-                android:drawableTop="@drawable/ic_current"/>
+                android:layout_toStartOf="@+id/replay_button"
+                android:layout_toEndOf="@id/connect_button">
 
-        <TextView
-                android:layout_centerVertical="true"
-                android:layout_toEndOf="@id/current"
-                android:id="@+id/voltage"
-                android:textColor="@android:color/white"
-                android:layout_margin="4dp"
-                android:text="-"
-                android:drawablePadding="4dp"
-                android:textSize="16sp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_toRightOf="@id/current"
-                android:textAlignment="center"
-                android:drawableTop="@drawable/ic_voltage"/>
+            <TextView
+                    android:id="@+id/satellites"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="4dp"
+                    android:drawableTop="@drawable/ic_satellite"
+                    android:drawablePadding="4dp"
+                    android:text="-"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp" />
+
+
+            <TextView
+                    android:id="@+id/fuel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="4dp"
+                    android:drawableTop="@drawable/ic_battery_unknown"
+                    android:text="-"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp" />
+
+            <TextView
+                    android:id="@+id/current"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="4dp"
+                    android:drawableTop="@drawable/ic_current"
+                    android:drawablePadding="4dp"
+                    android:text="-"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp" />
+
+            <TextView
+                    android:id="@+id/voltage"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="4dp"
+                    android:drawableTop="@drawable/ic_voltage"
+                    android:drawablePadding="4dp"
+                    android:text="-"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp" />
+        </LinearLayout>
+
 
         <ImageView
+                android:id="@id/replay_button"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_centerVertical="true"
+                android:layout_marginEnd="8dp"
+                android:layout_marginRight="8dp"
+                android:layout_toStartOf="@+id/settings_button"
                 android:layout_toLeftOf="@+id/settings_button"
                 android:background="?selectableItemBackground"
-                android:id="@id/replay_button"
-                android:layout_marginEnd="8dp"
-                android:layout_centerVertical="true"
-                android:src="@drawable/ic_replay"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:layout_marginRight="8dp"
-                android:layout_toStartOf="@+id/settings_button"/>
+                android:src="@drawable/ic_replay" />
 
         <ImageView
-                android:background="?selectableItemBackground"
                 android:id="@id/settings_button"
-                android:layout_marginEnd="8dp"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:src="@drawable/ic_settings"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                android:layout_marginEnd="8dp"
                 android:layout_marginRight="8dp"
-                android:layout_alignParentRight="true"/>
+                android:background="?selectableItemBackground"
+                android:src="@drawable/ic_settings" />
 
     </RelativeLayout>
 

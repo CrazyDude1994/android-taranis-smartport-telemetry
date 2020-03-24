@@ -40,11 +40,14 @@ import com.google.maps.android.SphericalUtil
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
 import crazydude.com.telemetry.R
+import crazydude.com.telemetry.converter.Converter
+import crazydude.com.telemetry.converter.KmhToMphConverter
 import crazydude.com.telemetry.manager.PreferenceManager
 import crazydude.com.telemetry.protocol.LogPlayer
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import crazydude.com.telemetry.service.DataService
 import java.io.File
+import java.util.HashMap
 import kotlin.math.roundToInt
 
 
@@ -80,8 +83,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     private lateinit var settingsButton: ImageView
     private lateinit var topLayout: RelativeLayout
     private lateinit var horizonView: HorizonView
+    private lateinit var topList: LinearLayout
+    private lateinit var bottomList: LinearLayout
+
+    private lateinit var sensorViewMap: HashMap<String, TextView>
+    private lateinit var sensorsConverters: HashMap<String, Converter>
+
     private lateinit var preferenceManager: PreferenceManager
     private lateinit var firebaseAnalytics: FirebaseAnalytics
+
     private var mapType = GoogleMap.MAP_TYPE_NORMAL
 
     private var lastGPS = LatLng(0.0, 0.0)
@@ -142,6 +152,18 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         horizonView = findViewById(R.id.horizon_view)
         fullscreenButton = findViewById(R.id.fullscreen_button)
         directionsButton = findViewById(R.id.directions_button)
+        topList = findViewById(R.id.top_list)
+        bottomList = findViewById(R.id.bottom_list)
+
+        sensorViewMap = hashMapOf(
+            Pair(PreferenceManager.sensors.elementAt(0).name, satellites),
+            Pair(PreferenceManager.sensors.elementAt(1).name, fuel),
+            Pair(PreferenceManager.sensors.elementAt(2).name, voltage),
+            Pair(PreferenceManager.sensors.elementAt(3).name, current),
+            Pair(PreferenceManager.sensors.elementAt(4).name, speed),
+            Pair(PreferenceManager.sensors.elementAt(5).name, distance),
+            Pair(PreferenceManager.sensors.elementAt(6).name, altitude)
+        )
 
         firebaseAnalytics = FirebaseAnalytics.getInstance(this)
 
@@ -413,6 +435,22 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
             horizonView.visibility = View.VISIBLE
         } else {
             horizonView.visibility = View.GONE
+        }
+        updateSensorsPlacement()
+    }
+
+    private fun updateSensorsPlacement() {
+        val sensorsSettings = preferenceManager.getSensorsSettings()
+        topList.removeAllViews()
+        bottomList.removeAllViews()
+        sensorsSettings.forEach {
+            val sensorView = sensorViewMap[it.name]
+            sensorView?.visibility = if (it.shown) View.VISIBLE else View.GONE
+            if (it.position == "top") {
+                topList.addView(sensorView)
+            } else {
+                bottomList.addView(sensorView)
+            }
         }
     }
 
@@ -703,7 +741,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     }
 
     private fun updateSpeed(speed: Float) {
-        this.speed.text = "${speed.roundToInt()} km/h"
+        this.speed.text = "${KmhToMphConverter().convert(speed).roundToInt()} km/h"
     }
 
     override fun onGPSState(satellites: Int, gpsFix: Boolean) {

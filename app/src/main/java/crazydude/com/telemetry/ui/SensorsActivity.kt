@@ -1,5 +1,6 @@
 package crazydude.com.telemetry.ui
 
+import android.graphics.Color
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -8,11 +9,12 @@ import androidx.recyclerview.widget.RecyclerView
 import crazydude.com.telemetry.R
 import crazydude.com.telemetry.manager.PreferenceManager
 import crazydude.com.telemetry.ui.adapters.SensorsAdapter
+import crazydude.com.telemetry.ui.adapters.SensorsAdapterListener
 
-class SensorsActivity : AppCompatActivity() {
+class SensorsActivity : AppCompatActivity(), SensorsAdapterListener {
 
     private lateinit var adapter: SensorsAdapter
-    private lateinit var recyclerView : RecyclerView
+    private lateinit var recyclerView: RecyclerView
     private lateinit var preferenceManager: PreferenceManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -24,15 +26,27 @@ class SensorsActivity : AppCompatActivity() {
 
         val sensorsSettings = preferenceManager.getSensorsSettings()
 
-        adapter = SensorsAdapter(sensorsSettings.filter { it.position == "top" }.sortedBy { it.index }.map { Sensor(it.name, it.shown) },
-            sensorsSettings.filter { it.position == "bottom" }.sortedBy { it.index }.map { Sensor(it.name, it.shown) })
+        adapter =
+            SensorsAdapter(sensorsSettings.filter { it.position == "top" }.sortedBy { it.index }.map {
+                Sensor(
+                    it.name,
+                    it.shown
+                )
+            },
+                sensorsSettings.filter { it.position == "bottom" }.sortedBy { it.index }.map {
+                    Sensor(
+                        it.name,
+                        it.shown
+                    )
+                }, this)
 
         recyclerView = findViewById(R.id.recycler_view)
 
         recyclerView.adapter = adapter
         recyclerView.layoutManager = LinearLayoutManager(this)
         val touchHelper =
-            ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0) {
+            ItemTouchHelper(object :
+                ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0) {
                 override fun onMove(
                     recyclerView: RecyclerView,
                     viewHolder: RecyclerView.ViewHolder,
@@ -46,6 +60,21 @@ class SensorsActivity : AppCompatActivity() {
 
                 }
 
+                override fun onSelectedChanged(
+                    viewHolder: RecyclerView.ViewHolder?,
+                    actionState: Int
+                ) {
+                    viewHolder?.itemView?.setBackgroundColor(Color.GRAY)
+                }
+
+                override fun clearView(
+                    recyclerView: RecyclerView,
+                    viewHolder: RecyclerView.ViewHolder
+                ) {
+                    super.clearView(recyclerView, viewHolder)
+                    viewHolder.itemView.setBackgroundColor(Color.TRANSPARENT)
+                }
+
                 override fun canDropOver(
                     recyclerView: RecyclerView,
                     current: RecyclerView.ViewHolder,
@@ -54,18 +83,26 @@ class SensorsActivity : AppCompatActivity() {
                     return target.adapterPosition != 0
                 }
 
-                override fun getDragDirs(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder): Int {
+                override fun getDragDirs(
+                    recyclerView: RecyclerView,
+                    viewHolder: RecyclerView.ViewHolder
+                ): Int {
                     if (adapter.getItemViewType(viewHolder.adapterPosition) == 1) return 0
                     return super.getDragDirs(recyclerView, viewHolder)
                 }
+
             })
         touchHelper.attachToRecyclerView(recyclerView)
     }
 
-    override fun onBackPressed() {
-        super.onBackPressed()
-        val data = adapter.data
+    override fun onSettingsClick(index: Int) {
+        
     }
 
-    data class Sensor(val name: String, var isShown: Boolean = true)
+    override fun onStop() {
+        super.onStop()
+        preferenceManager.setSensorsSettings(adapter.getSensorsList())
+    }
+
+    data class Sensor(val name: String, var isShown: Boolean = true, var isDragged: Boolean = false)
 }

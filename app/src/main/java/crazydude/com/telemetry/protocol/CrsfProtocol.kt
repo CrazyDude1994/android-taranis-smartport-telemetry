@@ -12,7 +12,7 @@ class CrsfProtocol : Protocol {
     constructor(dataDecoder: DataDecoder) : super(dataDecoder)
 
     private var buffer = ArrayList<Int>()
-    val crC8 = CRC8()
+    private val crC8 = CRC8()
 
     companion object {
 
