@@ -35,7 +35,7 @@ class CrsfDataDecoder(listener: Listener) : DataDecoder(listener) {
             }
             Protocol.HEADING -> {
                 val heading = data.data / 100f
-//                listener.onHeadingData(heading)
+                listener.onHeadingData(heading)
             }
             Protocol.ALTITUDE -> {
                 val altitude = data.data - 1000f
@@ -55,7 +55,7 @@ class CrsfDataDecoder(listener: Listener) : DataDecoder(listener) {
                     it.copyInto(byteArray, endIndex = stringLength)
                     val flightMode = String(byteArray)
 
-                    when (flightMode) {
+                    when(flightMode) {
                         "AIR", "ACRO" -> {
                             listener.onFlyModeData(true, false, Companion.FlyMode.ACRO, null)
                         }
@@ -86,7 +86,7 @@ class CrsfDataDecoder(listener: Listener) : DataDecoder(listener) {
                         "WP" -> {
                             listener.onFlyModeData(true, false, Companion.FlyMode.WAYPOINT, null)
                         }
-                        "ANGL", "STAB" -> {
+                        "ANGL" -> {
                             listener.onFlyModeData(true, false, Companion.FlyMode.ANGLE, null)
                         }
                         "HOR" -> {
@@ -98,23 +98,8 @@ class CrsfDataDecoder(listener: Listener) : DataDecoder(listener) {
                         "!ERR" -> {
                             listener.onFlyModeData(false, false, Companion.FlyMode.ERROR, null)
                         }
-                        else -> {
-                            Log.d("CrsfData", "Bad mode $flightMode")
-                        }
                     }
                 }
-            }
-            Protocol.PITCH -> {
-                val pitch = Math.toDegrees(data.data.toDouble() / 10000)
-                listener.onPitchData(pitch.toFloat())
-            }
-            Protocol.ROLL -> {
-                val roll = Math.toDegrees(data.data.toDouble() / 10000)
-                listener.onRollData(roll.toFloat())
-            }
-            Protocol.YAW -> {
-                val yaw = Math.toDegrees(data.data.toDouble() / 10000)
-                listener.onHeadingData(yaw.toFloat())
             }
 
             else -> {

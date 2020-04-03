@@ -3,6 +3,7 @@ package crazydude.com.telemetry.protocol
 import android.bluetooth.BluetoothSocket
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import java.io.FileOutputStream
 import java.io.IOException
@@ -21,6 +22,7 @@ class BluetoothDataPoller(
     init {
         thread = Thread(Runnable {
             try {
+                Log.d("BluetoothDataPoller", "MSzConnecting")
                 bluetoothSocket.connect()
                 if (bluetoothSocket.isConnected) {
                     runOnMainThread(Runnable {

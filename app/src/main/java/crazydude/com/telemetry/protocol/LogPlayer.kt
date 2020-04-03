@@ -2,9 +2,6 @@ package crazydude.com.telemetry.protocol
 
 import android.annotation.SuppressLint
 import android.os.AsyncTask
-import android.os.Handler
-import android.os.Looper
-import android.util.Log
 import com.google.android.gms.maps.model.LatLng
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import java.io.File
