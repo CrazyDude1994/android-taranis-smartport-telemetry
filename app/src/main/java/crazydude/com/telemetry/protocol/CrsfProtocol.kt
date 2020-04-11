@@ -1,6 +1,6 @@
 package crazydude.com.telemetry.protocol
 
-import android.util.Log
+import crazydude.com.telemetry.protocol.crc.CRC8
 import crazydude.com.telemetry.protocol.decoder.CrsfDataDecoder
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import java.nio.ByteBuffer

@@ -5,6 +5,8 @@
     <string name="connect">Connect</string>
     <string name="disconnect">Disconnect</string>
     <string name="disconnecting">Disconnecting…</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
 
     <string-array name="BatteryUnits">
         <item>Percentage</item>

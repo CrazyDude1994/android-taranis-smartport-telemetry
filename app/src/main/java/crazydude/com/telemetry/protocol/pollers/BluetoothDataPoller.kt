@@ -1,8 +1,9 @@
-package crazydude.com.telemetry.protocol
+package crazydude.com.telemetry.protocol.pollers
 
 import android.bluetooth.BluetoothSocket
 import android.os.Handler
 import android.os.Looper
+import crazydude.com.telemetry.protocol.*
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import java.io.FileOutputStream
 import java.io.IOException
@@ -27,28 +28,45 @@ class BluetoothDataPoller(
                         listener.onConnected()
                     })
                 }
-                val protocolDetector = ProtocolDetector(object : ProtocolDetector.Callback {
-                    override fun onProtocolDetected(protocol: Protocol?) {
-                        when (protocol) {
-                            is FrSkySportProtocol -> {
-                                selectedProtocol =
-                                    FrSkySportProtocol(listener)
-                            }
+                val protocolDetector =
+                    ProtocolDetector(object :
+                        ProtocolDetector.Callback {
+                        override fun onProtocolDetected(protocol: Protocol?) {
+                            when (protocol) {
+                                is FrSkySportProtocol -> {
+                                    selectedProtocol =
+                                        FrSkySportProtocol(
+                                            listener
+                                        )
+                                }
 
-                            is CrsfProtocol -> {
-                                selectedProtocol =
-                                    CrsfProtocol(listener)
-                            }
+                                is CrsfProtocol -> {
+                                    selectedProtocol =
+                                        CrsfProtocol(
+                                            listener
+                                        )
+                                }
 
-                            is LTMProtocol -> {
-                                selectedProtocol = LTMProtocol(listener)
-                            }
-                            else -> {
-                                thread.interrupt()
+                                is LTMProtocol -> {
+                                    selectedProtocol =
+                                        LTMProtocol(
+                                            listener
+                                        )
+                                }
+
+                                is MAVLinkProtocol -> {
+                                    selectedProtocol =
+                                        MAVLinkProtocol(
+                                            listener
+                                        )
+                                }
+
+                                else -> {
+                                    thread.interrupt()
+                                }
                             }
                         }
-                    }
-                })
+                    })
                 val buffer = ByteArray(1024)
                 while (!thread.isInterrupted && bluetoothSocket.isConnected) {
                     val size = bluetoothSocket.inputStream.read(buffer)

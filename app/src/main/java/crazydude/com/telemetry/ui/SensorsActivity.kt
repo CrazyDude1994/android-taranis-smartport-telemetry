@@ -38,7 +38,8 @@ class SensorsActivity : AppCompatActivity(), SensorsAdapterListener {
                         it.name,
                         it.shown
                     )
-                }, this)
+                }, this
+            )
 
         recyclerView = findViewById(R.id.recycler_view)
 
@@ -96,7 +97,7 @@ class SensorsActivity : AppCompatActivity(), SensorsAdapterListener {
     }
 
     override fun onSettingsClick(index: Int) {
-        
+
     }
 
     override fun onStop() {

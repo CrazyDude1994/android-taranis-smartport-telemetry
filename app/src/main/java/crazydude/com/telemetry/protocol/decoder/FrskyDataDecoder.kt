@@ -143,7 +143,8 @@ class FrskyDataDecoder(listener: Listener) : DataDecoder(listener) {
 //                Log.d(TAG, "Decoded pitch $value")
             }
             Protocol.ASPEED -> {
-                listener.onAirSpeed(data.data * 1.852f)
+                val speed = Float.fromBits(Integer.parseInt(Integer.toBinaryString(data.data)))
+                listener.onAirSpeed(speed * 1.852f)
             }
             Protocol.GPS_LONGITUDE -> {
 

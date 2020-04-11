@@ -43,7 +43,7 @@ import crazydude.com.telemetry.R
 import crazydude.com.telemetry.converter.Converter
 import crazydude.com.telemetry.converter.KmhToMphConverter
 import crazydude.com.telemetry.manager.PreferenceManager
-import crazydude.com.telemetry.protocol.LogPlayer
+import crazydude.com.telemetry.protocol.pollers.LogPlayer
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import crazydude.com.telemetry.service.DataService
 import java.io.File
@@ -314,7 +314,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
 
             replayFileString = it.name
 
-            val logPlayer = LogPlayer(this)
+            val logPlayer =
+                LogPlayer(this)
             logPlayer.load(file, object : LogPlayer.DataReadyListener {
                 override fun onUpdate(percent: Int) {
                     progressDialog.progress = percent

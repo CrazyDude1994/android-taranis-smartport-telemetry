@@ -1,11 +1,9 @@
-package crazydude.com.telemetry.protocol
+package crazydude.com.telemetry.protocol.pollers
 
 import android.annotation.SuppressLint
 import android.os.AsyncTask
-import android.os.Handler
-import android.os.Looper
-import android.util.Log
 import com.google.android.gms.maps.model.LatLng
+import crazydude.com.telemetry.protocol.*
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import java.io.File
 import java.io.FileInputStream
@@ -20,7 +18,6 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
     private var currentPosition: Int = 0
     private var uniqueData = HashMap<Int, Int>()
     private lateinit var protocol: Protocol
-    private var armed = false
 
     private val task = @SuppressLint("StaticFieldLeak") object :
         AsyncTask<File, Long, ArrayList<Protocol.Companion.TelemetryData>>() {
@@ -36,28 +33,57 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
                 }
             }
 
-            val protocolDetector = ProtocolDetector(object : ProtocolDetector.Callback {
-                override fun onProtocolDetected(detectedProtocol: Protocol?) {
-                    when (detectedProtocol) {
-                        is FrSkySportProtocol -> {
-                            tempProtocol =
-                                FrSkySportProtocol(tempDecoder)
-                            protocol = FrSkySportProtocol(this@LogPlayer)
-                        }
+            val protocolDetector =
+                ProtocolDetector(object :
+                    ProtocolDetector.Callback {
+                    override fun onProtocolDetected(detectedProtocol: Protocol?) {
+                        when (detectedProtocol) {
+                            is FrSkySportProtocol -> {
+                                tempProtocol =
+                                    FrSkySportProtocol(
+                                        tempDecoder
+                                    )
+                                protocol =
+                                    FrSkySportProtocol(
+                                        this@LogPlayer
+                                    )
+                            }
 
-                        is CrsfProtocol -> {
-                            tempProtocol =
-                                CrsfProtocol(tempDecoder)
-                            protocol = CrsfProtocol(this@LogPlayer)
-                        }
+                            is CrsfProtocol -> {
+                                tempProtocol =
+                                    CrsfProtocol(
+                                        tempDecoder
+                                    )
+                                protocol =
+                                    CrsfProtocol(
+                                        this@LogPlayer
+                                    )
+                            }
 
-                        is LTMProtocol -> {
-                            tempProtocol = LTMProtocol(tempDecoder)
-                            protocol = LTMProtocol(this@LogPlayer)
+                            is LTMProtocol -> {
+                                tempProtocol =
+                                    LTMProtocol(
+                                        tempDecoder
+                                    )
+                                protocol =
+                                    LTMProtocol(
+                                        this@LogPlayer
+                                    )
+                            }
+
+                            is MAVLinkProtocol -> {
+                                tempProtocol =
+                                    MAVLinkProtocol(
+                                        tempDecoder
+                                    )
+                                protocol =
+                                    MAVLinkProtocol(
+                                        this@LogPlayer
+                                    )
+                            }
                         }
                     }
-                }
-            })
+                })
 
             val buffer = ByteArray(1024)
 
@@ -117,9 +143,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
                 if (cachedData[i].telemetryType == Protocol.GPS || cachedData[i].telemetryType == Protocol.GPS_LATITUDE
                     || cachedData[i].telemetryType == Protocol.GPS_LONGITUDE
                 ) {
-                    if (armed) {
-                        protocol.dataDecoder.decodeData(cachedData[i])
-                    }
+                    protocol.dataDecoder.decodeData(cachedData[i])
                 } else if (cachedData[i].telemetryType == Protocol.FLYMODE) {
                     protocol.dataDecoder.decodeData(cachedData[i])
                 } else {
@@ -133,9 +157,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
                 if (cachedData[i].telemetryType == Protocol.GPS || cachedData[i].telemetryType == Protocol.GPS_LATITUDE
                     || cachedData[i].telemetryType == Protocol.GPS_LONGITUDE
                 ) {
-                    if (armed) {
-                        protocol.dataDecoder.decodeData(cachedData[i])
-                    }
+                    protocol.dataDecoder.decodeData(cachedData[i])
                 } else if (cachedData[i].telemetryType == Protocol.FLYMODE) {
                     protocol.dataDecoder.decodeData(cachedData[i])
                 } else {
@@ -240,7 +262,6 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
         firstFlightMode: DataDecoder.Companion.FlyMode?,
         secondFlightMode: DataDecoder.Companion.FlyMode?
     ) {
-        this.armed = armed
         originalListener.onFlyModeData(armed, heading, firstFlightMode, secondFlightMode)
     }
 
