@@ -47,8 +47,8 @@ class MAVLinkDataDecoder(listener: Listener) : DataDecoder(listener) {
                 listener.onGPSState(satellites, fix)
             }
             Protocol.HEADING -> {
-                val heading = data.data / 100f
-//                listener.onHeadingData(heading)
+                val heading = data.data / 1000f
+                listener.onHeadingData(heading)
             }
             Protocol.ALTITUDE -> {
                 val altitude = data.data - 1000f

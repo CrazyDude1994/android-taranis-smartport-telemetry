@@ -9,7 +9,7 @@
             android:layout_alignParentBottom="true"
             android:background="#AA000000">
 
-        <LinearLayout
+        <com.nex3z.flowlayout.FlowLayout
                 android:id="@+id/bottom_list"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -50,7 +50,7 @@
                     android:text="-"
                     android:textColor="@android:color/white"
                     android:textSize="16sp" />
-        </LinearLayout>
+        </com.nex3z.flowlayout.FlowLayout>
 
 
         <TextView

@@ -157,6 +157,7 @@ class MAVLinkProtocol : Protocol {
             val throttle = byteBuffer.short
             val alt = byteBuffer.float
             val vspeed = byteBuffer.float
+
         } else if (messageId == MAV_PACKET_RADIO_STATUS_ID && packetLength == MAV_PACKET_RADIO_STATUS_LENGTH) {
             val rxErrors = byteBuffer.short
             val fixed = byteBuffer.short

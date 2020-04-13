@@ -16,7 +16,7 @@
                 android:text="@string/connect"
                 android:textColor="@android:color/white" />
 
-        <LinearLayout
+        <com.nex3z.flowlayout.FlowLayout
                 android:id="@+id/top_list"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -70,7 +70,7 @@
                     android:textAlignment="center"
                     android:textColor="@android:color/white"
                     android:textSize="16sp" />
-        </LinearLayout>
+        </com.nex3z.flowlayout.FlowLayout>
 
 
         <ImageView

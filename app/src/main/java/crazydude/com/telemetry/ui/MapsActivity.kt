@@ -26,6 +26,7 @@ import android.widget.*
 import androidx.annotation.DrawableRes
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.DrawableCompat
@@ -39,15 +40,26 @@ import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.maps.android.SphericalUtil
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
+import com.nex3z.flowlayout.FlowLayout
 import crazydude.com.telemetry.R
 import crazydude.com.telemetry.converter.Converter
 import crazydude.com.telemetry.converter.KmhToMphConverter
 import crazydude.com.telemetry.manager.PreferenceManager
-import crazydude.com.telemetry.protocol.pollers.LogPlayer
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
+import crazydude.com.telemetry.protocol.pollers.LogPlayer
 import crazydude.com.telemetry.service.DataService
 import java.io.File
-import java.util.HashMap
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.List
+import kotlin.collections.elementAt
+import kotlin.collections.filterNotNull
+import kotlin.collections.firstOrNull
+import kotlin.collections.forEach
+import kotlin.collections.hashMapOf
+import kotlin.collections.isNotEmpty
+import kotlin.collections.map
+import kotlin.collections.reversed
 import kotlin.math.roundToInt
 
 
@@ -83,8 +95,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     private lateinit var settingsButton: ImageView
     private lateinit var topLayout: RelativeLayout
     private lateinit var horizonView: HorizonView
-    private lateinit var topList: LinearLayout
-    private lateinit var bottomList: LinearLayout
+    private lateinit var topList: FlowLayout
+    private lateinit var bottomList: FlowLayout
+    private lateinit var rootLayout: CoordinatorLayout
 
     private lateinit var sensorViewMap: HashMap<String, TextView>
     private lateinit var sensorsConverters: HashMap<String, Converter>
@@ -134,6 +147,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         followMode = savedInstanceState?.getBoolean("follow_mode", true) ?: true
         replayFileString = savedInstanceState?.getString("replay_file_name")
 
+        rootLayout = findViewById(R.id.rootLayout)
         fuel = findViewById(R.id.fuel)
         satellites = findViewById(R.id.satellites)
         topLayout = findViewById(R.id.top_layout)
@@ -201,7 +215,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         }
 
         if (isInReplayMode()) {
-            startReplay(File(Environment.getExternalStoragePublicDirectory("TelemetryLogs"), replayFileString))
+            startReplay(
+                File(
+                    Environment.getExternalStoragePublicDirectory("TelemetryLogs"),
+                    replayFileString
+                )
+            )
         } else {
             switchToIdleState()
         }
@@ -220,14 +239,21 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
             val posString = "${it.position.latitude},${it.position.longitude}"
             val clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             clipboardManager.primaryClip = ClipData.newPlainText("Location", posString)
-            Toast.makeText(this, "Current plane location copied to clipboard ($posString)", Toast.LENGTH_LONG).show()
+            Toast.makeText(
+                this,
+                "Current plane location copied to clipboard ($posString)",
+                Toast.LENGTH_LONG
+            ).show()
         }
     }
 
     private fun showDirectionsToCurrentLocation() {
         marker?.let {
             val posString = "${it.position.latitude},${it.position.longitude}"
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("http://maps.google.com/maps?daddr=$posString"))
+            val intent = Intent(
+                Intent.ACTION_VIEW,
+                Uri.parse("http://maps.google.com/maps?daddr=$posString")
+            )
             try {
                 startActivity(intent)
             } catch (e: ActivityNotFoundException) {
@@ -284,7 +310,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
             } else {
                 val dir = Environment.getExternalStoragePublicDirectory("TelemetryLogs")
                 if (dir.exists()) {
-                    val files = dir.listFiles { file -> file.extension == "log" && file.length() > 0 }.reversed()
+                    val files =
+                        dir.listFiles { file -> file.extension == "log" && file.length() > 0 }
+                            .reversed()
                     AlertDialog.Builder(this)
                         .setAdapter(
                             ArrayAdapter(
@@ -326,7 +354,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
                     seekBar.max = size
                     seekBar.visibility = View.VISIBLE
                     seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-                        override fun onProgressChanged(seekbar: SeekBar, position: Int, p2: Boolean) {
+                        override fun onProgressChanged(
+                            seekbar: SeekBar,
+                            position: Int,
+                            p2: Boolean
+                        ) {
                             logPlayer.seek(position)
                         }
 
@@ -408,7 +440,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
             DataDecoder.Companion.FlyMode.WAIT -> {
                 mode.text = mode.text.toString() + " | GPS wait"
             }
-            null -> {}
+            null -> {
+            }
         }
     }
 
@@ -430,7 +463,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
                 headingPolyline?.remove()
                 headingPolyline = null
             }
-            marker?.setIcon(bitmapDescriptorFromVector(this, R.drawable.ic_plane, preferenceManager.getPlaneColor()))
+            marker?.setIcon(
+                bitmapDescriptorFromVector(
+                    this,
+                    R.drawable.ic_plane,
+                    preferenceManager.getPlaneColor()
+                )
+            )
         }
         if (preferenceManager.showArtificialHorizonView()) {
             horizonView.visibility = View.VISIBLE
@@ -458,7 +497,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     private fun connect() {
         AlertDialog.Builder(this)
             .setItems(arrayOf("Bluetooth", "USB Serial")) { dialogInterface, i ->
-                when(i) {
+                when (i) {
                     0 -> connectBluetooth()
                     1 -> connectUSB()
                 }
@@ -478,24 +517,35 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
             if (connection != null) {
                 val port = driver.ports.firstOrNull()
                 if (port == null) {
-                    Toast.makeText(this, "No valid usb port has been found", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "No valid usb port has been found", Toast.LENGTH_SHORT)
+                        .show()
                 } else {
                     connectToUSBDevice(port, connection)
                 }
             } else {
-                val pendingIntent = PendingIntent.getBroadcast(this, 0, Intent(ACTION_USB_DEVICE), 0)
+                val pendingIntent =
+                    PendingIntent.getBroadcast(this, 0, Intent(ACTION_USB_DEVICE), 0)
                 registerReceiver(object : BroadcastReceiver() {
                     override fun onReceive(context: Context?, intent: Intent?) {
                         if (ACTION_USB_DEVICE == intent?.action) {
                             synchronized(this) {
-                                val device: UsbDevice? = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE)
+                                val device: UsbDevice? =
+                                    intent.getParcelableExtra(UsbManager.EXTRA_DEVICE)
 
-                                if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+                                if (intent.getBooleanExtra(
+                                        UsbManager.EXTRA_PERMISSION_GRANTED,
+                                        false
+                                    )
+                                ) {
                                     device?.apply {
                                         connectUSB()
                                     }
                                 } else {
-                                    Toast.makeText(this@MapsActivity, "You need to allow permission in order to connect with a usb", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(
+                                        this@MapsActivity,
+                                        "You need to allow permission in order to connect with a usb",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
                             }
                         }
@@ -546,7 +596,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
             }
             result
         }.filterNotNull())
-        val deviceAdapter = ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, deviceNames)
+        val deviceAdapter =
+            ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, deviceNames)
 
         val callback = BluetoothAdapter.LeScanCallback { bluetoothDevice, i, bytes ->
             if (!devices.contains(bluetoothDevice) && bluetoothDevice.name != null) {
@@ -650,7 +701,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     }
 
     @SuppressLint("MissingPermission")
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (grantResults.isNotEmpty()) {
             if (requestCode == REQUEST_LOCATION_PERMISSION) {
@@ -768,9 +823,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
 
     private fun createHeadingPolyline(): Polyline? {
         return map?.addPolyline(
-            PolylineOptions().add(lastGPS).add(lastGPS).color(preferenceManager.getHeadLineColor()).width(
-                3f
-            )
+            PolylineOptions().add(lastGPS).add(lastGPS).color(preferenceManager.getHeadLineColor())
+                .width(
+                    3f
+                )
         )
     }
 
@@ -794,7 +850,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
             )
             map?.isMyLocationEnabled = false
         }
-        topLayout.measure(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT)
+        topLayout.measure(
+            RelativeLayout.LayoutParams.MATCH_PARENT,
+            RelativeLayout.LayoutParams.WRAP_CONTENT
+        )
         map?.setPadding(0, topLayout.measuredHeight, 0, 0)
         polyLine = map?.addPolyline(PolylineOptions().color(preferenceManager.getRouteColor()))
         map?.setOnCameraMoveStartedListener {
@@ -828,7 +887,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
                 }
                 .setCancelable(false)
                 .show()
-            dialog.findViewById<TextView>(android.R.id.message)?.movementMethod = LinkMovementMethod.getInstance()
+            dialog.findViewById<TextView>(android.R.id.message)?.movementMethod =
+                LinkMovementMethod.getInstance()
         }
     }
 
@@ -867,9 +927,18 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         color?.let {
             DrawableCompat.setTint(vectorDrawable!!, it)
         }
-        vectorDrawable!!.setBounds(0, 0, vectorDrawable.intrinsicWidth, vectorDrawable.intrinsicHeight)
+        vectorDrawable!!.setBounds(
+            0,
+            0,
+            vectorDrawable.intrinsicWidth,
+            vectorDrawable.intrinsicHeight
+        )
         val bitmap =
-            Bitmap.createBitmap(vectorDrawable.intrinsicWidth, vectorDrawable.intrinsicHeight, Bitmap.Config.ARGB_8888)
+            Bitmap.createBitmap(
+                vectorDrawable.intrinsicWidth,
+                vectorDrawable.intrinsicHeight,
+                Bitmap.Config.ARGB_8888
+            )
         val canvas = Canvas(bitmap)
         vectorDrawable.draw(canvas)
         return BitmapDescriptorFactory.fromBitmap(bitmap)
