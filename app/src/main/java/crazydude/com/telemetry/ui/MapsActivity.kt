@@ -11,6 +11,7 @@ import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Color
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbDeviceConnection
 import android.hardware.usb.UsbManager
@@ -48,18 +49,10 @@ import crazydude.com.telemetry.manager.PreferenceManager
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import crazydude.com.telemetry.protocol.pollers.LogPlayer
 import crazydude.com.telemetry.service.DataService
+import uk.co.deanwild.materialshowcaseview.MaterialShowcaseView
 import java.io.File
 import java.util.*
 import kotlin.collections.ArrayList
-import kotlin.collections.List
-import kotlin.collections.elementAt
-import kotlin.collections.filterNotNull
-import kotlin.collections.firstOrNull
-import kotlin.collections.forEach
-import kotlin.collections.hashMapOf
-import kotlin.collections.isNotEmpty
-import kotlin.collections.map
-import kotlin.collections.reversed
 import kotlin.math.roundToInt
 
 
@@ -495,15 +488,26 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     }
 
     private fun connect() {
-        AlertDialog.Builder(this)
-            .setItems(arrayOf("Bluetooth", "USB Serial")) { dialogInterface, i ->
-                when (i) {
-                    0 -> connectBluetooth()
-                    1 -> connectUSB()
+        val showcaseView = MaterialShowcaseView.Builder(this)
+            .setTarget(replayButton)
+            .setMaskColour(Color.argb(230, 0, 0, 0))
+            .setDismissText("GOT IT")
+            .setContentText("You can replay your logged flights by clicking this button")
+            .singleUse("replay_guide").build()
+
+        if (showcaseView.hasFired()) {
+            AlertDialog.Builder(this)
+                .setItems(arrayOf("Bluetooth", "USB Serial")) { dialogInterface, i ->
+                    when (i) {
+                        0 -> connectBluetooth()
+                        1 -> connectUSB()
+                    }
                 }
-            }
-            .setTitle("Choose connection method")
-            .show()
+                .setTitle("Choose connection method")
+                .show()
+        } else {
+            showcaseView.show(this)
+        }
     }
 
     private fun connectUSB() {
