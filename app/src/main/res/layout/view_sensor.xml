@@ -17,14 +17,15 @@
 
     <ImageButton
             android:id="@+id/settings_button"
-            android:layout_marginEnd="8dp"
-            android:layout_centerVertical="true"
-            android:tint="@android:color/black"
-            android:layout_toStartOf="@id/move"
             android:layout_width="32dp"
             android:layout_height="32dp"
+            android:layout_centerVertical="true"
+            android:layout_marginEnd="8dp"
+            android:layout_toStartOf="@id/move"
             android:background="?android:selectableItemBackground"
-            android:src="@drawable/ic_settings" />
+            android:src="@drawable/ic_settings"
+            android:tint="@android:color/black"
+            android:visibility="gone" />
 
     <ImageView
             android:id="@+id/move"

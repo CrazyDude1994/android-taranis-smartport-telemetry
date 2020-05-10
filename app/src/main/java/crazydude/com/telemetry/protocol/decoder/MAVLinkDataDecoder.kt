@@ -1,5 +1,7 @@
 package crazydude.com.telemetry.protocol.decoder
 
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.SphericalUtil
 import crazydude.com.telemetry.protocol.Protocol
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -10,6 +12,8 @@ class MAVLinkDataDecoder(listener: Listener) : DataDecoder(listener) {
     private var newLongitude = false
     private var latitude: Double = 0.0
     private var longitude: Double = 0.0
+    private var originLatitude: Double = 0.0
+    private var originLongitude: Double = 0.0
     private var fix = false
     private var satellites = 0
 
@@ -27,7 +31,7 @@ class MAVLinkDataDecoder(listener: Listener) : DataDecoder(listener) {
                 listener.onVBATData(value)
             }
             Protocol.CURRENT -> {
-                val value = data.data / 1000f
+                val value = data.data / 100f
                 listener.onCurrentData(value)
             }
             Protocol.GPS_LONGITUDE -> {
@@ -46,16 +50,12 @@ class MAVLinkDataDecoder(listener: Listener) : DataDecoder(listener) {
                 fix = data.data == 3
                 listener.onGPSState(satellites, fix)
             }
-            Protocol.HEADING -> {
-                val heading = data.data / 1000f
-                listener.onHeadingData(heading)
-            }
             Protocol.ALTITUDE -> {
-                val altitude = data.data - 1000f
+                val altitude = data.data / 100f
                 listener.onAltitudeData(altitude)
             }
             Protocol.GSPEED -> {
-                val speed = data.data / 100f
+                val speed = (data.data / 100f) * 3.6f
                 listener.onGSpeedData(speed)
             }
             Protocol.FUEL -> {
@@ -91,8 +91,17 @@ class MAVLinkDataDecoder(listener: Listener) : DataDecoder(listener) {
                 val rollSpeed = byteBuffer.float
                 val pitchSpeed = byteBuffer.float
                 val yawSpeed = byteBuffer.float
-                listener.onRollData(roll)
-                listener.onPitchData(pitch)
+                listener.onRollData(Math.toDegrees(roll.toDouble()).toFloat())
+                listener.onPitchData(Math.toDegrees(pitch.toDouble()).toFloat())
+                listener.onHeadingData(Math.toDegrees(yaw.toDouble()).toFloat())
+            }
+
+            Protocol.GPS_ORIGIN_LONGITUDE -> {
+                originLongitude = data.data / 10000000.toDouble()
+            }
+
+            Protocol.GPS_ORIGIN_LATITUDE -> {
+                originLatitude = data.data / 10000000.toDouble()
             }
 
             else -> {
@@ -102,6 +111,18 @@ class MAVLinkDataDecoder(listener: Listener) : DataDecoder(listener) {
 
         if (newLatitude && newLongitude) {
             listener.onGPSData(latitude, longitude)
+
+            if (originLatitude > 0 && originLatitude > 0 && latitude > 0 && longitude > 0) {
+
+                val distance = SphericalUtil.computeDistanceBetween(
+                    LatLng(
+                        originLatitude,
+                        originLongitude
+                    ), LatLng(latitude, longitude)
+                )
+
+                listener.onDistanceData(distance.toInt())
+            }
             newLatitude = false
             newLongitude = false
         }

@@ -10,6 +10,7 @@ import crazydude.com.telemetry.R
 import crazydude.com.telemetry.manager.PreferenceManager
 import crazydude.com.telemetry.ui.adapters.SensorsAdapter
 import crazydude.com.telemetry.ui.adapters.SensorsAdapterListener
+import uk.co.deanwild.materialshowcaseview.MaterialShowcaseView
 
 class SensorsActivity : AppCompatActivity(), SensorsAdapterListener {
 
@@ -27,12 +28,13 @@ class SensorsActivity : AppCompatActivity(), SensorsAdapterListener {
         val sensorsSettings = preferenceManager.getSensorsSettings()
 
         adapter =
-            SensorsAdapter(sensorsSettings.filter { it.position == "top" }.sortedBy { it.index }.map {
-                Sensor(
-                    it.name,
-                    it.shown
-                )
-            },
+            SensorsAdapter(sensorsSettings.filter { it.position == "top" }.sortedBy { it.index }
+                .map {
+                    Sensor(
+                        it.name,
+                        it.shown
+                    )
+                },
                 sensorsSettings.filter { it.position == "bottom" }.sortedBy { it.index }.map {
                     Sensor(
                         it.name,
@@ -44,7 +46,8 @@ class SensorsActivity : AppCompatActivity(), SensorsAdapterListener {
         recyclerView = findViewById(R.id.recycler_view)
 
         recyclerView.adapter = adapter
-        recyclerView.layoutManager = LinearLayoutManager(this)
+        val linearLayoutManager = LinearLayoutManager(this)
+        recyclerView.layoutManager = linearLayoutManager
         val touchHelper =
             ItemTouchHelper(object :
                 ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0) {
@@ -94,10 +97,19 @@ class SensorsActivity : AppCompatActivity(), SensorsAdapterListener {
 
             })
         touchHelper.attachToRecyclerView(recyclerView)
+
+        recyclerView.viewTreeObserver.addOnGlobalLayoutListener {
+            MaterialShowcaseView.Builder(this)
+                .setTarget(linearLayoutManager.findViewByPosition(1)!!.findViewById(R.id.move))
+                .setMaskColour(Color.argb(180, 0, 0, 0))
+                .setDismissText("GOT IT")
+                .singleUse("sensors_guide1")
+                .setContentText("You can drag sensor to change sensor order")
+                .show()
+        }
     }
 
     override fun onSettingsClick(index: Int) {
-
     }
 
     override fun onStop() {

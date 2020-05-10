@@ -40,6 +40,7 @@ class MAVLinkProtocol : Protocol {
         private const val MAV_PACKET_VFR_HUD_ID = 74
         private const val MAV_PACKET_GPS_RAW_ID = 24
         private const val MAV_PACKET_RADIO_STATUS_ID = 109
+        private const val MAV_PACKET_GPS_ORIGIN_ID = 49
 
         private const val MAV_PACKET_STATUS_LENGTH = 31
         private const val MAV_PACKET_HEARTBEAT_LENGTH = 9
@@ -153,10 +154,18 @@ class MAVLinkProtocol : Protocol {
         } else if (messageId == MAV_PACKET_VFR_HUD_ID && packetLength == MAV_PACKET_VFR_HUD_LENGTH) {
             val airSpeed = byteBuffer.float
             val groundSpeed = byteBuffer.float
-            val heading = byteBuffer.short
-            val throttle = byteBuffer.short
             val alt = byteBuffer.float
             val vspeed = byteBuffer.float
+            val heading = byteBuffer.short
+            val throttle = byteBuffer.short
+
+            dataDecoder.decodeData(
+                Protocol.Companion.TelemetryData(
+                    GSPEED,
+                    (groundSpeed * 100).toInt()
+                )
+            )
+            dataDecoder.decodeData(Protocol.Companion.TelemetryData(ALTITUDE, (alt * 100).toInt()))
 
         } else if (messageId == MAV_PACKET_RADIO_STATUS_ID && packetLength == MAV_PACKET_RADIO_STATUS_LENGTH) {
             val rxErrors = byteBuffer.short
@@ -178,10 +187,33 @@ class MAVLinkProtocol : Protocol {
             val fixType = byteBuffer.get()
             val satellites = byteBuffer.get()
 
-            dataDecoder.decodeData(Protocol.Companion.TelemetryData(Protocol.GPS_STATE, fixType.toInt()))
-            dataDecoder.decodeData(Protocol.Companion.TelemetryData(Protocol.GPS_SATELLITES, satellites.toInt()))
+            dataDecoder.decodeData(
+                Protocol.Companion.TelemetryData(
+                    Protocol.GPS_STATE,
+                    fixType.toInt()
+                )
+            )
+            dataDecoder.decodeData(
+                Protocol.Companion.TelemetryData(
+                    Protocol.GPS_SATELLITES,
+                    satellites.toInt()
+                )
+            )
             dataDecoder.decodeData(Protocol.Companion.TelemetryData(Protocol.GPS_LATITUDE, lat))
             dataDecoder.decodeData(Protocol.Companion.TelemetryData(Protocol.GPS_LONGITUDE, lon))
+            if (cog.toInt() != -1)
+                dataDecoder.decodeData(
+                    Protocol.Companion.TelemetryData(
+                        Protocol.HEADING,
+                        cog.toInt()
+                    )
+                )
+        } else if (messageId == MAV_PACKET_GPS_ORIGIN_ID) {
+            val lat = byteBuffer.int
+            val lon = byteBuffer.int
+
+            dataDecoder.decodeData(Protocol.Companion.TelemetryData(GPS_ORIGIN_LATITUDE, lat))
+            dataDecoder.decodeData(Protocol.Companion.TelemetryData(GPS_ORIGIN_LONGITUDE, lon))
         } else {
             unique.add(messageId)
         }
