@@ -1,4 +1,4 @@
-package crazydude.com.telemetry.protocol;
+package crazydude.com.telemetry.protocol.crc;
 
 import java.io.IOException;
 import java.io.InputStream;

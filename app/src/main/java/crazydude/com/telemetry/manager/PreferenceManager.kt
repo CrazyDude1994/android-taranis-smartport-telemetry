@@ -10,9 +10,18 @@ class PreferenceManager(context: Context) {
     private val defaultHeadlineColor = context.resources.getColor(R.color.colorHeadline)
     private val defaultPlaneColor = context.resources.getColor(R.color.colorPlane)
     private val defaultRouteColor = context.resources.getColor(R.color.colorPlane)
-    private val sensors = setOf(SensorSetting("satellites", 0), SensorSetting("battery", 1),
-        SensorSetting("voltage", 2), SensorSetting("amperage", 3), SensorSetting("speed", 0, "bottom"),
-        SensorSetting("distance", 1, "bottom"), SensorSetting("altitude", 2, "bottom"))
+
+    companion object {
+        val sensors = setOf(
+            SensorSetting("Satellites", 0),
+            SensorSetting("Battery", 1),
+            SensorSetting("Voltage", 2),
+            SensorSetting("Amperage", 3),
+            SensorSetting("Speed", 0, "bottom"),
+            SensorSetting("Distance", 1, "bottom"),
+            SensorSetting("Altitude", 2, "bottom")
+        )
+    }
 
     fun isLoggingEnabled(): Boolean {
         return sharedPreferences.getBoolean("logging_enabled", true)
@@ -93,10 +102,29 @@ class PreferenceManager(context: Context) {
 
     fun getSensorsSettings(): List<SensorSetting> {
         return sensors.map {
-            SensorSetting(it.name, it.index, sharedPreferences.getString(it.name + "_position", it.position),
-                sharedPreferences.getBoolean(it.name + "_shown", it.shown))
+            SensorSetting(
+                it.name,
+                sharedPreferences.getInt(it.name + "_index", it.index),
+                sharedPreferences.getString(it.name + "_position", it.position),
+                sharedPreferences.getBoolean(it.name + "_shown", it.shown)
+            )
         }
     }
 
-    data class SensorSetting(val name: String, val index: Int, val position: String = "top", val shown: Boolean = true)
+    fun setSensorsSettings(data: List<SensorSetting>) {
+        val commit = sharedPreferences.edit()
+        data.forEach {
+            commit.putInt(it.name + "_index", it.index)
+            commit.putString(it.name + "_position", it.position)
+            commit.putBoolean(it.name + "_shown", it.shown)
+        }
+        commit.apply()
+    }
+
+    data class SensorSetting(
+        val name: String,
+        val index: Int,
+        val position: String = "top",
+        val shown: Boolean = true
+    )
 }

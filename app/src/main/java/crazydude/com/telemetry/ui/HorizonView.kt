@@ -28,18 +28,20 @@ class HorizonView @JvmOverloads constructor(
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
 
-        size = w.toFloat()
-        center = size / 2
+        size = w.toFloat() //336
+        center = size / 2 //128
+
+        planeLinePaint.strokeWidth = size / 67
 
         leftLinePath.apply {
-            moveTo(center - 100f, center)
-            lineTo(center - 20f, center)
-            lineTo(center - 20f, center + 10f)
+            moveTo(center - (size / 3), center)
+            lineTo(center - (size / 20), center)
+            lineTo(center - (size / 20), center + (size / 33))
         }
         rightLinePath.apply {
-            moveTo(center + 100f, center)
-            lineTo(center + 20f, center)
-            lineTo(center + 20f, center + 10f)
+            moveTo(center + (size / 3), center)
+            lineTo(center + (size / 20), center)
+            lineTo(center + (size / 20), center + (size / 33))
         }
         circlePath.apply {
             addCircle(center, center, center, Path.Direction.CW)
@@ -54,25 +56,25 @@ class HorizonView @JvmOverloads constructor(
             it.clipPath(circlePath, Region.Op.INTERSECT)
             it.rotate(-roll, center, center)
             paint.color = Color.parseColor("#5BCBD3")
-            it.drawRect(0f, 0f, size, center - pitch * 5, paint)
+            it.drawRect(0f, 0f, size, center - pitch * (size / 67), paint)
             paint.color = Color.parseColor("#D38700")
-            it.drawRect(0f, center - pitch * 5, size, size, paint)
-            paint.strokeWidth = 4f
+            it.drawRect(0f, center - pitch * (size / 67), size, size, paint)
+            paint.strokeWidth = size / 84
             paint.color = Color.BLACK
             for (i in 1..18) {
-                val lineLength = if (i.rem(2) == 0) 50 else 25
+                val lineLength = if (i.rem(2) == 0) size / 6 else size / 12
                 it.drawLine(
                     center - lineLength,
-                    (center - pitch * 5) + i * 25,
+                    (center - pitch * (size / 67)) + i * (size / 13),
                     center + lineLength,
-                    (center - pitch * 5) + i * 25,
+                    (center - pitch * (size / 67)) + i * (size / 13),
                     paint
                 )
                 it.drawLine(
                     center - lineLength,
-                    (center - pitch * 5) - i * 25,
+                    (center - pitch * (size / 67)) - i * (size / 13),
                     center + lineLength,
-                    (center - pitch * 5) - i * 25,
+                    (center - pitch * (size / 67)) - i * (size / 13),
                     paint
                 )
             }

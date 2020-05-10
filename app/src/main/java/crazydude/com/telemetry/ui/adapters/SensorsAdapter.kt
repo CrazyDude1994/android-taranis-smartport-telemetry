@@ -1,15 +1,22 @@
 package crazydude.com.telemetry.ui.adapters
 
+import android.hardware.Sensor
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.CheckBox
+import android.widget.ImageButton
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import crazydude.com.telemetry.R
+import crazydude.com.telemetry.manager.PreferenceManager
 import crazydude.com.telemetry.ui.SensorsActivity
 
-class SensorsAdapter(topSensors: List<SensorsActivity.Sensor>, bottomSensors: List<SensorsActivity.Sensor>) : RecyclerView.Adapter<SensorsAdapter.ViewHolder>() {
+class SensorsAdapter(
+    topSensors: List<SensorsActivity.Sensor>,
+    bottomSensors: List<SensorsActivity.Sensor>,
+    val sensorsAdapterListener: SensorsAdapterListener
+) : RecyclerView.Adapter<SensorsAdapter.ViewHolder>() {
 
     val data: ArrayList<Any> = ArrayList()
 
@@ -28,7 +35,13 @@ class SensorsAdapter(topSensors: List<SensorsActivity.Sensor>, bottomSensors: Li
                 false
             )
         ) else
-            ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.view_sensor_header, parent, false))
+            ViewHolder(
+                LayoutInflater.from(parent.context).inflate(
+                    R.layout.view_sensor_header,
+                    parent,
+                    false
+                )
+            )
     }
 
     override fun getItemCount(): Int {
@@ -43,8 +56,12 @@ class SensorsAdapter(topSensors: List<SensorsActivity.Sensor>, bottomSensors: Li
         if (getItemViewType(position) == 0) {
             val sensor = data[position] as SensorsActivity.Sensor
             holder.switch!!.text = sensor.name
+            holder.switch.isChecked = sensor.isShown
             holder.switch.setOnCheckedChangeListener { compoundButton, value ->
                 sensor.isShown = value
+            }
+            holder.settingsButton?.setOnClickListener {
+                sensorsAdapterListener.onSettingsClick(position)
             }
         } else {
             (holder.itemView as TextView).text = (data[position] as String)
@@ -58,7 +75,33 @@ class SensorsAdapter(topSensors: List<SensorsActivity.Sensor>, bottomSensors: Li
         notifyItemMoved(oldIndex, newIndex)
     }
 
+    fun getSensorsList() : List<PreferenceManager.SensorSetting> {
+        val result = ArrayList<PreferenceManager.SensorSetting>()
+        var position = "top"
+        var index = 0
+        for (value in data) {
+            if (value is String) {
+                if (value == "Bottom bar") {
+                    position = "bottom"
+                    index = 0
+                }
+            } else {
+                val data = value as SensorsActivity.Sensor
+                result.add(PreferenceManager.SensorSetting(data.name, index, position, data.isShown))
+                index++
+            }
+        }
+
+        return result
+    }
+
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val switch: CheckBox? = view.findViewById(R.id.sensor_view)
+        val settingsButton: ImageButton? = view.findViewById(R.id.settings_button)
+        val root: ViewGroup? = view.findViewById(R.id.root)
     }
+}
+
+interface SensorsAdapterListener {
+    fun onSettingsClick(index: Int)
 }

@@ -1,4 +1,4 @@
-package crazydude.com.telemetry.protocol
+package crazydude.com.telemetry.protocol.pollers
 
 import android.bluetooth.*
 import android.content.Context
@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import androidx.annotation.RequiresApi
+import crazydude.com.telemetry.protocol.*
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import java.io.FileOutputStream
 import java.io.IOException
@@ -88,35 +89,56 @@ class BluetoothLeDataPoller(
 
                     if (notifyCharacteristicList != null && notifyCharacteristicList.isNotEmpty()) {
                         notifyCharacteristicList.forEach { characteristic ->
-                            val protocolDetector = ProtocolDetector(object : ProtocolDetector.Callback {
-                                override fun onProtocolDetected(protocol: Protocol?) {
-                                    if (protocol != null) {
-                                        notifyCharacteristicList.filter { it.uuid != characteristic.uuid }.forEach {
-                                            gatt.setCharacteristicNotification(it, false)
-                                        }
-                                        when (protocol) {
-                                            is FrSkySportProtocol -> {
-                                                selectedProtocol =
-                                                    FrSkySportProtocol(listener)
-                                            }
+                            val protocolDetector =
+                                ProtocolDetector(
+                                    object :
+                                        ProtocolDetector.Callback {
+                                        override fun onProtocolDetected(protocol: Protocol?) {
+                                            if (protocol != null) {
+                                                notifyCharacteristicList.filter { it.uuid != characteristic.uuid }
+                                                    .forEach {
+                                                        gatt.setCharacteristicNotification(
+                                                            it,
+                                                            false
+                                                        )
+                                                    }
+                                                when (protocol) {
+                                                    is FrSkySportProtocol -> {
+                                                        selectedProtocol =
+                                                            FrSkySportProtocol(
+                                                                listener
+                                                            )
+                                                    }
 
-                                            is CrsfProtocol -> {
-                                                selectedProtocol =
-                                                    CrsfProtocol(listener)
-                                            }
+                                                    is CrsfProtocol -> {
+                                                        selectedProtocol =
+                                                            CrsfProtocol(
+                                                                listener
+                                                            )
+                                                    }
 
-                                            is LTMProtocol -> {
-                                                selectedProtocol = LTMProtocol(listener)
+                                                    is LTMProtocol -> {
+                                                        selectedProtocol =
+                                                            LTMProtocol(
+                                                                listener
+                                                            )
+                                                    }
+
+                                                    is MAVLinkProtocol -> {
+                                                        selectedProtocol =
+                                                            MAVLinkProtocol(
+                                                                listener
+                                                            )
+                                                    }
+                                                }
+                                                serviceSelected = true
+                                                runOnMainThread(Runnable {
+                                                    listener.onConnected()
+                                                })
+                                                protocolDetectors.clear()
                                             }
                                         }
-                                        serviceSelected = true
-                                        runOnMainThread(Runnable {
-                                            listener.onConnected()
-                                        })
-                                        protocolDetectors.clear()
-                                    }
-                                }
-                            })
+                                    })
                             protocolDetectors.put(characteristic.uuid, protocolDetector)
                             gatt.setCharacteristicNotification(characteristic, true)
                             AsyncTask.execute {

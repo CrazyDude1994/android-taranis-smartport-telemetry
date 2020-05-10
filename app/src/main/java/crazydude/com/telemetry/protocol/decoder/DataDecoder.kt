@@ -9,7 +9,8 @@ abstract class DataDecoder(protected val listener: Listener) {
 
         enum class FlyMode {
             ACRO, HORIZON, ANGLE, FAILSAFE, RTH, WAYPOINT, MANUAL, CRUISE, HOLD, HOME_RESET, CRUISE3D, ALTHOLD, ERROR,
-            WAIT
+            WAIT,
+            AUTONOMOUS
         }
 
         open class DefaultDecodeListener: Listener {
@@ -114,7 +115,7 @@ abstract class DataDecoder(protected val listener: Listener) {
             armed: Boolean,
             heading: Boolean,
             firstFlightMode: FlyMode?,
-            secondFlightMode: FlyMode?
+            secondFlightMode: FlyMode? = null
         )
 
         fun onAirSpeed(speed: Float)
