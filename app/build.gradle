@@ -22,7 +22,7 @@ android {
         applicationId "crazydude.com.telemetry"
         minSdkVersion 17
         targetSdkVersion 28
-        versionCode 24
+        versionCode 26
         versionName "1.7"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

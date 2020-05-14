@@ -15,6 +15,7 @@ import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.google.android.gms.maps.model.LatLng
+import com.google.firebase.analytics.FirebaseAnalytics
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import crazydude.com.telemetry.R
 import crazydude.com.telemetry.api.*
@@ -31,6 +32,7 @@ import retrofit2.Response
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.lang.NullPointerException
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
@@ -208,8 +210,12 @@ class DataService : Service(), DataDecoder.Listener {
                 call: Call<SessionCreateResponse?>,
                 response: Response<SessionCreateResponse?>
             ) {
-                response.body()?.let {
-                    sendTelemetryData(it.sessionId)
+                try {
+                    response?.body()?.let {
+                        it?.sessionId.let { sendTelemetryData(it) }
+                    }
+                } catch (e: NullPointerException) {
+                    // Unknown
                 }
             }
         })
@@ -229,7 +235,11 @@ class DataService : Service(), DataDecoder.Listener {
                     }
 
                     override fun onResponse(call: Call<AddLogResponse?>, response: Response<AddLogResponse?>) {
-                        sendTelemetryData(sessionId)
+                        try {
+                            sendTelemetryData(sessionId)
+                        } catch (e: NullPointerException) {
+
+                        }
                     }
                 })
             } else {
