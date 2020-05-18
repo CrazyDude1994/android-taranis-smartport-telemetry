@@ -30,6 +30,27 @@ abstract class Protocol(val dataDecoder: DataDecoder) {
         const val ATTITUDE = 21
         const val GPS_ORIGIN_LATITUDE = 22
         const val GPS_ORIGIN_LONGITUDE = 23
+        //ardupilot
+        const val DATA_ID_GPS_ALT_BP = 24
+        const val DATA_ID_GPS_SPEED_BP = 25
+        const val DATA_ID_GPS_ALT_AP = 26
+        const val DATA_ID_GPS_LONG_BP = 27
+        const val DATA_ID_GPS_LAT_BP = 28
+        const val DATA_ID_GPS_COURS_BP = 29
+        const val DATA_ID_GPS_SPEED_AP = 30
+        const val DATA_ID_GPS_LONG_AP = 31
+        const val DATA_ID_GPS_LAT_AP = 32
+        const val DATA_ID_BARO_ALT_AP = 33
+        const val DATA_ID_GPS_LONG_EW = 34
+        const val DATA_ID_GPS_LAT_NS = 35
+        const val RxBt = 35
+        //const val DATA_ID_TEMP1_SENSOR = 0x0002
+        //const val DATA_ID_FUEL_SENSOR = 0x0004
+        //const val DATA_ID_TEMP2_SENSOR = 0x0005
+        //const val DATA_ID_BARO_ALT_BP_SENSOR = 0x0010
+        //const val DATA_ID_CURRENT_SENSOR = 0x0028
+        //const val DATA_ID_VARIO_SENSOR = 0x0030
+        //const val DATA_ID_VFAS_SENSOR = 0x0039
 
         class TelemetryData(val telemetryType: Int, val data: Int, val rawData: ByteArray? = null) {
             override fun equals(other: Any?): Boolean {

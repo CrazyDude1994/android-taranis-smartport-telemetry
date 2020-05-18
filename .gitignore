@@ -12,3 +12,5 @@
 /captures
 .externalNativeBuild
 keystore.properties
+*.jks
+app/hyperion.jks

@@ -45,7 +45,39 @@ class FrSkySportProtocol : Protocol {
         const val PITCH_SENSOR = 0x0430
         const val ROLL_SENSOR = 0x0440
         const val AIRSPEED_SENSOR = 0x0A00
-
+        //ardupilot passthrough sensors
+        //const val ARDU_TEXT_SENSOR = 0x5000 // status text (dynamic)
+        //const val ARDU_ATTITUDE_SENSOR = 0x5006 //Attitude and range (dynamic)
+        //set_scheduler_entry(GPS_LAT, 550, 280);     // 0x800 GPS lat
+        //set_scheduler_entry(GPS_LON, 550, 280);     // 0x800 GPS lon
+        //const val ARDU_VEL_YAW_SENSOR = 0x5005 //Vel and Yaw
+        //const val ARDU_AP_STATUS_SENSOR = 0x5001 //AP status
+        //const val ARDU_GPS_STATUS_SENSOR = 0x5002 //GPS status
+        //const val ARDU_HOME_SENSOR =  0x5004   //Home
+        //const val ARDU_BATT_2_SENSOR = 0x5008  // Battery 2 status
+        //const val ARDU_BATT_1_SENSOR = 0x5003  // Battery 1 status
+        //const val ARDU_PARAM_SENSOR = 0x5007   // parameters
+        const val RxBt_SENSOR = 0xF104 //https://github.com/Clooney82/MavLink_FrSkySPort/wiki/1.2.-FrSky-Taranis-Telemetry
+        //ardupilot S.PORT sensors
+        const val DATA_ID_GPS_ALT_BP_SENSOR = 0x0001 //gps altitude integer part
+        const val DATA_ID_TEMP1_SENSOR = 0x0002 //flight mode
+        const val DATA_ID_FUEL_SENSOR = 0x0004 //battery remaining
+        const val DATA_ID_TEMP2_SENSOR = 0x0005 //GPS status and number of satellites as num_sats*10 + status (to fit into a uint8_t)
+        const val DATA_ID_GPS_ALT_AP_SENSOR = 0x0009 //gps altitude decimals
+        const val DATA_ID_BARO_ALT_BP_SENSOR = 0x0010 //altitude integer part
+        const val DATA_ID_GPS_SPEED_BP_SENSOR = 0x0011 //gps speed integer part
+        const val DATA_ID_GPS_LONG_BP_SENSOR = 0x0012 //gps longitude degree and minute integer part
+        const val DATA_ID_GPS_LAT_BP_SENSOR = 0x0013 //send gps lattitude degree and minute integer part
+        const val DATA_ID_GPS_COURS_BP_SENSOR = 0x0014 //heading in degree based on AHRS and not GPS
+        const val DATA_ID_GPS_SPEED_AP_SENSOR = 0x0019 //gps speed decimal part
+        const val DATA_ID_GPS_LONG_AP_SENSOR = 0x001A //gps longitude minutes decimal part
+        const val DATA_ID_GPS_LAT_AP_SENSOR = 0x001B //send gps lattitude minutes decimal part
+        const val DATA_ID_BARO_ALT_AP_SENSOR = 0x0021 //gps altitude decimal part
+        const val DATA_ID_GPS_LONG_EW_SENSOR = 0x0022 //gps East / West information
+        const val DATA_ID_GPS_LAT_NS_SENSOR = 0x0023 //gps North / South information
+        const val DATA_ID_CURRENT_SENSOR = 0x0028 //current consumption
+        const val DATA_ID_VARIO_SENSOR = 0x0030 //vspeed m/s
+        const val DATA_ID_VFAS_SENSOR = 0x0039 //battery voltage
         private val TAG: String = "FrSky Protocol"
     }
 
@@ -235,6 +267,108 @@ class FrSkySportProtocol : Protocol {
                     AIRSPEED_SENSOR -> {
                         dataDecoder.decodeData(
                             Protocol.Companion.TelemetryData(ASPEED, rawData)
+                        )
+                    }
+                    DATA_ID_GPS_ALT_BP_SENSOR -> {
+                        //Log.d(TAG, "ARDU_TEXT_SENSOR: $rawData")
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(GALT, rawData) //gps altitude integer part
+                        )
+                    }
+                    DATA_ID_TEMP1_SENSOR -> {
+
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(FLYMODE, rawData)
+                        )
+                    }
+                    DATA_ID_FUEL_SENSOR -> {
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(FUEL, rawData)
+                        )
+                    }
+                    DATA_ID_TEMP2_SENSOR -> {
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(GPS_STATE, rawData)
+                        )
+                    }
+                    DATA_ID_GPS_ALT_AP_SENSOR -> {
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(DATA_ID_GPS_ALT_AP, rawData)
+                        )
+                    }
+                    DATA_ID_BARO_ALT_BP_SENSOR -> {
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(DATA_ID_GPS_ALT_BP, rawData)
+                        )
+                    }
+                    DATA_ID_GPS_SPEED_BP_SENSOR -> {
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(DATA_ID_GPS_SPEED_BP, rawData)
+                        )
+                    }
+                    DATA_ID_GPS_LONG_BP_SENSOR -> {
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(DATA_ID_GPS_LONG_BP, rawData)
+                        )
+                    }
+                    DATA_ID_GPS_LAT_BP_SENSOR -> {
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(DATA_ID_GPS_LAT_BP, rawData)
+                        )
+                    }
+                    DATA_ID_GPS_COURS_BP_SENSOR -> {
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(DATA_ID_GPS_COURS_BP, rawData)
+                        )
+                    }
+                    DATA_ID_GPS_SPEED_AP_SENSOR -> {
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(DATA_ID_GPS_SPEED_AP, rawData)
+                        )
+                    }
+                    DATA_ID_GPS_LONG_AP_SENSOR -> {
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(DATA_ID_GPS_LONG_AP, rawData)
+                        )
+                    }
+                    DATA_ID_GPS_LAT_AP_SENSOR -> {
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(DATA_ID_GPS_LAT_AP, rawData)
+                        )
+                    }
+                    DATA_ID_BARO_ALT_AP_SENSOR -> {
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(DATA_ID_BARO_ALT_AP, rawData)
+                        )
+                    }
+                    DATA_ID_GPS_LONG_EW_SENSOR -> {
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(DATA_ID_GPS_LONG_EW, rawData)
+                        )
+                    }
+                    DATA_ID_GPS_LAT_NS_SENSOR -> {
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(DATA_ID_GPS_LAT_NS, rawData)
+                        )
+                    }
+                    DATA_ID_CURRENT_SENSOR -> {
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(CURRENT, rawData)
+                        )
+                    }
+                    DATA_ID_VARIO_SENSOR -> {
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(VSPEED, rawData)
+                        )
+                    }
+                    DATA_ID_VFAS_SENSOR -> {
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(VBAT, rawData)
+                        )
+                    }
+                    RxBt_SENSOR -> {
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(RxBt, rawData)
                         )
                     }
                     else -> {
