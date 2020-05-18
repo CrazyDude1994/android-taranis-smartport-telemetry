@@ -5,7 +5,6 @@ import crazydude.com.telemetry.protocol.decoder.DataDecoder
 abstract class Protocol(val dataDecoder: DataDecoder) {
 
     companion object {
-
         const val FUEL = 0
         const val GPS = 1
         const val VBAT = 2
@@ -43,7 +42,17 @@ abstract class Protocol(val dataDecoder: DataDecoder) {
         const val DATA_ID_BARO_ALT_AP = 33
         const val DATA_ID_GPS_LONG_EW = 34
         const val DATA_ID_GPS_LAT_NS = 35
+        const val GPS_STATE_ARDU = 36
         const val RxBt = 35
+        const val ARDU_TEXT = 36
+        const val ARDU_ATTITUDE = 37
+        const val ARDU_VEL_YAW = 38
+        const val ARDU_AP_STATUS = 39
+        const val ARDU_GPS_STATUS = 40
+        const val ARDU_HOME =41
+        const val ARDU_BATT_2 =42
+        const val ARDU_BATT_1=43
+        const val ARDU_PARAM=44
         //const val DATA_ID_TEMP1_SENSOR = 0x0002
         //const val DATA_ID_FUEL_SENSOR = 0x0004
         //const val DATA_ID_TEMP2_SENSOR = 0x0005

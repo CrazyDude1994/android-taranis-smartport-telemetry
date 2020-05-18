@@ -46,17 +46,17 @@ class FrSkySportProtocol : Protocol {
         const val ROLL_SENSOR = 0x0440
         const val AIRSPEED_SENSOR = 0x0A00
         //ardupilot passthrough sensors
-        //const val ARDU_TEXT_SENSOR = 0x5000 // status text (dynamic)
-        //const val ARDU_ATTITUDE_SENSOR = 0x5006 //Attitude and range (dynamic)
+        const val ARDU_TEXT_SENSOR = 0x5000 // status text (dynamic)
+        const val ARDU_ATTITUDE_SENSOR = 0x5006 //Attitude and range (dynamic)
         //set_scheduler_entry(GPS_LAT, 550, 280);     // 0x800 GPS lat
         //set_scheduler_entry(GPS_LON, 550, 280);     // 0x800 GPS lon
-        //const val ARDU_VEL_YAW_SENSOR = 0x5005 //Vel and Yaw
-        //const val ARDU_AP_STATUS_SENSOR = 0x5001 //AP status
-        //const val ARDU_GPS_STATUS_SENSOR = 0x5002 //GPS status
-        //const val ARDU_HOME_SENSOR =  0x5004   //Home
-        //const val ARDU_BATT_2_SENSOR = 0x5008  // Battery 2 status
-        //const val ARDU_BATT_1_SENSOR = 0x5003  // Battery 1 status
-        //const val ARDU_PARAM_SENSOR = 0x5007   // parameters
+        const val ARDU_VEL_YAW_SENSOR = 0x5005 //Vel and Yaw
+        const val ARDU_AP_STATUS_SENSOR = 0x5001 //AP status
+        const val ARDU_GPS_STATUS_SENSOR = 0x5002 //GPS status
+        const val ARDU_HOME_SENSOR =  0x5004   //Home
+        const val ARDU_BATT_2_SENSOR = 0x5008  // Battery 2 status
+        const val ARDU_BATT_1_SENSOR = 0x5003  // Battery 1 status
+        const val ARDU_PARAM_SENSOR = 0x5007   // parameters
         const val RxBt_SENSOR = 0xF104 //https://github.com/Clooney82/MavLink_FrSkySPort/wiki/1.2.-FrSky-Taranis-Telemetry
         //ardupilot S.PORT sensors
         const val DATA_ID_GPS_ALT_BP_SENSOR = 0x0001 //gps altitude integer part
@@ -288,7 +288,7 @@ class FrSkySportProtocol : Protocol {
                     }
                     DATA_ID_TEMP2_SENSOR -> {
                         dataDecoder.decodeData(
-                            Protocol.Companion.TelemetryData(GPS_STATE, rawData)
+                            Protocol.Companion.TelemetryData(GPS_STATE_ARDU, rawData)
                         )
                     }
                     DATA_ID_GPS_ALT_AP_SENSOR -> {
@@ -307,11 +307,15 @@ class FrSkySportProtocol : Protocol {
                         )
                     }
                     DATA_ID_GPS_LONG_BP_SENSOR -> {
+                      //  Log.d(TAG, "DATA_ID_GPS_LONG_BP_SENSOR: $rawData")
+                      //  Log.d(TAG, "DATA_ID_GPS_LONG_BP_SENSOR" + buffer.contentToString())
                         dataDecoder.decodeData(
                             Protocol.Companion.TelemetryData(DATA_ID_GPS_LONG_BP, rawData)
                         )
                     }
                     DATA_ID_GPS_LAT_BP_SENSOR -> {
+                      //  Log.d(TAG, "DATA_ID_GPS_LAT_BP_SENSOR: $rawData")
+                     //   Log.d(TAG, "DATA_ID_GPS_LAT_BP_SENSOR" + buffer.contentToString())
                         dataDecoder.decodeData(
                             Protocol.Companion.TelemetryData(DATA_ID_GPS_LAT_BP, rawData)
                         )
@@ -327,11 +331,15 @@ class FrSkySportProtocol : Protocol {
                         )
                     }
                     DATA_ID_GPS_LONG_AP_SENSOR -> {
+                      //  Log.d(TAG, "DATA_ID_GPS_LONG_AP_SENSOR: $rawData")
+                     //   Log.d(TAG, "DATA_ID_GPS_LONG_AP_SENSOR" + buffer.contentToString())
                         dataDecoder.decodeData(
                             Protocol.Companion.TelemetryData(DATA_ID_GPS_LONG_AP, rawData)
                         )
                     }
                     DATA_ID_GPS_LAT_AP_SENSOR -> {
+                    //    Log.d(TAG, "DATA_ID_GPS_LAT_AP_SENSOR: $rawData")
+                    //    Log.d(TAG, "DATA_ID_GPS_LAT_AP_SENSOR" + buffer.contentToString())
                         dataDecoder.decodeData(
                             Protocol.Companion.TelemetryData(DATA_ID_GPS_LAT_AP, rawData)
                         )
@@ -371,6 +379,52 @@ class FrSkySportProtocol : Protocol {
                             Protocol.Companion.TelemetryData(RxBt, rawData)
                         )
                     }
+                    ARDU_TEXT_SENSOR -> {
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(ARDU_TEXT, rawData)
+                        )
+                    }
+                    ARDU_ATTITUDE_SENSOR -> {
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(ARDU_ATTITUDE, rawData)
+                        )
+                    }
+                    ARDU_VEL_YAW_SENSOR -> {
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(ARDU_VEL_YAW, rawData)
+                        )
+                    }
+                    ARDU_AP_STATUS_SENSOR -> {
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(ARDU_AP_STATUS, rawData)
+                        )
+                    }
+                    ARDU_GPS_STATUS_SENSOR -> {
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(ARDU_GPS_STATUS, rawData)
+                        )
+                    }
+                    ARDU_HOME_SENSOR -> {
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(ARDU_HOME, rawData)
+                        )
+                    }
+                    ARDU_BATT_2_SENSOR -> {
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(ARDU_BATT_2, rawData)
+                        )
+                    }
+                    ARDU_BATT_1_SENSOR -> {
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(ARDU_BATT_1, rawData)
+                        )
+                    }
+                    ARDU_PARAM_SENSOR -> {
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(ARDU_PARAM, rawData)
+                        )
+                    }
+
                     else -> {
                         Log.d(TAG, "Unknown packet" + buffer.contentToString())
                     }

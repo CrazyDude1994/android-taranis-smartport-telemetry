@@ -2,6 +2,7 @@ package crazydude.com.telemetry.protocol.decoder
 
 import crazydude.com.telemetry.protocol.Protocol
 import java.io.IOException
+import android.util.Log
 
 class FrskyDataDecoder(listener: Listener) : DataDecoder(listener) {
 
@@ -9,7 +10,12 @@ class FrskyDataDecoder(listener: Listener) : DataDecoder(listener) {
     private var newLongitude = false
     private var latitude: Double = 0.0
     private var longitude: Double = 0.0
+    private var LONG_AP: Int = 0
+    private var LONG_BP: Int = 0
+    private var LAT_BP: Int = 0
+    private var LAT_AP: Int = 0
 
+    private val TAG: String = "FrSky Protocol"
     override fun decodeData(data: Protocol.Companion.TelemetryData) {
         var decoded = true
         when (data.telemetryType) {
@@ -37,7 +43,7 @@ class FrskyDataDecoder(listener: Listener) : DataDecoder(listener) {
                     } catch (e: IOException) {
                         //ignore
                     }
-//                    Log.d(TAG, "Decoded GPS lat=$latitude long=$longitude")
+                    Log.d(TAG, "Decoded GPS lat=$latitude long=$longitude")
                 }
             }
             Protocol.VBAT -> {
@@ -108,6 +114,29 @@ class FrskyDataDecoder(listener: Listener) : DataDecoder(listener) {
                 listener.onGPSState(satellites, isFix)
 //                Log.d(TAG, "Decoded satellites $satellites isFix=$isFix")
             }
+            Protocol.GPS_STATE_ARDU -> {
+                val satellites = data.data / 10
+                val isFix = data.data > 10
+                listener.onGPSState(satellites, isFix)
+                val dd = LONG_BP/100
+                val mm = LONG_BP%100
+                val ssss :Double = LONG_AP.toDouble()/100/3600
+                Log.d(TAG, "dd=$dd mm=$mm ssss=$ssss")
+                longitude=dd+mm.toDouble()/60+ssss
+                val dd2 = LAT_BP/100
+                val mm2 = LAT_BP%100
+                val ssss2 :Double = LAT_AP.toDouble()/100/3600
+                Log.d(TAG, "dd=$dd2 mm=$mm2 ssss=$ssss2")
+                latitude = dd2+mm2.toDouble()/60+ssss2
+                listener.onGPSData(latitude, longitude)
+                try {
+//                        outputStreamWriter?.append("$latitude, $longitude\r\n")
+                } catch (e: IOException) {
+                    //ignore
+                }
+                Log.d(TAG, "Decoded GPS lat=$latitude long=$longitude")
+//                Log.d(TAG, "Decoded satellites $satellites isFix=$isFix")
+            }
             Protocol.VSPEED -> {
                 val value = data.data / 100f
                 listener.onVSpeedData(value)
@@ -155,6 +184,21 @@ class FrskyDataDecoder(listener: Listener) : DataDecoder(listener) {
             Protocol.GPS_SATELLITES -> {
                 listener.onGPSState(data.data, true)
             }
+            Protocol.DATA_ID_GPS_LAT_AP ->{
+                LAT_AP=data.data
+            }
+            Protocol.DATA_ID_GPS_LAT_BP ->{
+                LAT_BP=data.data
+            }
+            Protocol.DATA_ID_GPS_LONG_AP ->{
+                LONG_AP=data.data
+            }
+            Protocol.DATA_ID_GPS_LONG_BP ->{
+                LONG_BP=data.data
+            }
+
+
+
             else -> {
                 decoded = false
             }
