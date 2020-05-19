@@ -48,8 +48,6 @@ class FrSkySportProtocol : Protocol {
         //ardupilot passthrough sensors
         const val ARDU_TEXT_SENSOR = 0x5000 // status text (dynamic)
         const val ARDU_ATTITUDE_SENSOR = 0x5006 //Attitude and range (dynamic)
-        //set_scheduler_entry(GPS_LAT, 550, 280);     // 0x800 GPS lat
-        //set_scheduler_entry(GPS_LON, 550, 280);     // 0x800 GPS lon
         const val ARDU_VEL_YAW_SENSOR = 0x5005 //Vel and Yaw
         const val ARDU_AP_STATUS_SENSOR = 0x5001 //AP status
         const val ARDU_GPS_STATUS_SENSOR = 0x5002 //GPS status
@@ -400,8 +398,8 @@ class FrSkySportProtocol : Protocol {
                         )
                     }
                     ARDU_GPS_STATUS_SENSOR -> {
-                        Log.d(TAG, "ARDU_GPS_STATUS: $rawData")
-                        Log.d(TAG, "ARDU_GPS_STATUS" + buffer.contentToString())
+//                      Log.d(TAG, "ARDU_GPS_STATUS: $rawData")
+//                      Log.d(TAG, "ARDU_GPS_STATUS" + buffer.contentToString())
                         dataDecoder.decodeData(
                             Protocol.Companion.TelemetryData(ARDU_GPS_STATUS, rawData)
                         )
@@ -426,7 +424,6 @@ class FrSkySportProtocol : Protocol {
                             Protocol.Companion.TelemetryData(ARDU_PARAM, rawData)
                         )
                     }
-
                     else -> {
                         Log.d(TAG, "Unknown packet" + buffer.contentToString())
                     }

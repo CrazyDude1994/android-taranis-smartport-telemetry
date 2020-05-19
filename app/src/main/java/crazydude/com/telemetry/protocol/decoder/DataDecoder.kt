@@ -10,7 +10,7 @@ abstract class DataDecoder(protected val listener: Listener) {
         enum class FlyMode {
             ACRO, HORIZON, ANGLE, FAILSAFE, RTH, WAYPOINT, MANUAL, CRUISE, HOLD, HOME_RESET, CRUISE3D, ALTHOLD, ERROR,
             WAIT,
-            AUTONOMOUS
+            AUTONOMOUS,CIRCLE,STABILIZE,TRAINING,FBWA,FBWB,AUTOTUNE,LOITER,TAKEOFF,AVOID_ADSB,GUIDED,INITIALISING,QSTABILIZE,QHOVER,QLOITER,QLAND,QRTL,QAUTOTUNE,QACRO
         }
 
         open class DefaultDecodeListener: Listener {
