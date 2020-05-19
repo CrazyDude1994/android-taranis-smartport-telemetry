@@ -430,6 +430,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
             DataDecoder.Companion.FlyMode.ERROR -> {
                 mode.text = mode.text.toString() + " | !ERROR!"
             }
+            DataDecoder.Companion.FlyMode.WAIT -> {
+                mode.text = mode.text.toString() + " | GPS wait"
             DataDecoder.Companion.FlyMode.CIRCLE -> {
                 mode.text = mode.text.toString() + " | CIRCLE"
             }
