@@ -400,6 +400,8 @@ class FrSkySportProtocol : Protocol {
                         )
                     }
                     ARDU_GPS_STATUS_SENSOR -> {
+                        Log.d(TAG, "ARDU_GPS_STATUS: $rawData")
+                        Log.d(TAG, "ARDU_GPS_STATUS" + buffer.contentToString())
                         dataDecoder.decodeData(
                             Protocol.Companion.TelemetryData(ARDU_GPS_STATUS, rawData)
                         )

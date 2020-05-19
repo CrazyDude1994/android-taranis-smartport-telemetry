@@ -1,8 +1,10 @@
 package crazydude.com.telemetry.protocol.decoder
 
+import android.util.Log
 import crazydude.com.telemetry.protocol.Protocol
 import java.io.IOException
-import android.util.Log
+import crazydude.com.telemetry.converter.KmhToMphConverter
+import kotlin.math.pow
 
 class FrskyDataDecoder(listener: Listener) : DataDecoder(listener) {
 
@@ -16,6 +18,11 @@ class FrskyDataDecoder(listener: Listener) : DataDecoder(listener) {
     private var LAT_AP: Int = 0
 
     private val TAG: String = "FrSky Protocol"
+    private fun bitExtracted(number: Int, num: Int, pos: Int): Int {
+        return (1 shl num) - 1 and (number shr pos - 1)
+    }
+
+
     override fun decodeData(data: Protocol.Companion.TelemetryData) {
         var decoded = true
         when (data.telemetryType) {
@@ -114,6 +121,7 @@ class FrskyDataDecoder(listener: Listener) : DataDecoder(listener) {
                 listener.onGPSState(satellites, isFix)
 //                Log.d(TAG, "Decoded satellites $satellites isFix=$isFix")
             }
+            /*
             Protocol.GPS_STATE_ARDU -> {
                 val satellites = data.data / 10
                 val isFix = data.data > 10
@@ -137,6 +145,7 @@ class FrskyDataDecoder(listener: Listener) : DataDecoder(listener) {
                 Log.d(TAG, "Decoded GPS lat=$latitude long=$longitude")
 //                Log.d(TAG, "Decoded satellites $satellites isFix=$isFix")
             }
+            */
             Protocol.VSPEED -> {
                 val value = data.data / 100f
                 listener.onVSpeedData(value)
@@ -196,9 +205,29 @@ class FrskyDataDecoder(listener: Listener) : DataDecoder(listener) {
             Protocol.DATA_ID_GPS_LONG_BP ->{
                 LONG_BP=data.data
             }
-
-
-
+            Protocol.ARDU_GPS_STATUS ->{
+                val satellites = bitExtracted(data.data,4,1)
+                val gpsStatus=bitExtracted(data.data,2,5)
+                val isFix = gpsStatus>= 3
+                listener.onGPSState(satellites, isFix)
+                Log.d(TAG, "Decoded satellites $satellites isFix=$isFix")
+            }
+            Protocol.ARDU_BATT_1 ->{
+                val fr_bat1_amps = bitExtracted(data.data,7,11) * 10.0.pow(
+                    bitExtracted(
+                        data.data,
+                        1,
+                        10
+                    ).toDouble()
+                )/10f
+                val fr_bat1_mAh = bitExtracted(data.data,15,18)
+                val fr_bat1_volts = bitExtracted(data.data,9,1).toFloat() / 10f
+                listener.onVBATData(fr_bat1_volts)
+                listener.onCurrentData(fr_bat1_amps.toFloat())
+                listener.onFuelData(fr_bat1_mAh)
+                Log.d(TAG, "Decoded amps=$fr_bat1_amps")
+                Log.d(TAG, "Decoded mah=$fr_bat1_mAh")
+            }
             else -> {
                 decoded = false
             }
