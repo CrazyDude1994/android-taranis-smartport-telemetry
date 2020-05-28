@@ -433,6 +433,60 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
             DataDecoder.Companion.FlyMode.WAIT -> {
                 mode.text = mode.text.toString() + " | GPS wait"
             }
+            DataDecoder.Companion.FlyMode.CIRCLE -> {
+                mode.text = mode.text.toString() + " | CIRCLE"
+            }
+            DataDecoder.Companion.FlyMode.STABILIZE -> {
+                mode.text = mode.text.toString() + " | STABILIZE"
+            }
+            DataDecoder.Companion.FlyMode.TRAINING -> {
+                mode.text = mode.text.toString() + " | TRAINING"
+            }
+            DataDecoder.Companion.FlyMode.FBWA -> {
+                mode.text = mode.text.toString() + " | FBWA"
+            }
+            DataDecoder.Companion.FlyMode.FBWB -> {
+                mode.text = mode.text.toString() + " | FBWB"
+            }
+            DataDecoder.Companion.FlyMode.AUTOTUNE -> {
+                mode.text = mode.text.toString() + " | AUTOTUNE"
+            }
+            DataDecoder.Companion.FlyMode.LOITER -> {
+                mode.text = mode.text.toString() + " | LOITER"
+            }
+            DataDecoder.Companion.FlyMode.TAKEOFF -> {
+                mode.text = mode.text.toString() + " | TAKEOFF"
+            }
+            DataDecoder.Companion.FlyMode.AVOID_ADSB -> {
+                mode.text = mode.text.toString() + " | AVOID_ADSB"
+            }
+            DataDecoder.Companion.FlyMode.GUIDED -> {
+                mode.text = mode.text.toString() + " | GUIDED"
+            }
+            DataDecoder.Companion.FlyMode.INITIALISING -> {
+                mode.text = mode.text.toString() + " | INITIALISING"
+            }
+            DataDecoder.Companion.FlyMode.QSTABILIZE -> {
+            mode.text = mode.text.toString() + " | QSTABILIZE"
+            }
+            DataDecoder.Companion.FlyMode.QHOVER -> {
+                mode.text = mode.text.toString() + " | QHOVER"
+            }
+            DataDecoder.Companion.FlyMode.QLOITER -> {
+                mode.text = mode.text.toString() + " | QLOITER"
+            }
+            DataDecoder.Companion.FlyMode.QLAND -> {
+                mode.text = mode.text.toString() + " | QLAND"
+            }
+            DataDecoder.Companion.FlyMode.QRTL -> {
+                mode.text = mode.text.toString() + " | QRTL"
+            }
+            DataDecoder.Companion.FlyMode.QAUTOTUNE -> {
+                mode.text = mode.text.toString() + " | QAUTOTUNE"
+            }
+            DataDecoder.Companion.FlyMode.QACRO -> {
+                mode.text = mode.text.toString() + " | QACRO"
+            }
             null -> {
             }
         }
@@ -988,7 +1042,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     }
 
     private fun updateVoltage() {
-        this.voltage.text = "$lastVBAT ($lastCellVoltage) V"
+        this.voltage.text = "$lastVBAT (${"%.2f".format(lastCellVoltage)}) V"
     }
 
     override fun onDisconnected() {

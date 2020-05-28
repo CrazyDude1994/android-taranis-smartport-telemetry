@@ -5,7 +5,6 @@ import crazydude.com.telemetry.protocol.decoder.DataDecoder
 abstract class Protocol(val dataDecoder: DataDecoder) {
 
     companion object {
-
         const val FUEL = 0
         const val GPS = 1
         const val VBAT = 2
@@ -30,6 +29,31 @@ abstract class Protocol(val dataDecoder: DataDecoder) {
         const val ATTITUDE = 21
         const val GPS_ORIGIN_LATITUDE = 22
         const val GPS_ORIGIN_LONGITUDE = 23
+        //ardupilot S.PORT Data ID's
+        const val DATA_ID_GPS_ALT_BP = 24
+        const val DATA_ID_GPS_SPEED_BP = 25
+        const val DATA_ID_GPS_ALT_AP = 26
+        const val DATA_ID_GPS_LONG_BP = 27
+        const val DATA_ID_GPS_LAT_BP = 28
+        const val DATA_ID_GPS_COURS_BP = 29
+        const val DATA_ID_GPS_SPEED_AP = 30
+        const val DATA_ID_GPS_LONG_AP = 31
+        const val DATA_ID_GPS_LAT_AP = 32
+        const val DATA_ID_BARO_ALT_AP = 33
+        const val DATA_ID_GPS_LONG_EW = 34
+        const val DATA_ID_GPS_LAT_NS = 35
+        const val GPS_STATE_ARDU = 36
+        //ardupilot S.PORT passthrough  Data ID's
+        const val RxBt = 35
+        const val ARDU_TEXT = 36
+        const val ARDU_ATTITUDE = 37
+        const val ARDU_VEL_YAW = 38
+        const val ARDU_AP_STATUS = 39
+        const val ARDU_GPS_STATUS = 40
+        const val ARDU_HOME =41
+        const val ARDU_BATT_2 =42
+        const val ARDU_BATT_1=43
+        const val ARDU_PARAM=44
 
         class TelemetryData(val telemetryType: Int, val data: Int, val rawData: ByteArray? = null) {
             override fun equals(other: Any?): Boolean {
