@@ -130,6 +130,13 @@ class BluetoothLeDataPoller(
                                                                 listener
                                                             )
                                                     }
+
+                                                    is MAVLink2Protocol -> {
+                                                        selectedProtocol =
+                                                            MAVLink2Protocol(
+                                                                listener
+                                                            )
+                                                    }
                                                 }
                                                 serviceSelected = true
                                                 runOnMainThread(Runnable {

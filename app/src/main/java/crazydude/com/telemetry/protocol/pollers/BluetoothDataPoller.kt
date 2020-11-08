@@ -61,6 +61,12 @@ class BluetoothDataPoller(
                                         )
                                 }
 
+                                is MAVLink2Protocol -> {
+                                    selectedProtocol = MAVLink2Protocol(
+                                        listener
+                                    )
+                                }
+
                                 else -> {
                                     thread.interrupt()
                                 }

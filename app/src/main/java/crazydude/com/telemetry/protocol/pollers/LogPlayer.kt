@@ -81,6 +81,11 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
                                         this@LogPlayer
                                     )
                             }
+
+                            is MAVLink2Protocol -> {
+                                tempProtocol = MAVLink2Protocol(tempDecoder)
+                                protocol = MAVLink2Protocol(this@LogPlayer)
+                            }
                         }
                     }
                 })
