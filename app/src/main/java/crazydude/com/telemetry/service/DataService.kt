@@ -20,6 +20,7 @@ import com.hoho.android.usbserial.driver.UsbSerialPort
 import crazydude.com.telemetry.R
 import crazydude.com.telemetry.api.*
 import crazydude.com.telemetry.manager.PreferenceManager
+import crazydude.com.telemetry.maps.Position
 import crazydude.com.telemetry.protocol.pollers.BluetoothDataPoller
 import crazydude.com.telemetry.protocol.pollers.BluetoothLeDataPoller
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
@@ -52,7 +53,7 @@ class DataService : Service(), DataDecoder.Listener {
     private var lastHeading: Float = 0.0f
     private val apiHandler = Handler()
     private lateinit var preferenceManager: PreferenceManager
-    val points: ArrayList<LatLng> = ArrayList()
+    val points: ArrayList<Position> = ArrayList()
 
     override fun onCreate() {
         super.onCreate()
@@ -250,14 +251,14 @@ class DataService : Service(), DataDecoder.Listener {
 
     override fun onGPSData(latitude: Double, longitude: Double) {
         if (hasGPSFix) {
-            points.add(LatLng(latitude, longitude))
+            points.add(Position(latitude, longitude))
         }
         lastLatitude = latitude
         lastLongitude = longitude
         dataListener?.onGPSData(latitude, longitude)
     }
 
-    override fun onGPSData(list: List<LatLng>, addToEnd: Boolean) {
+    override fun onGPSData(list: List<Position>, addToEnd: Boolean) {
 
     }
 

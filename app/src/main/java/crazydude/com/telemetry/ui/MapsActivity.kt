@@ -9,8 +9,6 @@ import android.bluetooth.BluetoothDevice
 import android.content.*
 import android.content.pm.PackageManager
 import android.content.res.Configuration
-import android.graphics.Bitmap
-import android.graphics.Canvas
 import android.graphics.Color
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbDeviceConnection
@@ -24,13 +22,11 @@ import android.text.Html
 import android.text.method.LinkMovementMethod
 import android.view.View
 import android.widget.*
-import androidx.annotation.DrawableRes
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.drawable.DrawableCompat
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -46,6 +42,11 @@ import crazydude.com.telemetry.R
 import crazydude.com.telemetry.converter.Converter
 import crazydude.com.telemetry.converter.KmhToMphConverter
 import crazydude.com.telemetry.manager.PreferenceManager
+import crazydude.com.telemetry.maps.MapLine
+import crazydude.com.telemetry.maps.MapMarker
+import crazydude.com.telemetry.maps.MapWrapper
+import crazydude.com.telemetry.maps.Position
+import crazydude.com.telemetry.maps.google.GoogleMapWrapper
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import crazydude.com.telemetry.protocol.pollers.LogPlayer
 import crazydude.com.telemetry.service.DataService
@@ -67,8 +68,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         private val MAP_TYPE_ITEMS = arrayOf("Road Map", "Satellite", "Terrain", "Hybrid")
     }
 
-    private var map: GoogleMap? = null
-    private var marker: Marker? = null
+    private var map: MapWrapper? = null
+
+    private var marker: MapMarker? = null
+    private var polyLine: MapLine? = null
+    private var headingPolyline: MapLine? = null
 
     private lateinit var connectButton: Button
     private lateinit var replayButton: ImageView
@@ -98,13 +102,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     private lateinit var preferenceManager: PreferenceManager
     private lateinit var firebaseAnalytics: FirebaseAnalytics
 
-    private var mapType = GoogleMap.MAP_TYPE_NORMAL
+    private var mapType = 0
 
-    private var lastGPS = LatLng(0.0, 0.0)
+    private var lastGPS = Position(0.0, 0.0)
     private var lastHeading = 0f
     private var followMode = true
-    private var polyLine: Polyline? = null
-    private var headingPolyline: Polyline? = null
     private var hasGPSFix = false
     private var replayFileString: String? = null
     private var dataService: DataService? = null
@@ -122,9 +124,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
             dataService?.let {
                 if (it.isConnected()) {
                     switchToConnectedState()
-                    val points = polyLine?.points
-                    points?.addAll(it.points)
-                    polyLine?.points = points
+                    polyLine?.addPoints(it.points)
                 }
             }
         }
@@ -190,7 +190,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         followButton.setOnClickListener {
             followMode = true
             marker?.let {
-                map?.moveCamera(CameraUpdateFactory.newLatLng(it.position))
+                map?.moveCamera(it.position)
             }
         }
 
@@ -229,7 +229,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
 
     private fun showAndCopyCurrentGPSLocation() {
         marker?.let {
-            val posString = "${it.position.latitude},${it.position.longitude}"
+            val posString = "${it.position.lat},${it.position.lon}"
             val clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             clipboardManager.primaryClip = ClipData.newPlainText("Location", posString)
             Toast.makeText(
@@ -242,7 +242,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
 
     private fun showDirectionsToCurrentLocation() {
         marker?.let {
-            val posString = "${it.position.latitude},${it.position.longitude}"
+            val posString = "${it.position.lat},${it.position.lon}"
             val intent = Intent(
                 Intent.ACTION_VIEW,
                 Uri.parse("http://maps.google.com/maps?daddr=$posString")
@@ -510,13 +510,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
                 headingPolyline?.remove()
                 headingPolyline = null
             }
-            marker?.setIcon(
-                bitmapDescriptorFromVector(
-                    this,
-                    R.drawable.ic_plane,
-                    preferenceManager.getPlaneColor()
-                )
-            )
+            marker?.setIcon(R.drawable.ic_plane, preferenceManager.getPlaneColor())
         }
         if (preferenceManager.showArtificialHorizonView()) {
             horizonView.visibility = View.VISIBLE
@@ -758,7 +752,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         bindService(intent, serviceConnection, 0)
     }
 
-    @SuppressLint("MissingPermission")
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -862,30 +855,18 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         runOnUiThread {
             this.hasGPSFix = gpsFix
             if (gpsFix && marker == null) {
-                marker = map?.addMarker(
-                    MarkerOptions().icon(
-                        bitmapDescriptorFromVector(
-                            this,
-                            R.drawable.ic_plane, preferenceManager.getPlaneColor()
-                        )
-                    ).position(lastGPS)
-                )
+                marker = map?.addMarker(R.drawable.ic_plane, preferenceManager.getPlaneColor(), lastGPS)
                 if (headingPolyline == null && preferenceManager.isHeadingLineEnabled()) {
                     headingPolyline = createHeadingPolyline()
                 }
-                map?.moveCamera(CameraUpdateFactory.newLatLngZoom(lastGPS, 15f))
+                map?.moveCamera(lastGPS, 15f)
             }
             this.satellites.text = satellites.toString()
         }
     }
 
-    private fun createHeadingPolyline(): Polyline? {
-        return map?.addPolyline(
-            PolylineOptions().add(lastGPS).add(lastGPS).color(preferenceManager.getHeadLineColor())
-                .width(
-                    3f
-                )
-        )
+    private fun createHeadingPolyline(): MapLine? {
+        return map?.addPolyline(3f, preferenceManager.getHeadLineColor(), lastGPS, lastGPS)
     }
 
     override fun onRSSIData(rssi: Int) {
@@ -893,7 +874,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
-        map = googleMap
+        map = GoogleMapWrapper(applicationContext, googleMap)
         map?.mapType = mapType
         if (checkCallingOrSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             map?.isMyLocationEnabled = true
@@ -912,12 +893,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
             RelativeLayout.LayoutParams.MATCH_PARENT,
             RelativeLayout.LayoutParams.WRAP_CONTENT
         )
-        map?.setPadding(0, topLayout.measuredHeight, 0, 0)
-        polyLine = map?.addPolyline(PolylineOptions().color(preferenceManager.getRouteColor()))
+//        map?.setPadding(0, topLayout.measuredHeight, 0, 0)
+        polyLine = map?.addPolyline(preferenceManager.getRouteColor())
         map?.setOnCameraMoveStartedListener {
-            if (it == GoogleMap.OnCameraMoveStartedListener.REASON_GESTURE) {
-                followMode = false
-            }
+            followMode = false
         }
     }
 
@@ -977,31 +956,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         fMapTypeDialog.show()
     }
 
-    private fun bitmapDescriptorFromVector(
-        context: Context, @DrawableRes vectorDrawableResourceId: Int,
-        color: Int? = null
-    ): BitmapDescriptor {
-        val vectorDrawable = ContextCompat.getDrawable(context, vectorDrawableResourceId)
-        color?.let {
-            DrawableCompat.setTint(vectorDrawable!!, it)
-        }
-        vectorDrawable!!.setBounds(
-            0,
-            0,
-            vectorDrawable.intrinsicWidth,
-            vectorDrawable.intrinsicHeight
-        )
-        val bitmap =
-            Bitmap.createBitmap(
-                vectorDrawable.intrinsicWidth,
-                vectorDrawable.intrinsicHeight,
-                Bitmap.Config.ARGB_8888
-            )
-        val canvas = Canvas(bitmap)
-        vectorDrawable.draw(canvas)
-        return BitmapDescriptorFactory.fromBitmap(bitmap)
-    }
-
     override fun onVBATData(voltage: Float) {
         lastVBAT = voltage
         runOnUiThread {
@@ -1027,10 +981,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
 
     private fun updateHeading() {
         headingPolyline?.let { headingLine ->
-            val points = headingLine.points
-            points[0] = lastGPS
-            points[1] = SphericalUtil.computeOffset(lastGPS, 1000.0, lastHeading.toDouble())
-            headingLine.points = points
+            headingLine.setPoint(0, lastGPS)
+            val computeOffset = SphericalUtil.computeOffset(lastGPS.toLatLng(), 1000.0, lastHeading.toDouble())
+            headingLine.setPoint(1, Position(computeOffset.latitude, computeOffset.longitude))
         }
     }
 
@@ -1079,9 +1032,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         }
         marker?.remove()
         marker = null
-        val points = polyLine?.points
-        points?.clear()
-        polyLine?.points = points
+        polyLine?.clear()
         headingPolyline?.remove()
     }
 
@@ -1155,34 +1106,30 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
 
     }
 
-    override fun onGPSData(list: List<LatLng>, addToEnd: Boolean) {
+    override fun onGPSData(list: List<Position>, addToEnd: Boolean) {
         runOnUiThread {
             if (hasGPSFix && list.isNotEmpty()) {
-                val points = polyLine?.points
                 if (!addToEnd) {
-                    points?.clear()
+                    polyLine?.clear()
                 }
-                points?.addAll(list)
-                points?.removeAt(points.size - 1)
-                polyLine?.points = points
-                onGPSData(list[list.size - 1].latitude, list[list.size - 1].longitude)
+                polyLine?.addPoints(list)
+                polyLine?.removeAt(polyLine?.size!! - 1)
+                onGPSData(list[list.size - 1].lat, list[list.size - 1].lon)
             }
         }
     }
 
     override fun onGPSData(latitude: Double, longitude: Double) {
         runOnUiThread {
-            if (LatLng(latitude, longitude) != lastGPS) {
-                lastGPS = LatLng(latitude, longitude)
+            if (Position(latitude, longitude) != lastGPS) {
+                lastGPS = Position(latitude, longitude)
                 marker?.let { it.position = lastGPS }
                 updateHeading()
                 if (followMode) {
-                    map?.moveCamera(CameraUpdateFactory.newLatLng(lastGPS))
+                    map?.moveCamera(lastGPS)
                 }
                 if (hasGPSFix) {
-                    val points = polyLine?.points
-                    points?.add(lastGPS)
-                    polyLine?.points = points
+                    polyLine?.addPoints(listOf(lastGPS))
                 }
             }
         }

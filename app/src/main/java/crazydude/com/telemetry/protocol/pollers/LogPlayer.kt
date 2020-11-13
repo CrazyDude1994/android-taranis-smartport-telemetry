@@ -2,7 +2,7 @@ package crazydude.com.telemetry.protocol.pollers
 
 import android.annotation.SuppressLint
 import android.os.AsyncTask
-import com.google.android.gms.maps.model.LatLng
+import crazydude.com.telemetry.maps.Position
 import crazydude.com.telemetry.protocol.*
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import java.io.File
@@ -13,7 +13,7 @@ import kotlin.collections.ArrayList
 class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listener {
 
     private var cachedData = ArrayList<Protocol.Companion.TelemetryData>()
-    private var decodedCoordinates = ArrayList<LatLng>()
+    private var decodedCoordinates = ArrayList<Position>()
     private var dataReadyListener: DataReadyListener? = null
     private var currentPosition: Int = 0
     private var uniqueData = HashMap<Int, Int>()
@@ -190,7 +190,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
 
     override fun onGPSData(latitude: Double, longitude: Double) {
         if (latitude != 0.0 && longitude != 0.0) {
-            decodedCoordinates.add(LatLng(latitude, longitude))
+            decodedCoordinates.add(Position(latitude, longitude))
         }
     }
 
@@ -214,7 +214,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
         originalListener.onRSSIData(rssi)
     }
 
-    override fun onGPSData(list: List<LatLng>, addToEnd: Boolean) {
+    override fun onGPSData(list: List<Position>, addToEnd: Boolean) {
 
     }
 

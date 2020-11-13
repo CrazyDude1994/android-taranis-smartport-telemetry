@@ -1,6 +1,7 @@
 package crazydude.com.telemetry.protocol.decoder
 
 import com.google.android.gms.maps.model.LatLng
+import crazydude.com.telemetry.maps.Position
 import crazydude.com.telemetry.protocol.Protocol
 
 abstract class DataDecoder(protected val listener: Listener) {
@@ -27,7 +28,7 @@ abstract class DataDecoder(protected val listener: Listener) {
             override fun onGPSData(latitude: Double, longitude: Double) {
             }
 
-            override fun onGPSData(list: List<LatLng>, addToEnd: Boolean) {
+            override fun onGPSData(list: List<Position>, addToEnd: Boolean) {
             }
 
             override fun onVBATData(voltage: Float) {
@@ -96,7 +97,7 @@ abstract class DataDecoder(protected val listener: Listener) {
         fun onFuelData(fuel: Int)
         fun onConnected()
         fun onGPSData(latitude: Double, longitude: Double)
-        fun onGPSData(list: List<LatLng>, addToEnd: Boolean)
+        fun onGPSData(list: List<Position>, addToEnd: Boolean)
         fun onVBATData(voltage: Float)
         fun onCellVoltageData(voltage: Float)
         fun onCurrentData(current: Float)
