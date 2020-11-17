@@ -4,11 +4,14 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.os.Bundle
 import androidx.annotation.DrawableRes
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.DrawableCompat
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.MapView
+import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.*
 import crazydude.com.telemetry.R
 import crazydude.com.telemetry.maps.MapLine
@@ -16,10 +19,16 @@ import crazydude.com.telemetry.maps.MapMarker
 import crazydude.com.telemetry.maps.MapWrapper
 import crazydude.com.telemetry.maps.Position
 
-class GoogleMapWrapper(val context: Context, val googleMap: GoogleMap) : MapWrapper {
+class GoogleMapWrapper(val context: Context, val mapView: MapView, private val callback: () -> Unit) : MapWrapper,
+    OnMapReadyCallback {
 
     private val markers = HashSet<MapMarker>()
     private val lines = HashSet<MapLine>()
+    private lateinit var googleMap : GoogleMap
+
+    init {
+        mapView.getMapAsync(this)
+    }
 
     override var mapType: Int
         get() = googleMap.mapType
@@ -27,7 +36,8 @@ class GoogleMapWrapper(val context: Context, val googleMap: GoogleMap) : MapWrap
     override var isMyLocationEnabled: Boolean
         get() = googleMap.isMyLocationEnabled
         @SuppressLint("MissingPermission")
-        set(value) {googleMap.isMyLocationEnabled = value}
+        set(value) {
+            googleMap.isMyLocationEnabled = value}
 
     override fun moveCamera(position: Position) {
         googleMap.moveCamera(CameraUpdateFactory.newLatLng(position.toLatLng()))
@@ -103,5 +113,46 @@ class GoogleMapWrapper(val context: Context, val googleMap: GoogleMap) : MapWrap
         val canvas = Canvas(bitmap)
         vectorDrawable.draw(canvas)
         return BitmapDescriptorFactory.fromBitmap(bitmap)
+    }
+
+    override fun onMapReady(googleMap: GoogleMap?) {
+        this.googleMap = googleMap!!
+        callback()
+    }
+
+    override fun setPadding(left: Int, top: Int, right: Int, bottom: Int) {
+        googleMap.setPadding(left, top, right, bottom)
+    }
+
+    override fun onCreate(bundle: Bundle?) {
+        mapView.onCreate(bundle)
+    }
+
+    override fun onResume() {
+        mapView.onResume()
+    }
+
+    override fun onPause() {
+        mapView.onPause()
+    }
+
+    override fun onLowMemory() {
+        mapView.onLowMemory()
+    }
+
+    override fun onStart() {
+        mapView.onStart()
+    }
+
+    override fun onStop() {
+        mapView.onStop()
+    }
+
+    override fun onDestroy() {
+        mapView.onDestroy()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle?) {
+        mapView.onSaveInstanceState(outState)
     }
 }

@@ -1,6 +1,5 @@
 package crazydude.com.telemetry.ui
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.PendingIntent
 import android.app.ProgressDialog
@@ -27,11 +26,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.*
+import com.google.android.gms.maps.*
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.maps.android.SphericalUtil
@@ -47,6 +42,7 @@ import crazydude.com.telemetry.maps.MapMarker
 import crazydude.com.telemetry.maps.MapWrapper
 import crazydude.com.telemetry.maps.Position
 import crazydude.com.telemetry.maps.google.GoogleMapWrapper
+import crazydude.com.telemetry.maps.osm.OsmMapWrapper
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import crazydude.com.telemetry.protocol.pollers.LogPlayer
 import crazydude.com.telemetry.service.DataService
@@ -57,7 +53,7 @@ import kotlin.collections.ArrayList
 import kotlin.math.roundToInt
 
 
-class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listener {
+class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
 
     companion object {
         private const val REQUEST_ENABLE_BT: Int = 0
@@ -65,7 +61,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         private const val REQUEST_WRITE_PERMISSION: Int = 2
         private const val REQUEST_READ_PERMISSION: Int = 3
         private const val ACTION_USB_DEVICE = "action_usb_device"
-        private val MAP_TYPE_ITEMS = arrayOf("Road Map", "Satellite", "Terrain", "Hybrid")
+        private val MAP_TYPE_ITEMS = arrayOf("Road Map (Google)", "Satellite (Google)", "Terrain (Google)", "Hybrid (Google)", "OpenStreetMap (can be cached)")
     }
 
     private var map: MapWrapper? = null
@@ -95,6 +91,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     private lateinit var topList: FlowLayout
     private lateinit var bottomList: FlowLayout
     private lateinit var rootLayout: CoordinatorLayout
+    private lateinit var mapHolder: FrameLayout
 
     private lateinit var sensorViewMap: HashMap<String, TextView>
     private lateinit var sensorsConverters: HashMap<String, Converter>
@@ -102,7 +99,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
     private lateinit var preferenceManager: PreferenceManager
     private lateinit var firebaseAnalytics: FirebaseAnalytics
 
-    private var mapType = 0
+    private var mapType = GoogleMap.MAP_TYPE_NORMAL
 
     private var lastGPS = Position(0.0, 0.0)
     private var lastHeading = 0f
@@ -161,6 +158,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         directionsButton = findViewById(R.id.directions_button)
         topList = findViewById(R.id.top_list)
         bottomList = findViewById(R.id.bottom_list)
+        mapHolder = findViewById(R.id.map_holder)
 
         sensorViewMap = hashMapOf(
             Pair(PreferenceManager.sensors.elementAt(0).name, satellites),
@@ -218,13 +216,67 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
             switchToIdleState()
         }
 
-        val mapFragment = supportFragmentManager
-            .findFragmentById(R.id.map) as SupportMapFragment
-        mapFragment.getMapAsync(this)
-
         startDataService()
 
         checkAppInstallDate()
+        initMap(false)
+        map?.onCreate(savedInstanceState)
+    }
+
+    private fun initMap(simulateLifecycle: Boolean) {
+        if (mapType in GoogleMap.MAP_TYPE_NORMAL..GoogleMap.MAP_TYPE_HYBRID) {
+            initGoogleMap(simulateLifecycle)
+        } else {
+            initOSMMap()
+        }
+    }
+
+    private fun initOSMMap() {
+        val mapView = org.osmdroid.views.MapView(this)
+        mapHolder.addView(mapView)
+        map = OsmMapWrapper(applicationContext, mapView)
+        map?.isMyLocationEnabled = true
+        polyLine = map?.addPolyline(preferenceManager.getRouteColor())
+        showMyLocation()
+    }
+
+    private fun showMyLocation() {
+        if (checkCallingOrSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            map?.isMyLocationEnabled = true
+            checkSendDataDialogShown()
+        } else {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(
+                    android.Manifest.permission.ACCESS_FINE_LOCATION
+                ),
+                REQUEST_LOCATION_PERMISSION
+            )
+            map?.isMyLocationEnabled = false
+        }
+    }
+
+    private fun initGoogleMap(simulateLifecycle: Boolean) {
+        val mapView = MapView(this)
+        mapHolder.addView(mapView)
+        map = GoogleMapWrapper(this, mapView) {
+            showMyLocation()
+            map?.mapType = mapType
+            topLayout.measure(
+                RelativeLayout.LayoutParams.MATCH_PARENT,
+                RelativeLayout.LayoutParams.WRAP_CONTENT
+            )
+            polyLine = map?.addPolyline(preferenceManager.getRouteColor())
+            map?.setOnCameraMoveStartedListener {
+                followMode = false
+            }
+            map?.setPadding(0, topLayout.measuredHeight, 0, 0)
+        }
+        if (simulateLifecycle) {
+            map?.onCreate(null)
+            map?.onStart()
+            map?.onResume()
+        }
     }
 
     private fun showAndCopyCurrentGPSLocation() {
@@ -492,14 +544,21 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         }
     }
 
+    override fun onLowMemory() {
+        super.onLowMemory()
+        map?.onLowMemory()
+    }
+
     override fun onSaveInstanceState(outState: Bundle?) {
         super.onSaveInstanceState(outState)
+        map?.onSaveInstanceState(outState)
         outState?.putBoolean("follow_mode", followMode)
         outState?.putString("replay_file_name", replayFileString)
     }
 
     override fun onStart() {
         super.onStart()
+        map?.onStart()
         polyLine?.let { it.color = preferenceManager.getRouteColor() }
         if (!isIdle()) {
             headingPolyline?.let { it.color = preferenceManager.getHeadLineColor() }
@@ -608,6 +667,21 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
                 usbManager.requestPermission(driver.device, pendingIntent)
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        map?.onResume()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        map?.onPause()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        map?.onStop()
     }
 
     private fun connectBluetooth() {
@@ -735,6 +809,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
 
     override fun onDestroy() {
         super.onDestroy()
+        map?.onDestroy()
         if (!isChangingConfigurations) {
             dataService?.setDataListener(null)
         }
@@ -873,33 +948,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
 
     }
 
-    override fun onMapReady(googleMap: GoogleMap) {
-        map = GoogleMapWrapper(applicationContext, googleMap)
-        map?.mapType = mapType
-        if (checkCallingOrSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            map?.isMyLocationEnabled = true
-            checkSendDataDialogShown()
-        } else {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(
-                    android.Manifest.permission.ACCESS_FINE_LOCATION
-                ),
-                REQUEST_LOCATION_PERMISSION
-            )
-            map?.isMyLocationEnabled = false
-        }
-        topLayout.measure(
-            RelativeLayout.LayoutParams.MATCH_PARENT,
-            RelativeLayout.LayoutParams.WRAP_CONTENT
-        )
-//        map?.setPadding(0, topLayout.measuredHeight, 0, 0)
-        polyLine = map?.addPolyline(preferenceManager.getRouteColor())
-        map?.setOnCameraMoveStartedListener {
-            followMode = false
-        }
-    }
-
     private fun checkSendDataDialogShown() {
         if (!preferenceManager.isSendDataDialogShown()) {
             firebaseAnalytics.logEvent("send_data_dialog_shown", null)
@@ -934,20 +982,17 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, DataDecoder.Listen
         val builder = AlertDialog.Builder(this)
         builder.setTitle(fDialogTitle)
 
-        val checkItem = (map?.mapType ?: GoogleMap.MAP_TYPE_NORMAL) - 1
+        val checkItem = preferenceManager.getMapType() - 1
 
         builder.setSingleChoiceItems(
             MAP_TYPE_ITEMS,
             checkItem
         ) { dialog, item ->
-            when (item) {
-                1 -> map?.mapType = GoogleMap.MAP_TYPE_SATELLITE
-                2 -> map?.mapType = GoogleMap.MAP_TYPE_TERRAIN
-                3 -> map?.mapType = GoogleMap.MAP_TYPE_HYBRID
-                else -> map?.mapType = GoogleMap.MAP_TYPE_NORMAL
-            }
-            mapType = map?.mapType ?: GoogleMap.MAP_TYPE_NORMAL
+            mapHolder.removeAllViews()
+            map = null
+            mapType = item + 1
             preferenceManager.setMapType(mapType)
+            initMap(true)
             dialog.dismiss()
         }
 
