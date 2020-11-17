@@ -67,6 +67,10 @@ class OsmMapWrapper(private val context: Context, private val mapView: MapView) 
     }
 
     override fun setOnCameraMoveStartedListener(function: () -> Unit) {
+        mapView.setOnTouchListener { v, event ->
+            function()
+            return@setOnTouchListener false
+        }
     }
 
     override fun addPolyline(color: Int): MapLine {

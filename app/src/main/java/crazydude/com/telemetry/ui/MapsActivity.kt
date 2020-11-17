@@ -235,7 +235,9 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         val mapView = org.osmdroid.views.MapView(this)
         mapHolder.addView(mapView)
         map = OsmMapWrapper(applicationContext, mapView)
-        map?.isMyLocationEnabled = true
+        map?.setOnCameraMoveStartedListener {
+            followMode = false
+        }
         polyLine = map?.addPolyline(preferenceManager.getRouteColor())
         showMyLocation()
     }
