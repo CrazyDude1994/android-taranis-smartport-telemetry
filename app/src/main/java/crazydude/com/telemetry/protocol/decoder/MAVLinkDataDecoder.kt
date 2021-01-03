@@ -21,6 +21,58 @@ class MAVLinkDataDecoder(listener: Listener) : DataDecoder(listener) {
         private const val MAV_MODE_FLAG_STABILIZE_ENABLED = 16
         private const val MAV_MODE_FLAG_GUIDED_ENABLED = 8
         private const val MAV_MODE_FLAG_SAFETY_ARMED = 128
+        private const val MAV_MODE_FLAG_CUSTOM_MODE_ENABLED = 1
+
+        private const val MAV_TYPE_FIXED_WING = 1
+        private const val MAV_TYPE_GROUND_ROVER = 10
+        private const val MAV_TYPE_SURFACE_BOAT = 11
+
+        private const val PLANE_MODE_MANUAL = 0
+        private const val PLANE_MODE_CIRCLE = 1
+        private const val PLANE_MODE_STABILIZE = 2
+        private const val PLANE_MODE_TRAINING = 3
+        private const val PLANE_MODE_ACRO = 4
+        private const val PLANE_MODE_FLY_BY_WIRE_A = 5
+        private const val PLANE_MODE_FLY_BY_WIRE_B = 6
+        private const val PLANE_MODE_CRUISE = 7
+        private const val PLANE_MODE_AUTOTUNE = 8
+        private const val PLANE_MODE_AUTO = 10
+        private const val PLANE_MODE_RTL = 11
+        private const val PLANE_MODE_LOITER = 12
+        private const val PLANE_MODE_TAKEOFF = 13
+        private const val PLANE_MODE_AVOID_ADSB = 14
+        private const val PLANE_MODE_GUIDED = 15
+        private const val PLANE_MODE_INITIALIZING = 16
+        private const val PLANE_MODE_QSTABILIZE = 17
+        private const val PLANE_MODE_QHOVER = 18
+        private const val PLANE_MODE_QLOITER = 19
+        private const val PLANE_MODE_QLAND = 20
+        private const val PLANE_MODE_QRTL = 21
+        private const val PLANE_MODE_QAUTOTUNE = 22
+        private const val PLANE_MODE_ENUM_END = 23
+
+        private const val COPTER_MODE_STABILIZE = 0
+        private const val COPTER_MODE_ACRO = 1
+        private const val COPTER_MODE_ALT_HOLD = 2
+        private const val COPTER_MODE_AUTO = 3
+        private const val COPTER_MODE_GUIDED = 4
+        private const val COPTER_MODE_LOITER = 5
+        private const val COPTER_MODE_RTL = 6
+        private const val COPTER_MODE_CIRCLE = 7
+        private const val COPTER_MODE_LAND = 9
+        private const val COPTER_MODE_DRIFT = 11
+        private const val COPTER_MODE_SPORT = 13
+        private const val COPTER_MODE_FLIP = 14
+        private const val COPTER_MODE_AUTOTUNE = 15
+        private const val COPTER_MODE_POSHOLD = 16
+        private const val COPTER_MODE_BRAKE = 17
+        private const val COPTER_MODE_THROW = 18
+        private const val COPTER_MODE_AVOID_ADSB = 19
+        private const val COPTER_MODE_GUIDED_NOGPS = 20
+        private const val COPTER_MODE_SMART_RTL = 21
+        private const val COPTER_MODE_ENUM_END = 22
+
+        private const val MAV_STATE_CRITICAL = 5
     }
 
     override fun decodeData(data: Protocol.Companion.TelemetryData) {
@@ -63,11 +115,22 @@ class MAVLinkDataDecoder(listener: Listener) : DataDecoder(listener) {
             }
             Protocol.FLYMODE -> {
                 val rawMode = data.data
+
+                val byteBuffer = ByteBuffer.wrap(data.rawData).order(ByteOrder.LITTLE_ENDIAN)
+
+                val customMode = byteBuffer.int
+                val aircraftType = byteBuffer.get().toUByte().toInt()
+                val autopilotClass = byteBuffer.get()
+                val mode = byteBuffer.get()
+                val state = byteBuffer.get().toUByte().toInt()
+                val version = byteBuffer.get()
+
                 val isStabilized =
                     (rawMode and MAV_MODE_FLAG_STABILIZE_ENABLED) == MAV_MODE_FLAG_STABILIZE_ENABLED
                 val isGuided =
                     (rawMode and MAV_MODE_FLAG_GUIDED_ENABLED) == MAV_MODE_FLAG_GUIDED_ENABLED
                 val armed = (rawMode and MAV_MODE_FLAG_SAFETY_ARMED) == MAV_MODE_FLAG_SAFETY_ARMED
+                val isFailsafe = state == MAV_STATE_CRITICAL;
 
                 var flyMode: DataDecoder.Companion.FlyMode
                 if (isGuided) {
@@ -80,7 +143,44 @@ class MAVLinkDataDecoder(listener: Listener) : DataDecoder(listener) {
                     }
                 }
 
-                listener.onFlyModeData(armed, false, flyMode)
+                if ((rawMode and MAV_MODE_FLAG_CUSTOM_MODE_ENABLED) == MAV_MODE_FLAG_CUSTOM_MODE_ENABLED) {
+                    //try to decode specific flight mode for INAV
+                    //https://github.com/iNavFlight/inav/blob/2.6.0/src/main/telemetry/mavlink.c
+                    if ( ( aircraftType == MAV_TYPE_FIXED_WING ) ||
+                        ( aircraftType == MAV_TYPE_GROUND_ROVER) ||
+                        ( aircraftType == MAV_TYPE_SURFACE_BOAT)){
+                        when (customMode) {
+                            PLANE_MODE_MANUAL -> flyMode = DataDecoder.Companion.FlyMode.MANUAL
+                            PLANE_MODE_ACRO -> flyMode = DataDecoder.Companion.FlyMode.ACRO
+                            PLANE_MODE_FLY_BY_WIRE_A -> flyMode = DataDecoder.Companion.FlyMode.ANGLE
+                            PLANE_MODE_STABILIZE -> flyMode = DataDecoder.Companion.FlyMode.HORIZON
+                            PLANE_MODE_FLY_BY_WIRE_B -> flyMode = DataDecoder.Companion.FlyMode.ALTHOLD
+                            PLANE_MODE_LOITER -> flyMode = DataDecoder.Companion.FlyMode.LOITER
+                            PLANE_MODE_RTL -> flyMode = DataDecoder.Companion.FlyMode.RTH
+                            PLANE_MODE_AUTO -> if ( isFailsafe ) flyMode = DataDecoder.Companion.FlyMode.LANDING else flyMode = DataDecoder.Companion.FlyMode.MISSION //can not decode Waypoint or RTH after mission, use Mission
+                            PLANE_MODE_CRUISE -> flyMode = DataDecoder.Companion.FlyMode.CRUISE  //can not decode Cruise or Cruise3D, not enough data
+                            PLANE_MODE_TAKEOFF -> flyMode = DataDecoder.Companion.FlyMode.TAKEOFF
+                        }
+                    }
+                    else {
+                        when (customMode) {
+                            COPTER_MODE_ACRO -> flyMode = DataDecoder.Companion.FlyMode.ACRO
+                            COPTER_MODE_STABILIZE -> flyMode = DataDecoder.Companion.FlyMode.STABILIZE  //can not decode Angle or Horizon, not enough data
+                            COPTER_MODE_ALT_HOLD -> flyMode = DataDecoder.Companion.FlyMode.ALTHOLD
+                            COPTER_MODE_POSHOLD -> flyMode = DataDecoder.Companion.FlyMode.HOLD
+                            COPTER_MODE_RTL -> flyMode = DataDecoder.Companion.FlyMode.RTH
+                            COPTER_MODE_AUTO -> if ( isFailsafe ) flyMode = DataDecoder.Companion.FlyMode.LANDING else flyMode = DataDecoder.Companion.FlyMode.MISSION
+                            COPTER_MODE_THROW -> flyMode = DataDecoder.Companion.FlyMode.TAKEOFF
+                        }
+                    }
+                }
+
+                if ( isFailsafe ) {
+                    listener.onFlyModeData(armed, false, flyMode, DataDecoder.Companion.FlyMode.FAILSAFE)
+                }
+                else {
+                    listener.onFlyModeData(armed, false, flyMode )
+                }
             }
             Protocol.ATTITUDE -> {
                 val byteBuffer = ByteBuffer.wrap(data.rawData).order(ByteOrder.LITTLE_ENDIAN)
