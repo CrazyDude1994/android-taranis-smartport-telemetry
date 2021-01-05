@@ -127,4 +127,13 @@ class PreferenceManager(context: Context) {
         val position: String = "top",
         val shown: Boolean = true
     )
+
+    fun getVideoContainerShown(): Boolean {
+        return sharedPreferences.getBoolean("video_container_shown", false)
+    }
+
+    fun setVideoContainerShown(shown: Boolean) {
+        sharedPreferences.edit().putBoolean("video_container_shown", shown).apply()
+    }
+
 }

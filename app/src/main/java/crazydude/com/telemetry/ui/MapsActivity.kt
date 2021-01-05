@@ -84,6 +84,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     private lateinit var followButton: FloatingActionButton
     private lateinit var mapTypeButton: FloatingActionButton
     private lateinit var fullscreenButton: FloatingActionButton
+    private lateinit var layoutButton: FloatingActionButton
     private lateinit var directionsButton: FloatingActionButton
     private lateinit var settingsButton: ImageView
     private lateinit var topLayout: RelativeLayout
@@ -92,6 +93,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     private lateinit var bottomList: FlowLayout
     private lateinit var rootLayout: CoordinatorLayout
     private lateinit var mapHolder: FrameLayout
+    private lateinit var videoHolder: FrameLayout
 
     private lateinit var sensorViewMap: HashMap<String, TextView>
     private lateinit var sensorsConverters: HashMap<String, Converter>
@@ -155,10 +157,12 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         seekBar = findViewById(R.id.seekbar)
         horizonView = findViewById(R.id.horizon_view)
         fullscreenButton = findViewById(R.id.fullscreen_button)
+        layoutButton = findViewById(R.id.layout_button)
         directionsButton = findViewById(R.id.directions_button)
         topList = findViewById(R.id.top_list)
         bottomList = findViewById(R.id.bottom_list)
         mapHolder = findViewById(R.id.map_holder)
+        videoHolder = findViewById(R.id.viewHolder)
 
         sensorViewMap = hashMapOf(
             Pair(PreferenceManager.sensors.elementAt(0).name, satellites),
@@ -182,6 +186,16 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             } else {
                 window.decorView.systemUiVisibility =
                     (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
+            }
+        }
+
+        layoutButton.setOnClickListener {
+            if ( preferenceManager.getVideoContainerShown() ) {
+                videoHolder.visibility = View.GONE
+                preferenceManager.setVideoContainerShown(false)
+            } else {
+                videoHolder.visibility = View.VISIBLE
+                preferenceManager.setVideoContainerShown(true)
             }
         }
 
@@ -578,6 +592,13 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         } else {
             horizonView.visibility = View.GONE
         }
+
+        if ( preferenceManager.getVideoContainerShown() ) {
+            videoHolder.visibility = View.VISIBLE
+        } else {
+            videoHolder.visibility = View.GONE
+        }
+
         updateSensorsPlacement()
     }
 
