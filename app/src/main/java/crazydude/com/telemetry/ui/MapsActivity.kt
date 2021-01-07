@@ -1,6 +1,7 @@
 package crazydude.com.telemetry.ui
 
 import android.app.Activity
+import android.app.Fragment
 import android.app.PendingIntent
 import android.app.ProgressDialog
 import android.bluetooth.BluetoothAdapter
@@ -26,13 +27,15 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.google.android.gms.maps.*
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.MapView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.maps.android.SphericalUtil
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
 import com.nex3z.flowlayout.FlowLayout
+import com.serenegiant.usbcameratest4.CameraFragment
 import crazydude.com.telemetry.R
 import crazydude.com.telemetry.converter.Converter
 import crazydude.com.telemetry.converter.KmhToMphConverter
@@ -53,7 +56,10 @@ import kotlin.collections.ArrayList
 import kotlin.math.roundToInt
 
 
-class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
+import com.serenegiant.common.BaseActivity;
+
+//class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
+class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener {
 
     companion object {
         private const val REQUEST_ENABLE_BT: Int = 0

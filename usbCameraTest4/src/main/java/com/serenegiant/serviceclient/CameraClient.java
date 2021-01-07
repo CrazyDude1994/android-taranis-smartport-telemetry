@@ -158,7 +158,7 @@ public class CameraClient implements ICameraClient {
 				final Context context = mWeakContext.get();
 				if (context != null) {
 					final Intent intent = new Intent(IUVCService.class.getName());
-					intent.setPackage("com.serenegiant.usbcameratest4");
+					intent.setPackage("crazydude.com.telemetry");
 					context.bindService(intent,
 						mServiceConnection, Context.BIND_AUTO_CREATE);
 				} else
