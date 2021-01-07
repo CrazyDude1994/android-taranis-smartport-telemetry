@@ -29,7 +29,7 @@
                     layout="@layout/view_video"
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
-                    android:layout_weight="0.7"
+                    android:layout_weight="1.1"
                     android:visibility="gone"
                     />
 
