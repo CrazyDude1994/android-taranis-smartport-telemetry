@@ -63,7 +63,7 @@ public class UVCService extends BaseService {
 			mUSBMonitor.register();
 		}
 		mNotificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
-		showNotification(getString(R.string.app_name));
+		showNotification();
 	}
 
 	@Override
@@ -115,17 +115,16 @@ public class UVCService extends BaseService {
 	/**
 	 * helper method to show/change message on notification area
 	 * and set this service as foreground service to keep alive as possible as this can.
-	 * @param text
 	 */
-	private void showNotification(final CharSequence text) {
-		if (DEBUG) Log.v(TAG, "showNotification:" + text);
+	private void showNotification() {
+		if (DEBUG) Log.v(TAG, "showNotification:");
         // Set the info for the views that show in the notification panel.
         final Notification notification = new Notification.Builder(this)
-			.setSmallIcon(R.drawable.ic_launcher)  // the status icon
-			.setTicker(text)  // the status text
+			.setSmallIcon(R.drawable.ic_switch_video)  // the status icon
+			.setTicker("Video service is running")  // the status text
 			.setWhen(System.currentTimeMillis())  // the time stamp
-			.setContentTitle(getText(R.string.app_name))  // the label of the entry
-			.setContentText(text)  // the contents of the entry
+			.setContentTitle("Video service is running. To stop - close the app")  // the label of the entry
+			.setContentText("Video service is running")  // the contents of the entry
 			.setContentIntent(PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), 0))  // The intent to send when the entry is clicked
 			.build();
 

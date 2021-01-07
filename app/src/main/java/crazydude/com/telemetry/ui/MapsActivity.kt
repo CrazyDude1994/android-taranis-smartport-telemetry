@@ -55,7 +55,6 @@ import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.math.roundToInt
 
-
 import com.serenegiant.common.BaseActivity;
 
 //class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
@@ -100,6 +99,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     private lateinit var rootLayout: CoordinatorLayout
     private lateinit var mapHolder: FrameLayout
     private lateinit var videoHolder: FrameLayout
+
+    private lateinit var mCameraFragment : com.serenegiant.usbcameratest4.CameraFragment
 
     private lateinit var sensorViewMap: HashMap<String, TextView>
     private lateinit var sensorsConverters: HashMap<String, Converter>
@@ -241,6 +242,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         checkAppInstallDate()
         initMap(false)
         map?.onCreate(savedInstanceState)
+
+        mCameraFragment = getFragmentManager().findFragmentById(R.id.cameraFragment) as CameraFragment
     }
 
     private fun initMap(simulateLifecycle: Boolean) {

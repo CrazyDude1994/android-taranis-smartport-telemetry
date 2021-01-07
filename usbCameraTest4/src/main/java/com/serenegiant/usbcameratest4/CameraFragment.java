@@ -178,11 +178,7 @@ public class CameraFragment extends BaseFragment {
 			queueEvent(new Runnable() {
 				@Override
 				public void run() {
-					if (mCameraClient != null) {
-						mCameraClient.disconnect();
-						mCameraClient.release();
-						mCameraClient = null;
-					}
+					disconnectCameraClient();
 				}
 			}, 0);
 			enableButtons(false);
@@ -261,11 +257,7 @@ public class CameraFragment extends BaseFragment {
 			} else if (id == R.id.stop_button) {
 				if (DEBUG) Log.v(TAG, "onClick:stop");
 				// stop service
-				if (mCameraClient != null) {
-					mCameraClient.disconnect();
-					mCameraClient.release();
-					mCameraClient = null;
-				}
+				disconnectCameraClient();
 				enableButtons(false);
 			} else if (id == R.id.record_button) {
 				if (DEBUG) Log.v(TAG, "onClick:record");
@@ -308,5 +300,13 @@ public class CameraFragment extends BaseFragment {
 					mRecordButton.setColorFilter(0);
 			}
 		});
+	}
+
+	public final void disconnectCameraClient() {
+		if (mCameraClient != null) {
+			mCameraClient.disconnect();
+			mCameraClient.release();
+			mCameraClient = null;
+		}
 	}
 }
