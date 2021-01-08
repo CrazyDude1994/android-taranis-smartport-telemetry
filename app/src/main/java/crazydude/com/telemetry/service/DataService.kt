@@ -71,8 +71,8 @@ class DataService : Service(), DataDecoder.Listener {
 
 
         val notification = NotificationCompat.Builder(this, "bt_channel")
-            .setContentText("Telemetry service is running")
-            .setContentTitle("Telemetry service is running. To stop - disconnect and close the app")
+            .setContentText("Telemetry service is running. To stop - disconnect and close the app")
+            .setContentTitle("Telemetry service is running")
             .setContentIntent(PendingIntent.getActivity(this, -1, Intent(this, MapsActivity::class.java), 0))
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .build()
