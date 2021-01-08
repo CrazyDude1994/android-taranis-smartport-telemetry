@@ -13,10 +13,7 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbDeviceConnection
 import android.hardware.usb.UsbManager
 import android.net.Uri
-import android.os.Build
-import android.os.Bundle
-import android.os.Environment
-import android.os.IBinder
+import android.os.*
 import android.text.Html
 import android.text.method.LinkMovementMethod
 import android.view.View
@@ -26,7 +23,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.google.android.gms.maps.*
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.MapView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.maps.android.SphericalUtil
@@ -77,6 +75,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     private lateinit var satellites: TextView
     private lateinit var current: TextView
     private lateinit var voltage: TextView
+    private lateinit var phoneBattery: TextView
     private lateinit var speed: TextView
     private lateinit var distance: TextView
     private lateinit var altitude: TextView
@@ -109,6 +108,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     private var dataService: DataService? = null
     private var lastVBAT = 0f
     private var lastCellVoltage = 0f
+    private var lastPhoneBattery = 0
 
     private val serviceConnection: ServiceConnection = object : ServiceConnection {
         override fun onServiceDisconnected(p0: ComponentName?) {
@@ -144,6 +144,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         connectButton = findViewById(R.id.connect_button)
         current = findViewById(R.id.current)
         voltage = findViewById(R.id.voltage)
+        phoneBattery = findViewById(R.id.phone_battery)
         speed = findViewById(R.id.speed)
         distance = findViewById(R.id.distance)
         altitude = findViewById(R.id.altitude)
@@ -167,7 +168,8 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             Pair(PreferenceManager.sensors.elementAt(3).name, current),
             Pair(PreferenceManager.sensors.elementAt(4).name, speed),
             Pair(PreferenceManager.sensors.elementAt(5).name, distance),
-            Pair(PreferenceManager.sensors.elementAt(6).name, altitude)
+            Pair(PreferenceManager.sensors.elementAt(6).name, altitude),
+            Pair(PreferenceManager.sensors.elementAt(7).name, phoneBattery)
         )
 
         firebaseAnalytics = FirebaseAnalytics.getInstance(this)
@@ -221,6 +223,8 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         checkAppInstallDate()
         initMap(false)
         map?.onCreate(savedInstanceState)
+
+        this.registerReceiver(this.mBatInfoReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED));
     }
 
     private fun initMap(simulateLifecycle: Boolean) {
@@ -762,6 +766,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     private fun resetUI() {
         satellites.text = "0"
         voltage.text = "-"
+        phoneBattery.text = "-"
         current.text = "-"
         fuel.text = "-"
         altitude.text = "-"
@@ -1194,4 +1199,19 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             switchToConnectedState()
         }
     }
+
+    private val mBatInfoReceiver: BroadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(ctxt: Context?, intent: Intent) {
+            val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, 0)
+            lastPhoneBattery = level
+            runOnUiThread {
+                updatePhoneBattery()
+            }
+        }
+    }
+
+    private fun updatePhoneBattery() {
+        this.phoneBattery.text = "$lastPhoneBattery%"
+    }
+
 }
