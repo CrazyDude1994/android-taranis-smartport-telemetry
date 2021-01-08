@@ -123,8 +123,8 @@ public class UVCService extends BaseService {
 			.setSmallIcon(R.drawable.ic_switch_video)  // the status icon
 			.setTicker("Video service is running")  // the status text
 			.setWhen(System.currentTimeMillis())  // the time stamp
-			.setContentTitle("Video service is running. To stop - close the app")  // the label of the entry
-			.setContentText("Video service is running")  // the contents of the entry
+			.setContentTitle("Video service is running")  // the label of the entry
+			.setContentText("To stop - stop recording and close the app")  // the contents of the entry
 			.setContentIntent(PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), 0))  // The intent to send when the entry is clicked
 			.build();
 

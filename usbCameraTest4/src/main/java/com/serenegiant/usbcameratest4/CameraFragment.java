@@ -30,20 +30,14 @@ import android.app.Fragment;
 import android.content.Intent;
 import android.hardware.usb.UsbDevice;
 import android.os.Bundle;
-import android.os.Environment;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.SurfaceView;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.widget.CompoundButton;
-import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.ImageButton;
-import android.widget.ToggleButton;
 
 import com.serenegiant.common.BaseFragment;
-import com.serenegiant.encoder.MediaMuxerWrapper;
 import com.serenegiant.service.UVCService;
 import com.serenegiant.serviceclient.CameraClient;
 import com.serenegiant.serviceclient.ICameraClient;
@@ -136,10 +130,19 @@ public class CameraFragment extends BaseFragment {
 	@Override
 	public void onDestroy() {
 		if (DEBUG) Log.v(TAG, "onDestroy:");
+		//Disconnect and release CameraClient completely.
+		//if device is recording, service will not be released.
+		//We will be able to connect to the same device and stop recording when CameraFragment is created
+		//make sure we disconnect listener, otherwise onDisconnect event might come too late, after object is destroyed
+		//doReleaseCameraClient( true );
+
 		if (mCameraClient != null) {
+			mCameraClient.disconnectListener();
+			if ( !mCameraClient.isRecording() ) mCameraClient.disconnect();
 			mCameraClient.release();
 			mCameraClient = null;
 		}
+
 		super.onDestroy();
 	}
 
@@ -178,7 +181,7 @@ public class CameraFragment extends BaseFragment {
 			queueEvent(new Runnable() {
 				@Override
 				public void run() {
-					disconnectCameraClient();
+					doReleaseCameraClient(false);
 				}
 			}, 0);
 			enableButtons(false);
@@ -213,7 +216,7 @@ public class CameraFragment extends BaseFragment {
 		if (list.size() > index) {
 			enableButtons(false);
 			if (mCameraClient == null)
-				mCameraClient = new CameraClient(getActivity(), mCameraListener);
+				mCameraClient = new CameraClient(getActivity().getApplicationContext(), mCameraListener);
 			mCameraClient.select(list.get(index));
 			mCameraClient.resize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
 			mCameraClient.connect();
@@ -249,7 +252,7 @@ public class CameraFragment extends BaseFragment {
 				final List<UsbDevice> list = mUSBMonitor.getDeviceList();
 				if (list.size() > 0) {
 					if (mCameraClient == null)
-						mCameraClient = new CameraClient(getActivity(), mCameraListener);
+						mCameraClient = new CameraClient(getActivity().getApplicationContext(), mCameraListener);
 					mCameraClient.select(list.get(0));
 					mCameraClient.resize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
 					mCameraClient.connect();
@@ -257,7 +260,7 @@ public class CameraFragment extends BaseFragment {
 			} else if (id == R.id.stop_button) {
 				if (DEBUG) Log.v(TAG, "onClick:stop");
 				// stop service
-				disconnectCameraClient();
+				doReleaseCameraClient( false );
 				enableButtons(false);
 			} else if (id == R.id.record_button) {
 				if (DEBUG) Log.v(TAG, "onClick:record");
@@ -302,8 +305,9 @@ public class CameraFragment extends BaseFragment {
 		});
 	}
 
-	public final void disconnectCameraClient() {
+	public final void doReleaseCameraClient( boolean disconnectListener ) {
 		if (mCameraClient != null) {
+			if ( disconnectListener ) mCameraClient.disconnectListener();
 			mCameraClient.disconnect();
 			mCameraClient.release();
 			mCameraClient = null;

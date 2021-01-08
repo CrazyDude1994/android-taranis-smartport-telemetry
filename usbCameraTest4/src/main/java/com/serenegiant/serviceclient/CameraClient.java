@@ -107,6 +107,11 @@ public class CameraClient implements ICameraClient {
 		mWeakHandler.get().sendEmptyMessage(MSG_DISCONNECT);
 	}
 
+	public void disconnectListener() {
+		if (DEBUG) Log.v(TAG, "disconnectListener:" + this);
+		this.mListener = null;
+	}
+
 	@Override
 	public void addSurface(final Surface surface, final boolean isRecordable) {
 		if (DEBUG) Log.v(TAG, "addSurface:surface=" + surface + ",hash=" + surface.hashCode());
