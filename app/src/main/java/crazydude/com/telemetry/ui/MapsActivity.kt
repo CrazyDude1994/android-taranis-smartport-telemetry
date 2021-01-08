@@ -110,6 +110,8 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     private var lastVBAT = 0f
     private var lastCellVoltage = 0f
 
+    private var fullscreenWindow = false
+
     private val serviceConnection: ServiceConnection = object : ServiceConnection {
         override fun onServiceDisconnected(p0: ComponentName?) {
             onDisconnected()
@@ -136,6 +138,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         mapType = preferenceManager.getMapType()
         followMode = savedInstanceState?.getBoolean("follow_mode", true) ?: true
         replayFileString = savedInstanceState?.getString("replay_file_name")
+        fullscreenWindow = preferenceManager.isFullscreenWindow()
 
         rootLayout = findViewById(R.id.rootLayout)
         fuel = findViewById(R.id.fuel)
@@ -177,12 +180,10 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         }
 
         fullscreenButton.setOnClickListener {
-            if (window.decorView.systemUiVisibility == (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)) {
-                window.decorView.systemUiVisibility = 0
-            } else {
-                window.decorView.systemUiVisibility =
-                    (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
-            }
+            updateFullscreenState()
+            this.fullscreenWindow = !this.fullscreenWindow
+            preferenceManager.setFullscreenWindow(fullscreenWindow)
+            updateWindowFullscreenDecoration()
         }
 
         followButton.setOnClickListener {
@@ -221,7 +222,25 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         checkAppInstallDate()
         initMap(false)
         map?.onCreate(savedInstanceState)
+
+        updateWindowFullscreenDecoration()
     }
+
+    private fun updateWindowFullscreenDecoration() {
+        if (!this.fullscreenWindow) {
+            window.decorView.systemUiVisibility = 0
+        } else {
+            window.decorView.systemUiVisibility =
+                (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
+        }
+    }
+
+    private fun updateFullscreenState() {
+        //user may have brought system ui with a swipe. Update state
+        this.fullscreenWindow = window.decorView.systemUiVisibility ==
+            (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
+    }
+
 
     private fun initMap(simulateLifecycle: Boolean) {
         if (mapType in GoogleMap.MAP_TYPE_NORMAL..GoogleMap.MAP_TYPE_HYBRID) {
@@ -556,6 +575,8 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         map?.onSaveInstanceState(outState)
         outState?.putBoolean("follow_mode", followMode)
         outState?.putString("replay_file_name", replayFileString)
+        updateFullscreenState()
+        preferenceManager.setFullscreenWindow(fullscreenWindow)
     }
 
     override fun onStart() {
