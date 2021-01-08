@@ -488,13 +488,13 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
                 mode.text = mode.text.toString() + " | GPS wait"
             }
             DataDecoder.Companion.FlyMode.CIRCLE -> {
-                mode.text = mode.text.toString() + " | CIRCLE"
+                mode.text = mode.text.toString() + " | Circle"
             }
             DataDecoder.Companion.FlyMode.STABILIZE -> {
-                mode.text = mode.text.toString() + " | STABILIZE"
+                mode.text = mode.text.toString() + " | Stabilize"
             }
             DataDecoder.Companion.FlyMode.TRAINING -> {
-                mode.text = mode.text.toString() + " | TRAINING"
+                mode.text = mode.text.toString() + " | Training"
             }
             DataDecoder.Companion.FlyMode.FBWA -> {
                 mode.text = mode.text.toString() + " | FBWA"
@@ -503,22 +503,28 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
                 mode.text = mode.text.toString() + " | FBWB"
             }
             DataDecoder.Companion.FlyMode.AUTOTUNE -> {
-                mode.text = mode.text.toString() + " | AUTOTUNE"
+                mode.text = mode.text.toString() + " | Autotune"
             }
             DataDecoder.Companion.FlyMode.LOITER -> {
-                mode.text = mode.text.toString() + " | LOITER"
+                mode.text = mode.text.toString() + " | Loiter"
             }
             DataDecoder.Companion.FlyMode.TAKEOFF -> {
-                mode.text = mode.text.toString() + " | TAKEOFF"
+                mode.text = mode.text.toString() + " | Takeoff"
             }
             DataDecoder.Companion.FlyMode.AVOID_ADSB -> {
                 mode.text = mode.text.toString() + " | AVOID_ADSB"
             }
             DataDecoder.Companion.FlyMode.GUIDED -> {
-                mode.text = mode.text.toString() + " | GUIDED"
+                mode.text = mode.text.toString() + " | Guided"
             }
             DataDecoder.Companion.FlyMode.INITIALISING -> {
-                mode.text = mode.text.toString() + " | INITIALISING"
+                mode.text = mode.text.toString() + " | Initializing"
+            }
+            DataDecoder.Companion.FlyMode.LANDING -> {
+                mode.text = mode.text.toString() + " | Landing"
+            }
+            DataDecoder.Companion.FlyMode.MISSION -> {
+                mode.text = mode.text.toString() + " | Mission"
             }
             DataDecoder.Companion.FlyMode.QSTABILIZE -> {
             mode.text = mode.text.toString() + " | QSTABILIZE"
