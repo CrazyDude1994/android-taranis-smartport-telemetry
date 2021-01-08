@@ -43,16 +43,18 @@
         android:gravity="bottom|center_horizontal" >
 
         <Button
-            android:id="@+id/start_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Start service" />
+                android:id="@+id/start_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Start service"
+                android:visibility="invisible" />
 
         <Button
-            android:id="@+id/stop_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Stop service" />
+                android:id="@+id/stop_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Stop service"
+                android:visibility="invisible" />
     </LinearLayout>
 
     <ImageButton
@@ -61,8 +63,8 @@
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true"
         android:layout_alignParentBottom="true"
-        android:layout_marginRight="@dimen/horizontal_margin"
-        android:layout_marginBottom="@dimen/vertical_margin"
+        android:layout_marginRight="1dp"
+        android:layout_marginBottom="-5dp"
         android:background="@null"
         android:src="@drawable/ic_switch_video" />
 
