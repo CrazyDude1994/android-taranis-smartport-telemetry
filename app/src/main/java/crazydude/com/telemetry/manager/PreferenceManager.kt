@@ -20,7 +20,7 @@ class PreferenceManager(context: Context) {
             SensorSetting("Speed", 0, "bottom"),
             SensorSetting("Distance", 1, "bottom"),
             SensorSetting("Altitude", 2, "bottom"),
-            SensorSetting("PhoneBattery", 4)
+            SensorSetting("Phone Battery", 4)
         )
     }
 
