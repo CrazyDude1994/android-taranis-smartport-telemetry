@@ -222,8 +222,6 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         checkAppInstallDate()
         initMap(false)
         map?.onCreate(savedInstanceState)
-
-        updateWindowFullscreenDecoration()
     }
 
     private fun updateWindowFullscreenDecoration() {
@@ -575,7 +573,6 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         map?.onSaveInstanceState(outState)
         outState?.putBoolean("follow_mode", followMode)
         outState?.putString("replay_file_name", replayFileString)
-        updateFullscreenState()
         preferenceManager.setFullscreenWindow(fullscreenWindow)
     }
 
@@ -695,11 +692,13 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     override fun onResume() {
         super.onResume()
         map?.onResume()
+        updateWindowFullscreenDecoration();
     }
 
     override fun onPause() {
         super.onPause()
         map?.onPause()
+        updateFullscreenState()//check if user has brought system ui with swipe
     }
 
     override fun onStop() {
