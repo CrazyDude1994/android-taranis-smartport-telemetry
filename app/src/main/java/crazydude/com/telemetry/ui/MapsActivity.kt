@@ -14,10 +14,7 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbDeviceConnection
 import android.hardware.usb.UsbManager
 import android.net.Uri
-import android.os.Build
-import android.os.Bundle
-import android.os.Environment
-import android.os.IBinder
+import android.os.*
 import android.text.Html
 import android.text.method.LinkMovementMethod
 import android.view.View
@@ -82,6 +79,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     private lateinit var satellites: TextView
     private lateinit var current: TextView
     private lateinit var voltage: TextView
+    private lateinit var phoneBattery: TextView
     private lateinit var speed: TextView
     private lateinit var distance: TextView
     private lateinit var altitude: TextView
@@ -118,6 +116,9 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     private var dataService: DataService? = null
     private var lastVBAT = 0f
     private var lastCellVoltage = 0f
+    private var lastPhoneBattery = 0
+
+    private var fullscreenWindow = false
 
     private val serviceConnection: ServiceConnection = object : ServiceConnection {
         override fun onServiceDisconnected(p0: ComponentName?) {
@@ -145,6 +146,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         mapType = preferenceManager.getMapType()
         followMode = savedInstanceState?.getBoolean("follow_mode", true) ?: true
         replayFileString = savedInstanceState?.getString("replay_file_name")
+        fullscreenWindow = preferenceManager.isFullscreenWindow()
 
         rootLayout = findViewById(R.id.rootLayout)
         fuel = findViewById(R.id.fuel)
@@ -153,6 +155,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         connectButton = findViewById(R.id.connect_button)
         current = findViewById(R.id.current)
         voltage = findViewById(R.id.voltage)
+        phoneBattery = findViewById(R.id.phone_battery)
         speed = findViewById(R.id.speed)
         distance = findViewById(R.id.distance)
         altitude = findViewById(R.id.altitude)
@@ -178,7 +181,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             Pair(PreferenceManager.sensors.elementAt(3).name, current),
             Pair(PreferenceManager.sensors.elementAt(4).name, speed),
             Pair(PreferenceManager.sensors.elementAt(5).name, distance),
-            Pair(PreferenceManager.sensors.elementAt(6).name, altitude)
+            Pair(PreferenceManager.sensors.elementAt(6).name, altitude),
+            Pair(PreferenceManager.sensors.elementAt(7).name, phoneBattery)
         )
 
         firebaseAnalytics = FirebaseAnalytics.getInstance(this)
@@ -188,12 +192,10 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         }
 
         fullscreenButton.setOnClickListener {
-            if (window.decorView.systemUiVisibility == (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)) {
-                window.decorView.systemUiVisibility = 0
-            } else {
-                window.decorView.systemUiVisibility =
-                    (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
-            }
+            updateFullscreenState()
+            this.fullscreenWindow = !this.fullscreenWindow
+            preferenceManager.setFullscreenWindow(fullscreenWindow)
+            updateWindowFullscreenDecoration()
         }
 
         layoutButton.setOnClickListener {
@@ -244,7 +246,27 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         map?.onCreate(savedInstanceState)
 
         mCameraFragment = getFragmentManager().findFragmentById(R.id.cameraFragment) as CameraFragment
+
+        updateWindowFullscreenDecoration()
+
+        this.registerReceiver(this.mBatInfoReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED));
     }
+
+    private fun updateWindowFullscreenDecoration() {
+        if (!this.fullscreenWindow) {
+            window.decorView.systemUiVisibility = 0
+        } else {
+            window.decorView.systemUiVisibility =
+                (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
+        }
+    }
+
+    private fun updateFullscreenState() {
+        //user may have brought system ui with a swipe. Update state
+        this.fullscreenWindow = window.decorView.systemUiVisibility ==
+            (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
+    }
+
 
     private fun initMap(simulateLifecycle: Boolean) {
         if (mapType in GoogleMap.MAP_TYPE_NORMAL..GoogleMap.MAP_TYPE_HYBRID) {
@@ -511,13 +533,13 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                 mode.text = mode.text.toString() + " | GPS wait"
             }
             DataDecoder.Companion.FlyMode.CIRCLE -> {
-                mode.text = mode.text.toString() + " | CIRCLE"
+                mode.text = mode.text.toString() + " | Circle"
             }
             DataDecoder.Companion.FlyMode.STABILIZE -> {
-                mode.text = mode.text.toString() + " | STABILIZE"
+                mode.text = mode.text.toString() + " | Stabilize"
             }
             DataDecoder.Companion.FlyMode.TRAINING -> {
-                mode.text = mode.text.toString() + " | TRAINING"
+                mode.text = mode.text.toString() + " | Training"
             }
             DataDecoder.Companion.FlyMode.FBWA -> {
                 mode.text = mode.text.toString() + " | FBWA"
@@ -526,22 +548,28 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                 mode.text = mode.text.toString() + " | FBWB"
             }
             DataDecoder.Companion.FlyMode.AUTOTUNE -> {
-                mode.text = mode.text.toString() + " | AUTOTUNE"
+                mode.text = mode.text.toString() + " | Autotune"
             }
             DataDecoder.Companion.FlyMode.LOITER -> {
-                mode.text = mode.text.toString() + " | LOITER"
+                mode.text = mode.text.toString() + " | Loiter"
             }
             DataDecoder.Companion.FlyMode.TAKEOFF -> {
-                mode.text = mode.text.toString() + " | TAKEOFF"
+                mode.text = mode.text.toString() + " | Takeoff"
             }
             DataDecoder.Companion.FlyMode.AVOID_ADSB -> {
                 mode.text = mode.text.toString() + " | AVOID_ADSB"
             }
             DataDecoder.Companion.FlyMode.GUIDED -> {
-                mode.text = mode.text.toString() + " | GUIDED"
+                mode.text = mode.text.toString() + " | Guided"
             }
             DataDecoder.Companion.FlyMode.INITIALISING -> {
-                mode.text = mode.text.toString() + " | INITIALISING"
+                mode.text = mode.text.toString() + " | Initializing"
+            }
+            DataDecoder.Companion.FlyMode.LANDING -> {
+                mode.text = mode.text.toString() + " | Landing"
+            }
+            DataDecoder.Companion.FlyMode.MISSION -> {
+                mode.text = mode.text.toString() + " | Mission"
             }
             DataDecoder.Companion.FlyMode.QSTABILIZE -> {
             mode.text = mode.text.toString() + " | QSTABILIZE"
@@ -579,6 +607,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         map?.onSaveInstanceState(outState)
         outState?.putBoolean("follow_mode", followMode)
         outState?.putString("replay_file_name", replayFileString)
+        updateFullscreenState()
+        preferenceManager.setFullscreenWindow(fullscreenWindow)
     }
 
     override fun onStart() {
@@ -786,6 +816,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     private fun resetUI() {
         satellites.text = "0"
         voltage.text = "-"
+        phoneBattery.text = "-"
         current.text = "-"
         fuel.text = "-"
         altitude.text = "-"
@@ -1218,4 +1249,19 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             switchToConnectedState()
         }
     }
+
+    private val mBatInfoReceiver: BroadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(ctxt: Context?, intent: Intent) {
+            val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, 0)
+            lastPhoneBattery = level
+            runOnUiThread {
+                updatePhoneBattery()
+            }
+        }
+    }
+
+    private fun updatePhoneBattery() {
+        this.phoneBattery.text = "$lastPhoneBattery%"
+    }
+
 }
