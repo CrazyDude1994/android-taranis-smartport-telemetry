@@ -1,6 +1,7 @@
 package crazydude.com.telemetry.ui
 
 import android.app.Activity
+import android.app.Fragment
 import android.app.PendingIntent
 import android.app.ProgressDialog
 import android.bluetooth.BluetoothAdapter
@@ -31,6 +32,7 @@ import com.google.maps.android.SphericalUtil
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
 import com.nex3z.flowlayout.FlowLayout
+import com.serenegiant.usbcameratest4.CameraFragment
 import crazydude.com.telemetry.R
 import crazydude.com.telemetry.converter.Converter
 import crazydude.com.telemetry.converter.KmhToMphConverter
@@ -50,8 +52,10 @@ import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.math.roundToInt
 
+import com.serenegiant.common.BaseActivity;
 
-class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
+//class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
+class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener {
 
     companion object {
         private const val REQUEST_ENABLE_BT: Int = 0
@@ -83,6 +87,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     private lateinit var followButton: FloatingActionButton
     private lateinit var mapTypeButton: FloatingActionButton
     private lateinit var fullscreenButton: FloatingActionButton
+    private lateinit var layoutButton: FloatingActionButton
     private lateinit var directionsButton: FloatingActionButton
     private lateinit var settingsButton: ImageView
     private lateinit var topLayout: RelativeLayout
@@ -91,6 +96,9 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     private lateinit var bottomList: FlowLayout
     private lateinit var rootLayout: CoordinatorLayout
     private lateinit var mapHolder: FrameLayout
+    private lateinit var videoHolder: FrameLayout
+
+    private lateinit var mCameraFragment : com.serenegiant.usbcameratest4.CameraFragment
 
     private lateinit var sensorViewMap: HashMap<String, TextView>
     private lateinit var sensorsConverters: HashMap<String, Converter>
@@ -159,10 +167,12 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         seekBar = findViewById(R.id.seekbar)
         horizonView = findViewById(R.id.horizon_view)
         fullscreenButton = findViewById(R.id.fullscreen_button)
+        layoutButton = findViewById(R.id.layout_button)
         directionsButton = findViewById(R.id.directions_button)
         topList = findViewById(R.id.top_list)
         bottomList = findViewById(R.id.bottom_list)
         mapHolder = findViewById(R.id.map_holder)
+        videoHolder = findViewById(R.id.viewHolder)
 
         sensorViewMap = hashMapOf(
             Pair(PreferenceManager.sensors.elementAt(0).name, satellites),
@@ -186,6 +196,16 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             this.fullscreenWindow = !this.fullscreenWindow
             preferenceManager.setFullscreenWindow(fullscreenWindow)
             updateWindowFullscreenDecoration()
+        }
+
+        layoutButton.setOnClickListener {
+            if ( preferenceManager.getVideoContainerShown() ) {
+                videoHolder.visibility = View.GONE
+                preferenceManager.setVideoContainerShown(false)
+            } else {
+                videoHolder.visibility = View.VISIBLE
+                preferenceManager.setVideoContainerShown(true)
+            }
         }
 
         followButton.setOnClickListener {
@@ -224,6 +244,8 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         checkAppInstallDate()
         initMap(false)
         map?.onCreate(savedInstanceState)
+
+        mCameraFragment = getFragmentManager().findFragmentById(R.id.cameraFragment) as CameraFragment
 
         updateWindowFullscreenDecoration()
 
@@ -609,6 +631,13 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         } else {
             horizonView.visibility = View.GONE
         }
+
+        if ( preferenceManager.getVideoContainerShown() ) {
+            videoHolder.visibility = View.VISIBLE
+        } else {
+            videoHolder.visibility = View.GONE
+        }
+
         updateSensorsPlacement()
     }
 
