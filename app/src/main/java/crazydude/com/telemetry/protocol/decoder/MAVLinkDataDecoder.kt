@@ -86,7 +86,7 @@ class MAVLinkDataDecoder(listener: Listener) : DataDecoder(listener) {
                 val byteBuffer = ByteBuffer.wrap(data.rawData).order(ByteOrder.LITTLE_ENDIAN)
                 val time = byteBuffer.int
                 val roll = byteBuffer.float
-                val pitch = byteBuffer.float
+                val pitch = -byteBuffer.float
                 val yaw = byteBuffer.float
                 val rollSpeed = byteBuffer.float
                 val pitchSpeed = byteBuffer.float
