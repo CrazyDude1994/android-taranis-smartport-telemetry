@@ -135,6 +135,7 @@ class PreferenceManager(context: Context) {
 
     fun setVideoContainerShown(shown: Boolean) {
         sharedPreferences.edit().putBoolean("video_container_shown", shown).apply()
+    }
 
     fun isFullscreenWindow(): Boolean {
         return sharedPreferences.getBoolean("fullscreen_window", false)
