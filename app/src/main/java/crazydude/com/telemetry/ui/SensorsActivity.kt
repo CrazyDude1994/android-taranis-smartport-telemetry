@@ -97,7 +97,7 @@ class SensorsActivity : AppCompatActivity(), SensorsAdapterListener {
 
             })
         touchHelper.attachToRecyclerView(recyclerView)
-/*
+
         recyclerView.viewTreeObserver.addOnGlobalLayoutListener {
             MaterialShowcaseView.Builder(this)
                 .setTarget(linearLayoutManager.findViewByPosition(1)!!.findViewById(R.id.move))
@@ -108,7 +108,6 @@ class SensorsActivity : AppCompatActivity(), SensorsAdapterListener {
                 .show()
         }
 
- */
     }
 
     override fun onSettingsClick(index: Int) {
