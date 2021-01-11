@@ -97,7 +97,7 @@ class SensorsActivity : AppCompatActivity(), SensorsAdapterListener {
 
             })
         touchHelper.attachToRecyclerView(recyclerView)
-
+/*
         recyclerView.viewTreeObserver.addOnGlobalLayoutListener {
             MaterialShowcaseView.Builder(this)
                 .setTarget(linearLayoutManager.findViewByPosition(1)!!.findViewById(R.id.move))
@@ -107,6 +107,8 @@ class SensorsActivity : AppCompatActivity(), SensorsAdapterListener {
                 .setContentText("You can drag sensor to change sensor order")
                 .show()
         }
+
+ */
     }
 
     override fun onSettingsClick(index: Int) {
