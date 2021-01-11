@@ -72,9 +72,9 @@
                     android:id="@+id/phone_battery"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_margin="4dp"
+                    android:layout_margin="6dp"
                     android:drawableStart="@drawable/ic_phone_battery"
-                    android:drawablePadding="4dp"
+                    android:drawablePadding="0dp"
                     android:text="-"
                     android:textColor="@android:color/white"
                     android:textSize="16sp" />
