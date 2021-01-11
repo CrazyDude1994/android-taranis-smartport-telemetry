@@ -19,7 +19,8 @@ class PreferenceManager(context: Context) {
             SensorSetting("Amperage", 3),
             SensorSetting("Speed", 0, "bottom"),
             SensorSetting("Distance", 1, "bottom"),
-            SensorSetting("Altitude", 2, "bottom")
+            SensorSetting("Altitude", 2, "bottom"),
+            SensorSetting("Phone Battery", 4)
         )
     }
 
@@ -127,6 +128,14 @@ class PreferenceManager(context: Context) {
         val position: String = "top",
         val shown: Boolean = true
     )
+
+    fun getVideoContainerShown(): Boolean {
+        return sharedPreferences.getBoolean("video_container_shown", false)
+    }
+
+    fun setVideoContainerShown(shown: Boolean) {
+        sharedPreferences.edit().putBoolean("video_container_shown", shown).apply()
+    }
 
     fun isFullscreenWindow(): Boolean {
         return sharedPreferences.getBoolean("fullscreen_window", false)

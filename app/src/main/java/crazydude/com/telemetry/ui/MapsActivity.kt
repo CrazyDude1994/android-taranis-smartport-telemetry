@@ -1,6 +1,7 @@
 package crazydude.com.telemetry.ui
 
 import android.app.Activity
+import android.app.Fragment
 import android.app.PendingIntent
 import android.app.ProgressDialog
 import android.bluetooth.BluetoothAdapter
@@ -13,10 +14,7 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbDeviceConnection
 import android.hardware.usb.UsbManager
 import android.net.Uri
-import android.os.Build
-import android.os.Bundle
-import android.os.Environment
-import android.os.IBinder
+import android.os.*
 import android.text.Html
 import android.text.method.LinkMovementMethod
 import android.view.View
@@ -27,13 +25,15 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.google.android.gms.maps.*
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.MapView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.maps.android.SphericalUtil
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
 import com.nex3z.flowlayout.FlowLayout
+import com.serenegiant.usbcameratest4.CameraFragment
 import crazydude.com.telemetry.R
 import crazydude.com.telemetry.converter.Converter
 import crazydude.com.telemetry.converter.KmhToMphConverter
@@ -53,8 +53,10 @@ import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.math.roundToInt
 
+import com.serenegiant.common.BaseActivity;
 
-class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
+//class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
+class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener {
 
     companion object {
         private const val REQUEST_ENABLE_BT: Int = 0
@@ -78,6 +80,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     private lateinit var satellites: TextView
     private lateinit var current: TextView
     private lateinit var voltage: TextView
+    private lateinit var phoneBattery: TextView
     private lateinit var speed: TextView
     private lateinit var distance: TextView
     private lateinit var altitude: TextView
@@ -85,6 +88,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     private lateinit var followButton: FloatingActionButton
     private lateinit var mapTypeButton: FloatingActionButton
     private lateinit var fullscreenButton: FloatingActionButton
+    private lateinit var layoutButton: FloatingActionButton
     private lateinit var directionsButton: FloatingActionButton
     private lateinit var settingsButton: ImageView
     private lateinit var topLayout: RelativeLayout
@@ -93,6 +97,9 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     private lateinit var bottomList: FlowLayout
     private lateinit var rootLayout: CoordinatorLayout
     private lateinit var mapHolder: FrameLayout
+    private lateinit var videoHolder: FrameLayout
+
+    private lateinit var mCameraFragment : com.serenegiant.usbcameratest4.CameraFragment
 
     private lateinit var sensorViewMap: HashMap<String, TextView>
     private lateinit var sensorsConverters: HashMap<String, Converter>
@@ -110,6 +117,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     private var dataService: DataService? = null
     private var lastVBAT = 0f
     private var lastCellVoltage = 0f
+    private var lastPhoneBattery = 0
 
     private var fullscreenWindow = false
 
@@ -148,6 +156,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         connectButton = findViewById(R.id.connect_button)
         current = findViewById(R.id.current)
         voltage = findViewById(R.id.voltage)
+        phoneBattery = findViewById(R.id.phone_battery)
         speed = findViewById(R.id.speed)
         distance = findViewById(R.id.distance)
         altitude = findViewById(R.id.altitude)
@@ -159,10 +168,12 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         seekBar = findViewById(R.id.seekbar)
         horizonView = findViewById(R.id.horizon_view)
         fullscreenButton = findViewById(R.id.fullscreen_button)
+        layoutButton = findViewById(R.id.layout_button)
         directionsButton = findViewById(R.id.directions_button)
         topList = findViewById(R.id.top_list)
         bottomList = findViewById(R.id.bottom_list)
         mapHolder = findViewById(R.id.map_holder)
+        videoHolder = findViewById(R.id.viewHolder)
 
         sensorViewMap = hashMapOf(
             Pair(PreferenceManager.sensors.elementAt(0).name, satellites),
@@ -171,7 +182,8 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             Pair(PreferenceManager.sensors.elementAt(3).name, current),
             Pair(PreferenceManager.sensors.elementAt(4).name, speed),
             Pair(PreferenceManager.sensors.elementAt(5).name, distance),
-            Pair(PreferenceManager.sensors.elementAt(6).name, altitude)
+            Pair(PreferenceManager.sensors.elementAt(6).name, altitude),
+            Pair(PreferenceManager.sensors.elementAt(7).name, phoneBattery)
         )
 
         firebaseAnalytics = FirebaseAnalytics.getInstance(this)
@@ -185,6 +197,16 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             this.fullscreenWindow = !this.fullscreenWindow
             preferenceManager.setFullscreenWindow(fullscreenWindow)
             updateWindowFullscreenDecoration()
+        }
+
+        layoutButton.setOnClickListener {
+            if ( preferenceManager.getVideoContainerShown() ) {
+                videoHolder.visibility = View.GONE
+                preferenceManager.setVideoContainerShown(false)
+            } else {
+                videoHolder.visibility = View.VISIBLE
+                preferenceManager.setVideoContainerShown(true)
+            }
         }
 
         followButton.setOnClickListener {
@@ -223,6 +245,12 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         checkAppInstallDate()
         initMap(false)
         map?.onCreate(savedInstanceState)
+
+        mCameraFragment = getFragmentManager().findFragmentById(R.id.cameraFragment) as CameraFragment
+
+        updateWindowFullscreenDecoration()
+
+        this.registerReceiver(this.mBatInfoReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED));
     }
 
     private fun updateWindowFullscreenDecoration() {
@@ -435,7 +463,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
                 }
 
                 override fun onDataReady(size: Int) {
-                    progressDialog.hide()
+                    progressDialog.dismiss()
                     seekBar.max = size
                     seekBar.visibility = View.VISIBLE
                     seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -526,13 +554,13 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
                 mode.text = mode.text.toString() + " | GPS wait"
             }
             DataDecoder.Companion.FlyMode.CIRCLE -> {
-                mode.text = mode.text.toString() + " | CIRCLE"
+                mode.text = mode.text.toString() + " | Circle"
             }
             DataDecoder.Companion.FlyMode.STABILIZE -> {
-                mode.text = mode.text.toString() + " | STABILIZE"
+                mode.text = mode.text.toString() + " | Stabilize"
             }
             DataDecoder.Companion.FlyMode.TRAINING -> {
-                mode.text = mode.text.toString() + " | TRAINING"
+                mode.text = mode.text.toString() + " | Training"
             }
             DataDecoder.Companion.FlyMode.FBWA -> {
                 mode.text = mode.text.toString() + " | FBWA"
@@ -541,22 +569,28 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
                 mode.text = mode.text.toString() + " | FBWB"
             }
             DataDecoder.Companion.FlyMode.AUTOTUNE -> {
-                mode.text = mode.text.toString() + " | AUTOTUNE"
+                mode.text = mode.text.toString() + " | Autotune"
             }
             DataDecoder.Companion.FlyMode.LOITER -> {
-                mode.text = mode.text.toString() + " | LOITER"
+                mode.text = mode.text.toString() + " | Loiter"
             }
             DataDecoder.Companion.FlyMode.TAKEOFF -> {
-                mode.text = mode.text.toString() + " | TAKEOFF"
+                mode.text = mode.text.toString() + " | Takeoff"
             }
             DataDecoder.Companion.FlyMode.AVOID_ADSB -> {
                 mode.text = mode.text.toString() + " | AVOID_ADSB"
             }
             DataDecoder.Companion.FlyMode.GUIDED -> {
-                mode.text = mode.text.toString() + " | GUIDED"
+                mode.text = mode.text.toString() + " | Guided"
             }
             DataDecoder.Companion.FlyMode.INITIALISING -> {
-                mode.text = mode.text.toString() + " | INITIALISING"
+                mode.text = mode.text.toString() + " | Initializing"
+            }
+            DataDecoder.Companion.FlyMode.LANDING -> {
+                mode.text = mode.text.toString() + " | Landing"
+            }
+            DataDecoder.Companion.FlyMode.MISSION -> {
+                mode.text = mode.text.toString() + " | Mission"
             }
             DataDecoder.Companion.FlyMode.QSTABILIZE -> {
             mode.text = mode.text.toString() + " | QSTABILIZE"
@@ -617,6 +651,13 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         } else {
             horizonView.visibility = View.GONE
         }
+
+        if ( preferenceManager.getVideoContainerShown() ) {
+            videoHolder.visibility = View.VISIBLE
+        } else {
+            videoHolder.visibility = View.GONE
+        }
+
         updateSensorsPlacement()
     }
 
@@ -797,6 +838,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     private fun resetUI() {
         satellites.text = "0"
         voltage.text = "-"
+        phoneBattery.text = "-"
         current.text = "-"
         fuel.text = "-"
         altitude.text = "-"
@@ -1229,4 +1271,19 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             switchToConnectedState()
         }
     }
+
+    private val mBatInfoReceiver: BroadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(ctxt: Context?, intent: Intent) {
+            val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, 0)
+            lastPhoneBattery = level
+            runOnUiThread {
+                updatePhoneBattery()
+            }
+        }
+    }
+
+    private fun updatePhoneBattery() {
+        this.phoneBattery.text = "$lastPhoneBattery%"
+    }
+
 }
