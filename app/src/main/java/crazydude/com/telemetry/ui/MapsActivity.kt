@@ -20,6 +20,7 @@ import android.os.IBinder
 import android.text.Html
 import android.text.method.LinkMovementMethod
 import android.view.View
+import android.view.WindowManager
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -377,16 +378,27 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
                     val files =
                         dir.listFiles { file -> file.extension == "log" && file.length() > 0 }
                             .reversed()
-                    AlertDialog.Builder(this)
+                    var dialog : AlertDialog = AlertDialog.Builder(this)
                         .setAdapter(
                             ArrayAdapter(
                                 this,
                                 android.R.layout.simple_list_item_1,
                                 files.map { i -> "${i.nameWithoutExtension} (${i.length() / 1024} Kb)" })
                         ) { _, i ->
-                            startReplay(files[i])
+                                updateWindowFullscreenDecoration()
+                                startReplay(files[i])
                         }
-                        .show()
+                        .create()
+
+                    dialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
+                    dialog.show();
+                    if (!this.fullscreenWindow) {
+                        dialog.getWindow().decorView.systemUiVisibility = 0
+                    } else {
+                        dialog.getWindow().decorView.systemUiVisibility =
+                            (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
+                    }
+                    dialog.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
                 }
             }
         } else {
@@ -400,7 +412,16 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             progressDialog.setCancelable(false)
             progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL)
             progressDialog.max = 100
-            progressDialog.show()
+
+            progressDialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
+            progressDialog.show();
+            if (!this.fullscreenWindow) {
+                progressDialog.getWindow().decorView.systemUiVisibility = 0
+            } else {
+                progressDialog.getWindow().decorView.systemUiVisibility =
+                    (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
+            }
+            progressDialog.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
 
             switchToReplayMode()
 
