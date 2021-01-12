@@ -28,6 +28,14 @@
     android:layout_height="match_parent"
     tools:context="com.serenegiant.serviceviewtest.MainActivity" >
 
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Connect ROTG01/ROTG02 receiver"
+            android:textColor="@android:color/white"
+            android:layout_centerInParent="true"
+            android:textSize="16sp" />
+
 
 	<com.serenegiant.widget.UVCCameraTextureView
         android:id="@+id/camera_view"
