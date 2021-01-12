@@ -70,6 +70,7 @@ dependencies {
 	implementation project(':usbCameraTest4')
 	implementation project(':libuvccamera')
 	implementation project(':usbCameraCommon')
+	implementation 'com.google.android:flexbox:2.0.1'
 }
 
 apply plugin: 'com.google.gms.google-services'

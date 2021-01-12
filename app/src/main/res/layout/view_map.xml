@@ -19,8 +19,8 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentBottom="true"
                 android:layout_margin="8dp"
-                android:layout_toStartOf="@+id/map_type_button"
-                android:layout_toLeftOf="@+id/map_type_button"
+                android:layout_toStartOf="@+id/buttons_box"
+                android:layout_toLeftOf="@+id/buttons_box"
                 android:visibility="gone" />
 
         <crazydude.com.telemetry.ui.TextViewOutline
@@ -47,51 +47,54 @@
                 android:layout_alignParentTop="true"
                 android:layout_margin="8dp" />
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-                android:id="@id/map_type_button"
+        <com.google.android.flexbox.FlexboxLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:app="http://schemas.android.com/apk/res-auto"
+                android:id="@+id/buttons_box"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_alignParentRight="true"
                 android:layout_alignParentBottom="true"
-                android:layout_alignParentEnd="true"
-                android:layout_alignParentRight="true"
-                android:layout_margin="8dp"
-                android:src="@drawable/ic_layers"
-                app:fabSize="mini" />
+                app:alignContent="flex_start"
+                app:alignItems="flex_start"
+                app:justifyContent="flex_start"
+                app:flexDirection="column_reverse"
+                app:flexWrap="wrap_reverse">
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-                android:id="@+id/follow_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_above="@id/map_type_button"
-                android:layout_alignParentEnd="true"
-                android:layout_alignParentRight="true"
-                android:layout_margin="8dp"
-                android:src="@drawable/ic_follow"
-                app:fabSize="mini" />
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@+id/map_type_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="8dp"
+                    android:src="@drawable/ic_layers"
+                    app:fabSize="mini" />
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-                android:id="@+id/directions_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_above="@id/follow_button"
-                android:layout_alignParentEnd="true"
-                android:layout_alignParentRight="true"
-                android:layout_margin="8dp"
-                android:src="@drawable/ic_directions"
-                android:visibility="gone"
-                app:fabSize="mini"
-                tools:visibility="visible" />
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@+id/follow_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="8dp"
+                    android:src="@drawable/ic_follow"
+                    app:fabSize="mini" />
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-                android:id="@+id/fullscreen_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_above="@id/directions_button"
-                android:layout_alignParentEnd="true"
-                android:layout_alignParentRight="true"
-                android:layout_margin="8dp"
-                android:src="@drawable/ic_fullscreen"
-                app:fabSize="mini" />
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@+id/directions_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="8dp"
+                    android:src="@drawable/ic_directions"
+                    android:visibility="gone"
+                    app:fabSize="mini"
+                    tools:visibility="visible" />
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@+id/fullscreen_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="8dp"
+                    android:src="@drawable/ic_fullscreen"
+                    app:fabSize="mini" />
+
+        </com.google.android.flexbox.FlexboxLayout>
 
     </RelativeLayout>
 
