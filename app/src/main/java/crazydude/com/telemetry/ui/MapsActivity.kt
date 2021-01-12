@@ -1,7 +1,6 @@
 package crazydude.com.telemetry.ui
 
 import android.app.Activity
-import android.app.Fragment
 import android.app.PendingIntent
 import android.app.ProgressDialog
 import android.bluetooth.BluetoothAdapter
@@ -21,7 +20,6 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -52,8 +50,6 @@ import java.io.File
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.math.roundToInt
-
-import com.serenegiant.common.BaseActivity;
 
 //class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
 class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener {
@@ -87,8 +83,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     private lateinit var mode: TextView
     private lateinit var followButton: FloatingActionButton
     private lateinit var mapTypeButton: FloatingActionButton
-    private lateinit var fullscreenButton: FloatingActionButton
-    private lateinit var layoutButton: FloatingActionButton
+    private lateinit var fullscreenButton: ImageView
+    private lateinit var layoutButton: ImageView
     private lateinit var directionsButton: FloatingActionButton
     private lateinit var settingsButton: ImageView
     private lateinit var topLayout: RelativeLayout
@@ -97,7 +93,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     private lateinit var bottomList: FlowLayout
     private lateinit var rootLayout: CoordinatorLayout
     private lateinit var mapHolder: FrameLayout
-    private lateinit var videoHolder: FrameLayout
+    private lateinit var videoHolder: AspectFrameLayout
 
     private lateinit var mCameraFragment : com.serenegiant.usbcameratest4.CameraFragment
 
@@ -174,6 +170,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         bottomList = findViewById(R.id.bottom_list)
         mapHolder = findViewById(R.id.map_holder)
         videoHolder = findViewById(R.id.viewHolder)
+
+        videoHolder.setAspectRatio(640.0/480)
 
         sensorViewMap = hashMapOf(
             Pair(PreferenceManager.sensors.elementAt(0).name, satellites),
@@ -623,7 +621,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         map?.onLowMemory()
     }
 
-    override fun onSaveInstanceState(outState: Bundle?) {
+    override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         map?.onSaveInstanceState(outState)
         outState?.putBoolean("follow_mode", followMode)

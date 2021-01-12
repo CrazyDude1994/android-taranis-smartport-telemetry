@@ -88,10 +88,34 @@
                 android:layout_centerVertical="true"
                 android:layout_marginEnd="8dp"
                 android:layout_marginRight="8dp"
-                android:layout_toStartOf="@+id/settings_button"
-                android:layout_toLeftOf="@+id/settings_button"
+                android:layout_toStartOf="@+id/fullscreen_button"
+                android:layout_toLeftOf="@+id/fullscreen_button"
                 android:background="?selectableItemBackground"
                 android:src="@drawable/ic_replay" />
+
+        <ImageView
+                android:id="@id/fullscreen_button"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_centerVertical="true"
+                android:layout_marginEnd="8dp"
+                android:layout_marginRight="8dp"
+                android:layout_toStartOf="@+id/layout_button"
+                android:layout_toLeftOf="@+id/layout_button"
+                android:background="?selectableItemBackground"
+                android:src="@drawable/ic_fullscreen" />
+
+        <ImageView
+                android:id="@id/layout_button"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_toStartOf="@+id/settings_button"
+                android:layout_toLeftOf="@+id/settings_button"
+                android:layout_centerVertical="true"
+                android:layout_marginEnd="8dp"
+                android:layout_marginRight="8dp"
+                android:background="?selectableItemBackground"
+                android:src="@drawable/ic_layout" />
 
         <ImageView
                 android:id="@id/settings_button"

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        android:id="@+id/videoContainer"
-        android:layout_width="match_parent" android:layout_height="match_parent"
+<crazydude.com.telemetry.ui.AspectFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent" android:layout_height="0dp"
         android:background="#606060"
         >
 
@@ -11,4 +10,4 @@
             android:layout_height="match_parent"
             android:name="com.serenegiant.usbcameratest4.CameraFragment"/>
 
-</FrameLayout>
+</crazydude.com.telemetry.ui.AspectFrameLayout>
