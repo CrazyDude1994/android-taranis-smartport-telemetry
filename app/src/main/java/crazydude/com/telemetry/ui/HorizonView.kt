@@ -33,16 +33,19 @@ class HorizonView @JvmOverloads constructor(
 
         planeLinePaint.strokeWidth = size / 67
 
+        leftLinePath.reset()
         leftLinePath.apply {
             moveTo(center - (size / 3), center)
             lineTo(center - (size / 20), center)
             lineTo(center - (size / 20), center + (size / 33))
         }
+        rightLinePath.reset()
         rightLinePath.apply {
             moveTo(center + (size / 3), center)
             lineTo(center + (size / 20), center)
             lineTo(center + (size / 20), center + (size / 33))
         }
+        circlePath.reset()
         circlePath.apply {
             addCircle(center, center, center, Path.Direction.CW)
         }

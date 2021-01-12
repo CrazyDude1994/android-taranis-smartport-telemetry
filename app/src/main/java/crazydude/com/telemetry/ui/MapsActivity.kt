@@ -16,6 +16,7 @@ import android.net.Uri
 import android.os.*
 import android.text.Html
 import android.text.method.LinkMovementMethod
+import android.util.TypedValue
 import android.view.View
 import android.view.WindowManager
 import android.widget.*
@@ -205,6 +206,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                 videoHolder.visibility = View.VISIBLE
                 preferenceManager.setVideoContainerShown(true)
             }
+
+            updateHorizonViewSize()
         }
 
         followButton.setOnClickListener {
@@ -655,6 +658,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         } else {
             videoHolder.visibility = View.GONE
         }
+
+        updateHorizonViewSize()
 
         updateSensorsPlacement()
     }
@@ -1270,6 +1275,24 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         }
     }
 
+    private fun updateHorizonViewSize() {
+        var size = 96.0f;
+        if (preferenceManager.getVideoContainerShown()) {
+            size = 64.0f;
+        }
+        var sizeInt = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            size,
+            getResources().getDisplayMetrics()
+        )
+            .toInt();
+
+        var lp = horizonView.getLayoutParams()
+        lp.width = sizeInt;
+        lp.height = sizeInt;
+        horizonView.setLayoutParams(lp);
+    }
+
     private val mBatInfoReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(ctxt: Context?, intent: Intent) {
             val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, 0)
@@ -1278,7 +1301,6 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                 updatePhoneBattery()
             }
         }
-    }
 
     private fun updatePhoneBattery() {
         this.phoneBattery.text = "$lastPhoneBattery%"
