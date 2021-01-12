@@ -83,21 +83,10 @@
                 tools:visibility="visible" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
-                android:id="@+id/layout_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_above="@id/directions_button"
-                android:layout_alignParentEnd="true"
-                android:layout_alignParentRight="true"
-                android:layout_margin="8dp"
-                android:src="@drawable/ic_layout"
-                app:fabSize="mini" />
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:id="@+id/fullscreen_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_above="@id/layout_button"
+                android:layout_above="@id/directions_button"
                 android:layout_alignParentEnd="true"
                 android:layout_alignParentRight="true"
                 android:layout_margin="8dp"

@@ -89,7 +89,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     private lateinit var followButton: FloatingActionButton
     private lateinit var mapTypeButton: FloatingActionButton
     private lateinit var fullscreenButton: FloatingActionButton
-    private lateinit var layoutButton: FloatingActionButton
+    private lateinit var layoutButton: ImageView
     private lateinit var directionsButton: FloatingActionButton
     private lateinit var settingsButton: ImageView
     private lateinit var topLayout: RelativeLayout
