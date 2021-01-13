@@ -1301,6 +1301,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                 updatePhoneBattery()
             }
         }
+    }
 
     private fun updatePhoneBattery() {
         this.phoneBattery.text = "$lastPhoneBattery%"
