@@ -117,6 +117,12 @@ public class UVCCameraTextureView extends AspectRatioTextureView    // API >= 14
 		if (mRenderHandler != null) {
 			mRenderHandler.resize(width, height);
 		}
+
+		if (mPreviewSurface != null) {
+			mPreviewSurface.release();
+			mPreviewSurface = null;
+		}
+
 		if (mCallback != null) {
 			mCallback.onSurfaceChanged(this, getSurface(), width, height);
 		}
