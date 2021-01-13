@@ -41,7 +41,7 @@ public class MediaMuxerWrapper {
 	private static final boolean DEBUG = true;	// TODO set false on release
 	private static final String TAG = "MediaMuxerWrapper";
 
-	private static final String DIR_NAME = "USBCameraTest";
+	private static final String DIR_NAME = "TelemetryViewer";
     private static final SimpleDateFormat mDateTimeFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.US);
 
 	private String mOutputPath;
