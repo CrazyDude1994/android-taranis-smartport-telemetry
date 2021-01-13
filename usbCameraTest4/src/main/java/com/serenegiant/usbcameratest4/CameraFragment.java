@@ -32,6 +32,7 @@ import android.hardware.usb.UsbDevice;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Surface;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
@@ -63,6 +64,8 @@ public class CameraFragment extends BaseFragment {
 
 	private ImageButton mRecordButton;
 	private CameraViewInterface mCameraView;
+
+	private Surface addedSurface = null;
 
 	public CameraFragment() {
 		if (DEBUG) Log.v(TAG, "Constructor:");
@@ -100,6 +103,7 @@ public class CameraFragment extends BaseFragment {
 		mRecordButton.setEnabled(false);
 		mCameraView = (CameraViewInterface)rootView.findViewById(R.id.camera_view);
 		mCameraView.setAspectRatio(DEFAULT_WIDTH / (float)DEFAULT_HEIGHT);
+		mCameraView.setCallback( mCallback );
 		return rootView;
 	}
 
@@ -114,7 +118,9 @@ public class CameraFragment extends BaseFragment {
 	public void onPause() {
 		if (DEBUG) Log.v(TAG, "onPause:");
 		if (mCameraClient != null) {
-			mCameraClient.removeSurface(mCameraView.getSurface());
+			if (addedSurface != null)
+				mCameraClient.removeSurface(addedSurface);
+			addedSurface = null;
 		}
 		mUSBMonitor.unregister();
 		enableButtons(false);
@@ -227,7 +233,8 @@ public class CameraFragment extends BaseFragment {
 		@Override
 		public void onConnect() {
 			if (DEBUG) Log.v(TAG, "onConnect:");
-			mCameraClient.addSurface(mCameraView.getSurface(), false);
+			addedSurface = mCameraView.getSurface();
+			mCameraClient.addSurface(addedSurface, false);
 			enableButtons(true);
 			// start UVCService
 			final Intent intent = new Intent(getActivity(), UVCService.class);
@@ -313,4 +320,26 @@ public class CameraFragment extends BaseFragment {
 			mCameraClient = null;
 		}
 	}
+
+	private final CameraViewInterface.Callback	mCallback = new CameraViewInterface.Callback() {
+		@Override
+		public void onSurfaceCreated(final CameraViewInterface view, final Surface surface) {
+		}
+
+		@Override
+		public void onSurfaceChanged(final CameraViewInterface view, final Surface surface, final int width, final int height) {
+			if ( mCameraClient != null ) {
+				if (addedSurface != null)
+					mCameraClient.removeSurface(addedSurface);
+				addedSurface = surface;
+				mCameraClient.addSurface(addedSurface, false);
+			}
+		}
+
+		@Override
+		public void onSurfaceDestroy(final CameraViewInterface view, final Surface surface) {
+		}
+	};
+
+
 }
