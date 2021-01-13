@@ -24,15 +24,19 @@
 package com.serenegiant.service;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.hardware.usb.UsbDevice;
+import android.os.Build;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.Surface;
+
+import androidx.core.app.NotificationCompat;
 
 import com.serenegiant.common.BaseService;
 import com.serenegiant.usb.USBMonitor;
@@ -118,11 +122,21 @@ public class UVCService extends BaseService {
 	 */
 	private void showNotification() {
 		if (DEBUG) Log.v(TAG, "showNotification:");
+
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+			NotificationChannel channel = mNotificationManager.getNotificationChannel("telemetry_video");
+			if (channel == null) {
+				channel = new NotificationChannel(
+						"telemetry_video",
+						"TelemetryViewer Video",
+						NotificationManager.IMPORTANCE_DEFAULT
+				);
+				mNotificationManager.createNotificationChannel(channel);
+			}
+		}
         // Set the info for the views that show in the notification panel.
-        final Notification notification = new Notification.Builder(this)
+        final Notification notification = new NotificationCompat.Builder(this, "telemetry_video")
 			.setSmallIcon(R.drawable.ic_switch_video)  // the status icon
-			.setTicker("Video service is running")  // the status text
-			.setWhen(System.currentTimeMillis())  // the time stamp
 			.setContentTitle("Video service is running")  // the label of the entry
 			.setContentText("To stop - stop recording and close the app")  // the contents of the entry
 			.setContentIntent(PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), 0))  // The intent to send when the entry is clicked
