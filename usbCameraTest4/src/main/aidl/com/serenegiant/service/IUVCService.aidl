@@ -45,6 +45,7 @@ interface IUVCService {
 	void addSurface(int serviceId, int id_surface, in Surface surface, boolean isRecordable);
 	void removeSurface(int serviceId, int id_surface);
 	boolean isRecording(int serviceId);
+    int getRecordingLengthSeconds(int serviceId);
 	void startRecording(int serviceId);
 	void stopRecording(int serviceId);
 	void captureStillImage(int serviceId, String path);
