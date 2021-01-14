@@ -37,6 +37,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.TextView;
 
 import com.serenegiant.common.BaseFragment;
 import com.serenegiant.service.UVCService;
@@ -63,6 +64,7 @@ public class CameraFragment extends BaseFragment {
 	private ICameraClient mCameraClient;
 
 	private ImageButton mRecordButton;
+	private TextView mRecordingTime;
 	private CameraViewInterface mCameraView;
 
 	private Surface addedSurface = null;
@@ -104,6 +106,8 @@ public class CameraFragment extends BaseFragment {
 		mCameraView = (CameraViewInterface)rootView.findViewById(R.id.camera_view);
 		mCameraView.setAspectRatio(DEFAULT_WIDTH / (float)DEFAULT_HEIGHT);
 		mCameraView.setCallback( mCallback );
+		mRecordingTime = (TextView) rootView.findViewById(R.id.recording_time);
+		mRecordingTime.setText("");
 		return rootView;
 	}
 
@@ -124,6 +128,7 @@ public class CameraFragment extends BaseFragment {
 		}
 		mUSBMonitor.unregister();
 		enableButtons(false);
+		updateRecordingTime();
 		super.onPause();
 	}
 
@@ -191,6 +196,7 @@ public class CameraFragment extends BaseFragment {
 				}
 			}, 0);
 			enableButtons(false);
+			updateRecordingTime();
 			updateCameraDialog();
 		}
 
@@ -198,6 +204,7 @@ public class CameraFragment extends BaseFragment {
 		public void onCancel(final UsbDevice device) {
 			if (DEBUG) Log.v(TAG, "OnDeviceConnectListener#onCancel:");
 			enableButtons(false);
+			updateRecordingTime();
 		}
 	};
 
@@ -236,6 +243,7 @@ public class CameraFragment extends BaseFragment {
 			addedSurface = mCameraView.getSurface();
 			mCameraClient.addSurface(addedSurface, false);
 			enableButtons(true);
+			updateRecordingTime();
 			// start UVCService
 			final Intent intent = new Intent(getActivity(), UVCService.class);
 			getActivity().startService(intent);
@@ -245,6 +253,12 @@ public class CameraFragment extends BaseFragment {
 		public void onDisconnect() {
 			if (DEBUG) Log.v(TAG, "onDisconnect:");
 			enableButtons(false);
+			updateRecordingTime();
+		}
+
+		@Override
+		public void onRecordingTimeChanged(boolean isRecording, int recordingTimeSeconds) {
+			updateRecordingTime();
 		}
 
 	};
@@ -308,6 +322,21 @@ public class CameraFragment extends BaseFragment {
 					mRecordButton.setColorFilter(0x7fff0000);
 				else
 					mRecordButton.setColorFilter(0);
+			}
+		});
+	}
+
+	private final void updateRecordingTime() {
+		getActivity().runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				if (mCameraClient.isRecording()) {
+					int s = mCameraClient.getRecordingLengthSeconds();
+					mRecordingTime.setText( String.format("%02d", s / 60 ) +":" + String.format("%02d", s % 60 ));
+				}
+				else {
+					mRecordingTime.setText( "" );
+				}
 			}
 		});
 	}

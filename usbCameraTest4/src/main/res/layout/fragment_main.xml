@@ -65,6 +65,19 @@
                 android:visibility="invisible" />
     </LinearLayout>
 
+    <TextView
+            android:id="@+id/recording_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="00:00"
+            android:layout_above="@id/record_button"
+            android:layout_alignParentRight="true"
+            android:textColor="#ff8080"
+            android:layout_marginRight="8dp"
+            android:layout_marginBottom="-12dp"
+            android:textSize="16sp" />
+
+
     <ImageButton
         android:id="@+id/record_button"
         android:layout_width="wrap_content"

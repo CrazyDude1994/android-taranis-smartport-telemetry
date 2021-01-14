@@ -23,7 +23,9 @@
 
 package com.serenegiant.serviceclient;
 
+//all callbacks are called from thread
 public interface ICameraClientCallback {
 	public void onConnect();
 	public void onDisconnect();
+	public void onRecordingTimeChanged(boolean isRecording, int recordingTimeSeconds);
 }

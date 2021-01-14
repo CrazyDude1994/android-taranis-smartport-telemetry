@@ -400,6 +400,12 @@ public class UVCService extends BaseService {
 			return server != null && server.isRecording();
 		}
 
+		public int getRecordingLengthSeconds(int serviceId) throws android.os.RemoteException {
+			final CameraServer server = getCameraServer(serviceId);
+			if ( server == null ) return -1;
+			return server.getRecordingLengthSeconds();
+		}
+
 		@Override
 		public void startRecording(final int serviceId) throws RemoteException {
 			if (DEBUG) Log.d(TAG, "mBasicBinder#startRecording:");
