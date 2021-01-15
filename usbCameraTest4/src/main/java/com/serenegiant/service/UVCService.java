@@ -134,12 +134,13 @@ public class UVCService extends BaseService {
 				mNotificationManager.createNotificationChannel(channel);
 			}
 		}
+
         // Set the info for the views that show in the notification panel.
         final Notification notification = new NotificationCompat.Builder(this, "telemetry_video")
 			.setSmallIcon(R.drawable.ic_switch_video)  // the status icon
 			.setContentTitle("Video service is running")  // the label of the entry
 			.setContentText("To stop - stop recording and close the app")  // the contents of the entry
-			.setContentIntent(PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), 0))  // The intent to send when the entry is clicked
+			.setContentIntent(PendingIntent.getActivity(this, -1, this.getPackageManager().getLaunchIntentForPackage("crazydude.com.telemetry"), 0))
 			.build();
 
 		startForeground(NOTIFICATION, notification);
