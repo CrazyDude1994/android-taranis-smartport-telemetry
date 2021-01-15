@@ -24,6 +24,8 @@
 package com.serenegiant.serviceclient;
 
 import java.lang.ref.WeakReference;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -52,6 +54,7 @@ public class CameraClient implements ICameraClient {
 	protected final Object mServiceSync = new Object();
 	protected IUVCService mService;
 	protected ICameraClientCallback mListener;
+	private Timer mTimer = new Timer();
 
 	public CameraClient(final Context context, final ICameraClientCallback listener) {
 		if (DEBUG) Log.v(TAG, "Constructor:");
@@ -59,11 +62,31 @@ public class CameraClient implements ICameraClient {
 		mListener = listener;
 		mWeakHandler = new WeakReference<CameraHandler>(CameraHandler.createHandler(this));
 		doBindService();
+
+		mTimer.scheduleAtFixedRate(new TimerTask(){
+			@Override
+			public void run(){
+				if ( isRecording() ) {
+					if ( mListener != null)
+					{
+						mListener.onRecordingTimeChanged( true, getRecordingLengthSeconds() );
+					}
+				}
+				else {
+					if ( mListener != null)
+					{
+						mListener.onRecordingTimeChanged( false, -1 );
+					}
+				}
+			}
+		},0,200);
 	}
 
 	@Override
 	protected void finalize() throws Throwable {
 		if (DEBUG) Log.v(TAG, "finalize");
+		mTimer.cancel();
+		mTimer.purge();
 		doUnBindService();
 		super.finalize();
 	}
@@ -79,6 +102,8 @@ public class CameraClient implements ICameraClient {
 	@Override
 	public void release() {
 		if (DEBUG) Log.v(TAG, "release:" + this);
+		mTimer.cancel();
+		mTimer.purge();
 		mUsbDevice = null;
 		mWeakHandler.get().sendEmptyMessage(MSG_RELEASE);
 	}
@@ -130,6 +155,13 @@ public class CameraClient implements ICameraClient {
 	public boolean isRecording() {
 		final CameraHandler handler = mWeakHandler.get();
 		return (handler != null) && handler.isRecording();
+	}
+
+	@Override
+	public int getRecordingLengthSeconds() {
+		final CameraHandler handler = mWeakHandler.get();
+		if (handler == null) return -1;
+		return handler.getRecordingLengthSeconds();
 	}
 
 	@Override
@@ -261,6 +293,16 @@ public class CameraClient implements ICameraClient {
 				if (DEBUG) Log.e(TAG, "isRecording:", e);
 			}
 			return false;
+		}
+
+		public int getRecordingLengthSeconds() {
+			final IUVCService service = mCameraTask.mParent.getService();
+			if (service != null)
+				try {
+					return service.getRecordingLengthSeconds(mCameraTask.mServiceId);
+				} catch (final RemoteException e) {
+				}
+			return -1;
 		}
 
 		@Override

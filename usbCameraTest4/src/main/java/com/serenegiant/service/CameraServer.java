@@ -26,6 +26,7 @@ package com.serenegiant.service;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
+import java.util.Date;
 
 import android.content.Context;
 import android.media.AudioManager;
@@ -71,6 +72,8 @@ public final class CameraServer extends Handler {
 
 	private RendererHolder mRendererHolder;
 	private final WeakReference<CameraThread> mWeakThread;
+
+	private Date mRecordingStartTime = new Date();
 
 	public static CameraServer createServer(final Context context, final UsbControlBlock ctrlBlock, final int vid, final int pid) {
 		if (DEBUG) Log.d(TAG, "createServer:");
@@ -178,6 +181,11 @@ public final class CameraServer extends Handler {
 		return (thread != null) && thread.isRecording();
 	}
 
+	public int getRecordingLengthSeconds() {
+		if ( !isRecording() ) return -1;
+		return (int)(new Date().getTime() - mRecordingStartTime.getTime()) / 1000;
+	}
+
 	public void addSurface(final int id, final Surface surface, final boolean isRecordable, final IUVCServiceOnFrameAvailable onFrameAvailableListener) {
 		if (DEBUG) Log.d(TAG, "addSurface:id=" + id +",surface=" + surface);
 		if (mRendererHolder != null)
@@ -191,8 +199,10 @@ public final class CameraServer extends Handler {
 	}
 
 	public void startRecording() {
-		if (!isRecording())
+		if (!isRecording()) {
+			mRecordingStartTime = new Date();
 			sendEmptyMessage(MSG_CAPTURE_START);
+		}
 	}
 
 	public void stopRecording() {
