@@ -107,6 +107,7 @@ class SensorsActivity : AppCompatActivity(), SensorsAdapterListener {
                 .setContentText("You can drag sensor to change sensor order")
                 .show()
         }
+
     }
 
     override fun onSettingsClick(index: Int) {
