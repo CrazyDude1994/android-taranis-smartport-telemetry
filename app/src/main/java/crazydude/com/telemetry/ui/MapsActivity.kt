@@ -202,9 +202,11 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             if ( preferenceManager.getVideoContainerShown() ) {
                 videoHolder.visibility = View.GONE
                 preferenceManager.setVideoContainerShown(false)
+                mCameraFragment.onContainerVisibilityChange(false)
             } else {
                 videoHolder.visibility = View.VISIBLE
                 preferenceManager.setVideoContainerShown(true)
+                mCameraFragment.onContainerVisibilityChange(true)
             }
 
             updateHorizonViewSize()
