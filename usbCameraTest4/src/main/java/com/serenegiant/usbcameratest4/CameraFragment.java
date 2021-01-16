@@ -69,6 +69,8 @@ public class CameraFragment extends BaseFragment {
 
 	private Surface addedSurface = null;
 
+	private boolean  attachWasSkipped = false;
+
 	public CameraFragment() {
 		if (DEBUG) Log.v(TAG, "Constructor:");
 //		setRetainInstance(true);
@@ -172,7 +174,11 @@ public class CameraFragment extends BaseFragment {
 		public void onAttach(final UsbDevice device) {
 			if (DEBUG) Log.v(TAG, "OnDeviceConnectListener#onAttach:");
 			if (!updateCameraDialog() && (mCameraView.hasSurface())) {
+				attachWasSkipped = false;
 				tryOpenUVCCamera(true);
+			}
+			else {
+				attachWasSkipped = true;
 			}
 		}
 
@@ -370,6 +376,23 @@ public class CameraFragment extends BaseFragment {
 		public void onSurfaceDestroy(final CameraViewInterface view, final Surface surface) {
 		}
 	};
+
+	public void onContainerVisibilityChange( Boolean visible )
+	{
+		//fragment was created is collapsed state?
+		//then try to connect after uncollapsing
+		if ( visible && attachWasSkipped ) {
+			new android.os.Handler().postDelayed(
+					new Runnable() {
+						public void run() {
+							if (!updateCameraDialog() && (mCameraView.hasSurface())) {
+								attachWasSkipped = false;
+								tryOpenUVCCamera(true);
+							}
+						}
+					}, 1);
+		}
+	}
 
 
 }
