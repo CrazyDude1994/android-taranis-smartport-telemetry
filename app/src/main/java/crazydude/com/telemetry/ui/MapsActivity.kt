@@ -820,6 +820,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         if (!isChangingConfigurations) {
             dataService?.setDataListener(null)
         }
+        this.unregisterReceiver(this.batInfoReceiver)
         unbindService(serviceConnection)
     }
 
