@@ -333,6 +333,9 @@ public class CameraFragment extends BaseFragment {
 	}
 
 	private final void updateRecordingTime() {
+		if ( mCameraClient == null ) return;
+		Activity activity = getActivity();
+		if ( (activity == null )) return;
 		getActivity().runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
