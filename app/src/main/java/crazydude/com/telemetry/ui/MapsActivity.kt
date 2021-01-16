@@ -251,7 +251,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
 
         updateWindowFullscreenDecoration()
 
-        this.registerReceiver(this.mBatInfoReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+        this.registerReceiver(this.batInfoReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED));
     }
 
     private fun updateWindowFullscreenDecoration() {
@@ -901,6 +901,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         if (!isChangingConfigurations) {
             dataService?.setDataListener(null)
         }
+        this.unregisterReceiver(this.batInfoReceiver)
         unbindService(serviceConnection)
     }
 
@@ -1293,7 +1294,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         horizonView.setLayoutParams(lp);
     }
 
-    private val mBatInfoReceiver: BroadcastReceiver = object : BroadcastReceiver() {
+    private val batInfoReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(ctxt: Context?, intent: Intent) {
             val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, 0)
             lastPhoneBattery = level
