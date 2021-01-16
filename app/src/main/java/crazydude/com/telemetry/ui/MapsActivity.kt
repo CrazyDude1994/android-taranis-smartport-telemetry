@@ -397,7 +397,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
                 }
 
                 override fun onDataReady(size: Int) {
-                    progressDialog.hide()
+                    progressDialog.dismiss()
                     seekBar.max = size
                     seekBar.visibility = View.VISIBLE
                     seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
