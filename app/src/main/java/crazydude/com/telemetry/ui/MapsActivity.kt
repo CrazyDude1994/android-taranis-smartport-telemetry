@@ -224,7 +224,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         initMap(false)
         map?.onCreate(savedInstanceState)
 
-        this.registerReceiver(this.mBatInfoReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+        this.registerReceiver(this.batInfoReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED));
     }
 
     private fun initMap(simulateLifecycle: Boolean) {
@@ -1194,7 +1194,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         }
     }
 
-    private val mBatInfoReceiver: BroadcastReceiver = object : BroadcastReceiver() {
+    private val batInfoReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(ctxt: Context?, intent: Intent) {
             val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, 0)
             lastPhoneBattery = level
