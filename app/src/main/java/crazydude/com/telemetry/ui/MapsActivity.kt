@@ -1130,7 +1130,10 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     }
 
     private fun updateVoltage() {
-        this.voltage.text = "$lastVBAT (${"%.2f".format(lastCellVoltage)}) V"
+        if ( lastCellVoltage > 0 )
+            this.voltage.text =  "$lastVBAT (${"%.2f".format(lastCellVoltage)}) V"
+        else
+            this.voltage.text = "$lastVBAT V"
     }
 
     override fun onDisconnected() {
@@ -1201,7 +1204,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             when (batteryUnits) {
                 "mAh", "mWh" -> {
                     this.fuel.text = "$fuel $batteryUnits"
-                    realFuel = ((1 - (4.2f - lastCellVoltage)).coerceIn(0f, 1f) * 100).toInt()
+                    if ( lastCellVoltage > 0)
+                        realFuel = ((1 - (4.2f - lastCellVoltage)).coerceIn(0f, 1f) * 100).toInt()
                 }
                 "Percentage" -> {
                     this.fuel.text = "$fuel%"
