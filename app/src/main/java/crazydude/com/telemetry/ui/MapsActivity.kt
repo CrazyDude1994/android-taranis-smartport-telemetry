@@ -882,7 +882,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
 
     override fun onAltitudeData(altitude: Float) {
         runOnUiThread {
-            this.altitude.text = "$altitude m"
+            this.altitude.text = "${"%.2f".format(altitude)} m"
         }
     }
 
@@ -1012,7 +1012,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
 
     override fun onCurrentData(current: Float) {
         runOnUiThread {
-            this.current.text = "$current A"
+            this.current.text = "${"%.2f".format(current)} A"
         }
     }
 
@@ -1042,7 +1042,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     }
 
     private fun updateVoltage() {
-        this.voltage.text = "$lastVBAT (${"%.2f".format(lastCellVoltage)}) V"
+        this.voltage.text = "${"%.2f".format(lastVBAT)} (${"%.2f".format(lastCellVoltage)}) V"
     }
 
     override fun onDisconnected() {
