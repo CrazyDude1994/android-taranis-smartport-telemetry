@@ -38,7 +38,8 @@
                 android:layout_above="@id/seekbar"
                 android:textColor="@android:color/white"
                 android:textSize="18sp"
-                android:layout_alignWithParentIfMissing="true"/>
+                android:layout_alignWithParentIfMissing="true"
+                android:gravity="center"/>
 
         <crazydude.com.telemetry.ui.HorizonView
                 android:id="@+id/horizon_view"
