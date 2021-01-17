@@ -81,6 +81,17 @@
                     app:minText="0,00 V"
                     app:iconWidthDp="29"/>
 
+            <TextView
+                    android:id="@+id/phone_battery"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="6dp"
+                    android:drawableStart="@drawable/ic_phone_battery"
+                    android:drawablePadding="0dp"
+                    android:text="-"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp" />
+
         </com.nex3z.flowlayout.FlowLayout>
 
         <ImageView
