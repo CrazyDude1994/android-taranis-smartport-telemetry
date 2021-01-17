@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<merge xmlns:android="http://schemas.android.com/apk/res/android">
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <RelativeLayout
             android:id="@+id/top_layout"
@@ -23,61 +24,75 @@
                 android:layout_toStartOf="@+id/replay_button"
                 android:layout_toEndOf="@id/connect_button">
 
-            <TextView
+            <crazydude.com.telemetry.ui.TextViewStableSize
                     android:id="@+id/satellites"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_margin="6dp"
                     android:drawableStart="@drawable/ic_satellite"
                     android:drawablePadding="4dp"
+                    android:gravity="center_horizontal"
                     android:text="-"
                     android:textColor="@android:color/white"
-                    android:textSize="16sp" />
+                    android:textSize="16sp"
+                    app:minText="00"
+                    app:iconWidthDp="29"/>
 
 
-            <TextView
+            <crazydude.com.telemetry.ui.TextViewStableSize
                     android:id="@+id/fuel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_margin="6dp"
                     android:drawableStart="@drawable/ic_battery_unknown"
+                    android:gravity="center_horizontal"
                     android:drawablePadding="0dp"
                     android:text="-"
                     android:textColor="@android:color/white"
-                    android:textSize="16sp" />
+                    android:textSize="16sp"
+                    app:minText="100%"
+                    app:iconWidthDp="29"/>
 
-            <TextView
+            <crazydude.com.telemetry.ui.TextViewStableSize
                     android:id="@+id/current"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_margin="6dp"
                     android:drawableStart="@drawable/ic_current"
                     android:drawablePadding="4dp"
+                    android:gravity="center_horizontal"
                     android:text="-"
                     android:textColor="@android:color/white"
-                    android:textSize="16sp" />
+                    android:textSize="16sp"
+                    app:minText="0,00 A"
+                    app:iconWidthDp="29"/>
 
-            <TextView
+            <crazydude.com.telemetry.ui.TextViewStableSize
                     android:id="@+id/voltage"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_margin="6dp"
                     android:drawableStart="@drawable/ic_voltage"
                     android:drawablePadding="4dp"
+                    android:gravity="center_horizontal"
                     android:text="-"
                     android:textColor="@android:color/white"
-                    android:textSize="16sp" />
+                    android:textSize="16sp"
+                    app:minText="0,00 V"
+                    app:iconWidthDp="29"/>
 
-            <TextView
+            <crazydude.com.telemetry.ui.TextViewStableSize
                     android:id="@+id/phone_battery"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_margin="6dp"
                     android:drawableStart="@drawable/ic_phone_battery"
                     android:drawablePadding="0dp"
+                    android:gravity="center_horizontal"
                     android:text="-"
                     android:textColor="@android:color/white"
-                    android:textSize="16sp" />
+                    app:minText="100%"
+                    app:iconWidthDp="29"/>
 
         </com.nex3z.flowlayout.FlowLayout>
 

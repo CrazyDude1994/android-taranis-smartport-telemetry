@@ -4,4 +4,8 @@
         <attr name="outlineSize" format="dimension"/>
         <attr name="outlineColor" format="color|reference"/>
     </declare-styleable>
+    <declare-styleable name="TextViewStableSize">
+        <attr name="minText" format="string"/>
+        <attr name="iconWidthDp" format="integer"/>
+    </declare-styleable>
 </resources>
