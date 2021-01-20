@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <merge xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
         android:orientation="vertical">
 
     <RelativeLayout
@@ -14,41 +15,56 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
-            <TextView
+            <crazydude.com.telemetry.ui.TextViewStableSize
                     android:id="@+id/speed"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_margin="8dp"
+                    android:layout_marginLeft="6dp"
+                    android:layout_marginRight="6dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="2dp"
                     android:drawableTop="@drawable/ic_speed"
-                    android:drawablePadding="4dp"
+                    android:drawablePadding="0dp"
+                    android:gravity="center_horizontal"
                     android:text="-"
                     android:textAlignment="center"
                     android:textColor="@android:color/white"
-                    android:textSize="16sp" />
+                    android:textSize="16sp"
+                    app:minText="00 km/h"/>
 
-            <TextView
+            <crazydude.com.telemetry.ui.TextViewStableSize
                     android:id="@+id/distance"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_margin="8dp"
+                    android:layout_marginLeft="6dp"
+                    android:layout_marginRight="6dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="2dp"
                     android:drawableTop="@drawable/ic_distance"
-                    android:drawablePadding="4dp"
+                    android:drawablePadding="0dp"
+                    android:gravity="center_horizontal"
                     android:text="-"
                     android:textAlignment="center"
                     android:textColor="@android:color/white"
-                    android:textSize="16sp" />
+                    android:textSize="16sp"
+                    app:minText="000 m"/>
 
-            <TextView
+            <crazydude.com.telemetry.ui.TextViewStableSize
                     android:id="@+id/altitude"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_margin="8dp"
+                    android:layout_marginLeft="6dp"
+                    android:layout_marginRight="6dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="2dp"
                     android:drawableTop="@drawable/ic_altitutde"
-                    android:drawablePadding="4dp"
+                    android:drawablePadding="0dp"
+                    android:gravity="center_horizontal"
                     android:text="-"
                     android:textAlignment="center"
                     android:textColor="@android:color/white"
-                    android:textSize="16sp" />
+                    android:textSize="16sp"
+                    app:minText="000,00 m"/>
         </com.nex3z.flowlayout.FlowLayout>
 
     </RelativeLayout>

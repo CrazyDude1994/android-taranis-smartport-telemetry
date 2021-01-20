@@ -17,44 +17,53 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
-            <TextView
+            <crazydude.com.telemetry.ui.TextViewStableSize
                     android:id="@+id/speed"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_margin="8dp"
+                    android:layout_margin="6dp"
                     android:drawableStart="@drawable/ic_speed"
                     android:drawableLeft="@drawable/ic_speed"
                     android:drawablePadding="4dp"
                     android:layout_centerVertical="true"
+                    android:gravity="center_horizontal"
                     android:text="-"
                     android:textColor="@android:color/white"
-                    android:textSize="16sp" />
+                    android:textSize="16sp"
+                    app:minText="00 km/h"
+                    app:iconWidthDp="29"/>
 
-            <TextView
+            <crazydude.com.telemetry.ui.TextViewStableSize
                     android:id="@+id/distance"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_margin="8dp"
+                    android:layout_margin="6dp"
                     android:drawableStart="@drawable/ic_distance"
                     android:drawableLeft="@drawable/ic_distance"
                     android:drawablePadding="4dp"
                     android:layout_centerVertical="true"
+                    android:gravity="center_horizontal"
                     android:text="-"
                     android:textColor="@android:color/white"
-                    android:textSize="16sp" />
+                    android:textSize="16sp"
+                    app:minText="000 m"
+                    app:iconWidthDp="29"/>
 
-            <TextView
+            <crazydude.com.telemetry.ui.TextViewStableSize
                     android:id="@+id/altitude"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_margin="8dp"
+                    android:layout_margin="6dp"
                     android:drawableStart="@drawable/ic_altitutde"
                     android:drawableLeft="@drawable/ic_altitutde"
                     android:drawablePadding="4dp"
                     android:layout_centerVertical="true"
+                    android:gravity="center_horizontal"
                     android:text="-"
                     android:textColor="@android:color/white"
-                    android:textSize="16sp" />
+                    android:textSize="16sp"
+                    app:minText="000,00 m"
+                    app:iconWidthDp="29"/>
         </com.nex3z.flowlayout.FlowLayout>
 
     </RelativeLayout>
