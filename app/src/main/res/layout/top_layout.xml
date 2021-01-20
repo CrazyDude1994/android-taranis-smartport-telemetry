@@ -33,8 +33,6 @@
                     android:layout_margin="6dp"
                     android:drawableStart="@drawable/ic_satellite"
                     android:drawablePadding="4dp"
-                    android:paddingTop="8dp"
-                    android:paddingBottom="8dp"
                     android:layout_centerVertical="true"
                     android:gravity="center_horizontal"
                     android:text="-"
