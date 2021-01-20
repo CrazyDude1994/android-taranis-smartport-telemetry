@@ -38,6 +38,7 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.serenegiant.common.BaseFragment;
 import com.serenegiant.service.UVCService;
@@ -173,6 +174,7 @@ public class CameraFragment extends BaseFragment {
 	private final OnDeviceConnectListener mOnDeviceConnectListener = new OnDeviceConnectListener() {
 		@Override
 		public void onAttach(final UsbDevice device) {
+			showDeviceAttachedToast();
 			if (DEBUG) Log.v(TAG, "OnDeviceConnectListener#onAttach:");
 			if (!updateCameraDialog() && (mCameraView.hasSurface())) {
 				attachWasSkipped = false;
@@ -195,6 +197,7 @@ public class CameraFragment extends BaseFragment {
 
 		@Override
 		public void onDettach(final UsbDevice device) {
+			showDeviceDetachedToast();
 			if (DEBUG) Log.v(TAG, "OnDeviceConnectListener#onDettach:");
 			queueEvent(new Runnable() {
 				@Override
@@ -401,6 +404,24 @@ public class CameraFragment extends BaseFragment {
 						}
 					}, 1);
 		}
+	}
+
+	private void showDeviceAttachedToast() {
+		this.runOnUiThread( new Runnable() {
+			@Override
+			public void run() {
+				Toast.makeText(getActivity().getApplicationContext(), "USB device attached", Toast.LENGTH_SHORT).show();
+			}
+		},0);
+	}
+
+	private void showDeviceDetachedToast() {
+		this.runOnUiThread( new Runnable() {
+			@Override
+			public void run() {
+				Toast.makeText(getActivity().getApplicationContext(), "USB device removed", Toast.LENGTH_SHORT).show();
+			}
+		},0);
 	}
 
 
