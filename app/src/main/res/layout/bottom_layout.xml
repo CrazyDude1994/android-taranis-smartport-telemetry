@@ -8,10 +8,12 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
+            android:padding="1dp"
             android:background="#AA000000">
 
         <com.nex3z.flowlayout.FlowLayout
                 android:id="@+id/bottom_list"
+                android:layout_centerVertical="true"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
@@ -23,6 +25,7 @@
                     android:drawableStart="@drawable/ic_speed"
                     android:drawableLeft="@drawable/ic_speed"
                     android:drawablePadding="4dp"
+                    android:layout_centerVertical="true"
                     android:text="-"
                     android:textColor="@android:color/white"
                     android:textSize="16sp" />
@@ -35,6 +38,7 @@
                     android:drawableStart="@drawable/ic_distance"
                     android:drawableLeft="@drawable/ic_distance"
                     android:drawablePadding="4dp"
+                    android:layout_centerVertical="true"
                     android:text="-"
                     android:textColor="@android:color/white"
                     android:textSize="16sp" />
@@ -47,6 +51,7 @@
                     android:drawableStart="@drawable/ic_altitutde"
                     android:drawableLeft="@drawable/ic_altitutde"
                     android:drawablePadding="4dp"
+                    android:layout_centerVertical="true"
                     android:text="-"
                     android:textColor="@android:color/white"
                     android:textSize="16sp" />

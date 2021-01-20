@@ -9,9 +9,11 @@
 
         <Button
                 android:id="@+id/connect_button"
-                style="@style/Base.Widget.AppCompat.Button.Borderless"
+                style="@style/Widget.AppCompat.Button.Borderless.Colored"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
                 android:layout_centerVertical="true"
                 android:text="@string/connect"
                 android:textColor="@android:color/white" />
@@ -32,6 +34,7 @@
                     android:drawablePadding="4dp"
                     android:paddingTop="8dp"
                     android:paddingBottom="8dp"
+                    android:layout_centerVertical="true"
                     android:text="-"
                     android:textColor="@android:color/white"
                     android:textSize="16sp" />
@@ -43,6 +46,9 @@
                     android:layout_height="wrap_content"
                     android:layout_margin="4dp"
                     android:drawableStart="@drawable/ic_battery_unknown"
+                    android:gravity="center_horizontal"
+                    android:layout_centerVertical="true"
+                    android:drawablePadding="0dp"
                     android:text="-"
                     android:textColor="@android:color/white"
                     android:textSize="16sp" />
@@ -54,6 +60,7 @@
                     android:layout_margin="4dp"
                     android:drawableStart="@drawable/ic_current"
                     android:drawablePadding="4dp"
+                    android:layout_centerVertical="true"
                     android:text="-"
                     android:textColor="@android:color/white"
                     android:textSize="16sp" />
@@ -65,6 +72,7 @@
                     android:layout_margin="4dp"
                     android:drawableStart="@drawable/ic_voltage"
                     android:drawablePadding="4dp"
+                    android:layout_centerVertical="true"
                     android:text="-"
                     android:textColor="@android:color/white"
                     android:textSize="16sp" />
