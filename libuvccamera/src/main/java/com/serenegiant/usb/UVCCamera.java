@@ -40,7 +40,7 @@ import android.view.SurfaceHolder;
 import com.serenegiant.usb.USBMonitor.UsbControlBlock;
 
 public class UVCCamera {
-	private static final boolean DEBUG = false;	// TODO set false when releasing
+	private static final boolean DEBUG = true;	// TODO set false when releasing
 	private static final String TAG = UVCCamera.class.getSimpleName();
 	private static final String DEFAULT_USBFS = "/dev/bus/usb";
 
@@ -187,6 +187,7 @@ public class UVCCamera {
      * @param ctrlBlock
      */
     public synchronized void open(final UsbControlBlock ctrlBlock) {
+		Log.w(TAG, "Open");
     	int result;
     	try {
 			mCtrlBlock = ctrlBlock.clone();
@@ -199,15 +200,18 @@ public class UVCCamera {
 		} catch (final Exception e) {
 			Log.w(TAG, e);
 			result = -1;
+			close();
 		}
 		if (result != 0) {
 			throw new UnsupportedOperationException("open failed:result=" + result);
 		}
+
     	if (mNativePtr != 0 && TextUtils.isEmpty(mSupportedSize)) {
     		mSupportedSize = nativeGetSupportedSize(mNativePtr);
     	}
 		nativeSetPreviewSize(mNativePtr, DEFAULT_PREVIEW_WIDTH, DEFAULT_PREVIEW_HEIGHT,
 			DEFAULT_PREVIEW_MIN_FPS, DEFAULT_PREVIEW_MAX_FPS, DEFAULT_PREVIEW_MODE, DEFAULT_BANDWIDTH);
+
     }
 
 	/**

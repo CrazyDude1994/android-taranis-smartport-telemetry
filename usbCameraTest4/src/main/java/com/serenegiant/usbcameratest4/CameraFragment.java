@@ -132,6 +132,7 @@ public class CameraFragment extends BaseFragment {
 		enableButtons(false);
 		updateRecordingTime();
 		super.onPause();
+		if (DEBUG) Log.v(TAG, "onPause finished:");
 	}
 
 	@Override
@@ -229,10 +230,15 @@ public class CameraFragment extends BaseFragment {
 	}
 
 	private void openUVCCamera(final int index) {
+		//REVIEW: as we do not show USB device selection dialog here, it might be good
+		//to record bad connection attempts with device's productId/VendorId.
+		//Then avoid connecting to this device again in the session (select "index" accordingly).
+		//F.e. Cube iWork8 tablet has internal USB device reported as UVC device class/subclass, but it is a modem.
 		if (DEBUG) Log.v(TAG, "openUVCCamera:index=" + index);
 		if (!mUSBMonitor.isRegistered()) return;
 		final List<UsbDevice> list = mUSBMonitor.getDeviceList();
 		if (list.size() > index) {
+			if (DEBUG) Log.v(TAG, "openUVCCamera:productId=" + list.get(index).getProductId() + ", vendorId=" + list.get(index).getVendorId() );
 			enableButtons(false);
 			if (mCameraClient == null)
 				mCameraClient = new CameraClient(getActivity().getApplicationContext(), mCameraListener);

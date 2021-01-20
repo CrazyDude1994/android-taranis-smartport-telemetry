@@ -385,11 +385,22 @@ public final class CameraServer extends Handler {
 			if (DEBUG) Log.d(TAG_THREAD, "handleOpen:");
 			handleClose();
 			synchronized (mSync) {
-				mUVCCamera = new UVCCamera();
-				mUVCCamera.open(mCtrlBlock);
-				if (DEBUG) Log.i(TAG, "supportedSize:" + mUVCCamera.getSupportedSize());
+				try
+				{
+					mUVCCamera = new UVCCamera();
+					mUVCCamera.open(mCtrlBlock);
+					if (DEBUG) Log.i(TAG, "supportedSize:" + mUVCCamera.getSupportedSize());
+				}
+				catch( final Exception e )
+				{
+					//well maybe connected device is not camera
+					mUVCCamera.destroy();
+					mUVCCamera = null;
+					if (DEBUG) Log.w(TAG, e);
+					mSync.notifyAll();
+				}
 			}
-			mHandler.processOnCameraStart();
+			if (!(mUVCCamera == null )) mHandler.processOnCameraStart();
 		}
 
 		public void handleClose() {
