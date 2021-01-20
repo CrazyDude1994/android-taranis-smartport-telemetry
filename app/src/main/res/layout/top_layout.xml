@@ -15,7 +15,6 @@
                 android:layout_height="wrap_content"
                 android:minWidth="0dp"
                 android:minHeight="0dp"
-                android:layout_height="36dp"
                 android:layout_centerVertical="true"
                 android:text="@string/connect"
                 android:textColor="@android:color/white" />
