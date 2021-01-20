@@ -237,10 +237,19 @@ public class UVCService extends BaseService {
 				if (server == null)
 					try {
 						Log.i(TAG, "waiting for service is ready");
-						sServiceSync.wait();
+						sServiceSync.wait(10000);
+						Log.i(TAG, "waiting for service is ready done");
 					} catch (final InterruptedException e) {
 					}
 					server = sCameraServers.get(serviceId);
+
+				/*
+				if (server == null) {
+					{
+						throw new RuntimeException("waiting failed");
+					}
+				}
+				*/
 			}
 			return server;
 		}
@@ -397,6 +406,10 @@ public class UVCService extends BaseService {
 
 		@Override
 		public boolean isRecording(final int serviceId) throws RemoteException {
+			synchronized (sServiceSync) {
+				if ((sCameraServers.size() == 0)) return false;
+			}
+
 			final CameraServer server = getCameraServer(serviceId);
 			return server != null && server.isRecording();
 		}
