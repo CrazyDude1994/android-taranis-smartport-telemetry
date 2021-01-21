@@ -23,7 +23,9 @@
 
 package com.serenegiant.usbcameratest4;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import android.app.Activity;
 import android.app.Fragment;
@@ -38,6 +40,7 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.serenegiant.common.BaseFragment;
 import com.serenegiant.service.UVCService;
@@ -70,6 +73,9 @@ public class CameraFragment extends BaseFragment {
 	private Surface addedSurface = null;
 
 	private boolean  attachWasSkipped = false;
+
+	private String conDevice;
+	private HashSet<String> badDevices = new HashSet<String>();
 
 	public CameraFragment() {
 		if (DEBUG) Log.v(TAG, "Constructor:");
@@ -173,6 +179,7 @@ public class CameraFragment extends BaseFragment {
 	private final OnDeviceConnectListener mOnDeviceConnectListener = new OnDeviceConnectListener() {
 		@Override
 		public void onAttach(final UsbDevice device) {
+			showDeviceAttachedToast();
 			if (DEBUG) Log.v(TAG, "OnDeviceConnectListener#onAttach:");
 			if (!updateCameraDialog() && (mCameraView.hasSurface())) {
 				attachWasSkipped = false;
@@ -195,6 +202,7 @@ public class CameraFragment extends BaseFragment {
 
 		@Override
 		public void onDettach(final UsbDevice device) {
+			showDeviceDetachedToast();
 			if (DEBUG) Log.v(TAG, "OnDeviceConnectListener#onDettach:");
 			queueEvent(new Runnable() {
 				@Override
@@ -229,7 +237,12 @@ public class CameraFragment extends BaseFragment {
 		openUVCCamera(0);
 	}
 
-	private void openUVCCamera(final int index) {
+	private String getDeviceKey( UsbDevice d)
+	{
+		return d.getVendorId() + "/" + d.getProductId();
+	}
+
+	private void openUVCCamera(int index) {
 		//REVIEW: as we do not show USB device selection dialog here, it might be good
 		//to record bad connection attempts with device's productId/VendorId.
 		//Then avoid connecting to this device again in the session (select "index" accordingly).
@@ -237,7 +250,11 @@ public class CameraFragment extends BaseFragment {
 		if (DEBUG) Log.v(TAG, "openUVCCamera:index=" + index);
 		if (!mUSBMonitor.isRegistered()) return;
 		final List<UsbDevice> list = mUSBMonitor.getDeviceList();
+
+		while ( (index+1) < list.size() && badDevices.contains( getDeviceKey( list.get(index)))) index++;
+
 		if (list.size() > index) {
+			this.conDevice = getDeviceKey(list.get(index) );
 			if (DEBUG) Log.v(TAG, "openUVCCamera:productId=" + list.get(index).getProductId() + ", vendorId=" + list.get(index).getVendorId() );
 			enableButtons(false);
 			if (mCameraClient == null)
@@ -259,6 +276,8 @@ public class CameraFragment extends BaseFragment {
 			// start UVCService
 			final Intent intent = new Intent(getActivity(), UVCService.class);
 			getActivity().startService(intent);
+
+			showCameraConnectedToast();
 		}
 
 		@Override
@@ -271,6 +290,12 @@ public class CameraFragment extends BaseFragment {
 		@Override
 		public void onRecordingTimeChanged(boolean isRecording, int recordingTimeSeconds) {
 			updateRecordingTime();
+		}
+
+		@Override
+		public void onConnectionError() {
+			badDevices.add(conDevice);
+			showConnectionErrorToast();
 		}
 
 	};
@@ -401,6 +426,42 @@ public class CameraFragment extends BaseFragment {
 						}
 					}, 1);
 		}
+	}
+
+	private void showDeviceAttachedToast() {
+		this.runOnUiThread( new Runnable() {
+			@Override
+			public void run() {
+				Toast.makeText(getActivity().getApplicationContext(), "USB device attached", Toast.LENGTH_SHORT).show();
+			}
+		},0);
+	}
+
+	private void showCameraConnectedToast() {
+		this.runOnUiThread( new Runnable() {
+			@Override
+			public void run() {
+				Toast.makeText(getActivity().getApplicationContext(), "Camera connected", Toast.LENGTH_SHORT).show();
+			}
+		},0);
+	}
+
+	private void showDeviceDetachedToast() {
+		this.runOnUiThread( new Runnable() {
+			@Override
+			public void run() {
+				Toast.makeText(getActivity().getApplicationContext(), "USB device removed", Toast.LENGTH_SHORT).show();
+			}
+		},0);
+	}
+
+	private void showConnectionErrorToast() {
+		this.runOnUiThread( new Runnable() {
+			@Override
+			public void run() {
+				Toast.makeText(getActivity().getApplicationContext(), "Error connecting to USB camera", Toast.LENGTH_SHORT).show();
+			}
+		},0);
 	}
 
 

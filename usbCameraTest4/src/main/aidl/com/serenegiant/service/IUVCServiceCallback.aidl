@@ -26,4 +26,5 @@ package com.serenegiant.service;
 interface IUVCServiceCallback {
 	oneway void onConnected();
 	oneway void onDisConnected();
+    oneway void onConnectionError();
 }

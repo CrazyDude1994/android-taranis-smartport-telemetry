@@ -363,7 +363,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         val delta = System.currentTimeMillis() - installTime
 
         if (delta / 1000 / 60 / 60 / 24 > 3 && !preferenceManager.isYoutubeChannelShown()) {
-            AlertDialog.Builder(this)
+            this.showDialog( AlertDialog.Builder(this)
                 .setTitle("Thanks for using my application")
                 .setMessage(
                     "Thanks for using my application. As it's does not contain any ads and completely free, " +
@@ -379,7 +379,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                 }
                 .setNegativeButton("Cancel", null)
                 .setOnDismissListener { preferenceManager.setYoutubeShown() }
-                .show()
+                .create() );
         }
     }
 
@@ -409,7 +409,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                     val files =
                         dir.listFiles { file -> file.extension == "log" && file.length() > 0 }
                             .reversed()
-                    var dialog : AlertDialog = AlertDialog.Builder(this)
+                    this.showDialog( AlertDialog.Builder(this)
                         .setAdapter(
                             ArrayAdapter(
                                 this,
@@ -419,17 +419,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                                 updateWindowFullscreenDecoration()
                                 startReplay(files[i])
                         }
-                        .create()
-
-                    dialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
-                    dialog.show();
-                    if (!this.fullscreenWindow) {
-                        dialog.getWindow().decorView.systemUiVisibility = 0
-                    } else {
-                        dialog.getWindow().decorView.systemUiVisibility =
-                            (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
-                    }
-                    dialog.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
+                        .create() );
                 }
             }
         } else {
@@ -690,7 +680,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             .singleUse("replay_guide").build()
 
         if (showcaseView.hasFired()) {
-            AlertDialog.Builder(this)
+            this.showDialog( AlertDialog.Builder(this)
                 .setItems(arrayOf("Bluetooth", "USB Serial")) { dialogInterface, i ->
                     when (i) {
                         0 -> connectBluetooth()
@@ -698,7 +688,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                     }
                 }
                 .setTitle("Choose connection method")
-                .show()
+                .create())
         } else {
             showcaseView.show(this)
         }
@@ -776,10 +766,10 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     private fun connectBluetooth() {
         val adapter = BluetoothAdapter.getDefaultAdapter()
         if (adapter == null) {
-            AlertDialog.Builder(this)
+            this.showDialog( AlertDialog.Builder(this)
                 .setMessage("It seems like your phone does not have bluetooth, or it does not supported")
                 .setPositiveButton("OK", null)
-                .show()
+                .create())
             return
         }
 
@@ -826,7 +816,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             adapter.startLeScan(callback)
         }
 
-        AlertDialog.Builder(this).setOnDismissListener {
+        this.showDialog( AlertDialog.Builder(this).setOnDismissListener {
             if (bleCheck()) {
                 adapter.stopLeScan(callback)
             }
@@ -837,7 +827,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             runOnUiThread {
                 connectToBluetoothDevice(devices[i])
             }
-        }.show()
+        }.create())
     }
 
     private fun resetUI() {
@@ -930,29 +920,29 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                     map?.isMyLocationEnabled = true
                     checkSendDataDialogShown()
                 } else {
-                    AlertDialog.Builder(this)
+                    this.showDialog( AlertDialog.Builder(this)
                         .setMessage("Location permission is needed in order to discover BLE devices and show your location on map")
                         .setOnDismissListener { checkSendDataDialogShown() }
                         .setPositiveButton("OK", null)
-                        .show()
+                        .create())
                 }
             } else if (requestCode == REQUEST_WRITE_PERMISSION) {
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     connect()
                 } else {
-                    AlertDialog.Builder(this)
+                    this.showDialog(AlertDialog.Builder(this)
                         .setMessage("Write permission is required in order to log telemetry data. Disable logging or grant permission to continue")
                         .setPositiveButton("OK", null)
-                        .show()
+                        .create())
                 }
             } else if (requestCode == REQUEST_READ_PERMISSION) {
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     replay()
                 } else {
-                    AlertDialog.Builder(this)
+                    this.showDialog( AlertDialog.Builder(this)
                         .setMessage("Read permission is required in order to read and replay telemetry data")
                         .setPositiveButton("OK", null)
-                        .show()
+                        .create())
                 }
             }
         }
@@ -1062,7 +1052,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                     firebaseAnalytics.logEvent("telemetry_sharing_disabled", null)
                 }
                 .setCancelable(false)
-                .show()
+                .create()
+            this.showDialog(dialog)
             dialog.findViewById<TextView>(android.R.id.message)?.movementMethod =
                 LinkMovementMethod.getInstance()
         }
@@ -1089,7 +1080,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
 
         val fMapTypeDialog = builder.create()
         fMapTypeDialog.setCanceledOnTouchOutside(true)
-        fMapTypeDialog.show()
+        this.showDialog(fMapTypeDialog);
     }
 
     override fun onVBATData(voltage: Float) {
@@ -1312,6 +1303,18 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
 
     private fun updatePhoneBattery() {
         this.phoneBattery.text = "$lastPhoneBattery%"
+    }
+
+    private fun showDialog( dialog: AlertDialog ) {
+        dialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
+        dialog.show();
+        if (!this.fullscreenWindow) {
+            dialog.getWindow().decorView.systemUiVisibility = 0
+        } else {
+            dialog.getWindow().decorView.systemUiVisibility =
+                (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
+        }
+        dialog.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
     }
 
 }
