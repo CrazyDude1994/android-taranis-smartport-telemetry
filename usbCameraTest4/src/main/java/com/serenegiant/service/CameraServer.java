@@ -252,6 +252,20 @@ public final class CameraServer extends Handler {
 		mCallbacks.finishBroadcast();
 	}
 
+	private void processOnConnectionError() {
+		if (DEBUG) Log.d(TAG, "processOnConnectionError:");
+		final int n = mCallbacks.beginBroadcast();
+		for (int i = 0; i < n; i++) {
+			if (!((CallbackCookie)mCallbacks.getBroadcastCookie(i)).isConnected)
+				try {
+					mCallbacks.getBroadcastItem(i).onConnectionError();
+				} catch (final Exception e) {
+					Log.e(TAG, "failed to call IOverlayCallback#onConnectionError");
+				}
+		}
+		mCallbacks.finishBroadcast();
+	}
+
 //**********************************************************************
 	private static final int MSG_OPEN = 0;
 	private static final int MSG_CLOSE = 1;
@@ -400,7 +414,14 @@ public final class CameraServer extends Handler {
 					mSync.notifyAll();
 				}
 			}
-			if (!(mUVCCamera == null )) mHandler.processOnCameraStart();
+			if (!(mUVCCamera == null ))
+			{
+				mHandler.processOnCameraStart();
+			}
+			else
+			{
+				mHandler.processOnConnectionError();
+			}
 		}
 
 		public void handleClose() {

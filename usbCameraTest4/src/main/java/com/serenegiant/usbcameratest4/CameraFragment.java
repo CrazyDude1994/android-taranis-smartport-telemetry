@@ -262,6 +262,8 @@ public class CameraFragment extends BaseFragment {
 			// start UVCService
 			final Intent intent = new Intent(getActivity(), UVCService.class);
 			getActivity().startService(intent);
+
+			showCameraConnectedToast();
 		}
 
 		@Override
@@ -274,6 +276,11 @@ public class CameraFragment extends BaseFragment {
 		@Override
 		public void onRecordingTimeChanged(boolean isRecording, int recordingTimeSeconds) {
 			updateRecordingTime();
+		}
+
+		@Override
+		public void onConnectionError() {
+			showConnectionErrorToast();
 		}
 
 	};
@@ -415,11 +422,29 @@ public class CameraFragment extends BaseFragment {
 		},0);
 	}
 
+	private void showCameraConnectedToast() {
+		this.runOnUiThread( new Runnable() {
+			@Override
+			public void run() {
+				Toast.makeText(getActivity().getApplicationContext(), "Camera connected", Toast.LENGTH_SHORT).show();
+			}
+		},0);
+	}
+
 	private void showDeviceDetachedToast() {
 		this.runOnUiThread( new Runnable() {
 			@Override
 			public void run() {
 				Toast.makeText(getActivity().getApplicationContext(), "USB device removed", Toast.LENGTH_SHORT).show();
+			}
+		},0);
+	}
+
+	private void showConnectionErrorToast() {
+		this.runOnUiThread( new Runnable() {
+			@Override
+			public void run() {
+				Toast.makeText(getActivity().getApplicationContext(), "Error connecting to USB camera", Toast.LENGTH_SHORT).show();
 			}
 		},0);
 	}

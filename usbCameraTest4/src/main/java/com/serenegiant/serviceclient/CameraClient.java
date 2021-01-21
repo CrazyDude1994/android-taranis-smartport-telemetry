@@ -410,6 +410,16 @@ public class CameraClient implements ICameraClient {
 				}
 			}
 
+			@Override
+			public void onConnectionError() throws RemoteException {
+				if (DEBUG) Log.v(TAG_CAMERA, "onConnectionError:");
+				if (mParent != null) {
+					if (mParent.mListener != null) {
+						mParent.mListener.onConnectionError();
+					}
+				}
+			}
+
 //================================================================================
 			public void handleSelect(final UsbDevice device) {
 				if (DEBUG) Log.v(TAG_CAMERA, "handleSelect:");

@@ -28,4 +28,5 @@ public interface ICameraClientCallback {
 	public void onConnect();
 	public void onDisconnect();
 	public void onRecordingTimeChanged(boolean isRecording, int recordingTimeSeconds);
+	public void onConnectionError();
 }
