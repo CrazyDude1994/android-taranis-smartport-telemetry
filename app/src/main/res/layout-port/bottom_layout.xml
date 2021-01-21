@@ -12,6 +12,7 @@
 
         <com.nex3z.flowlayout.FlowLayout
                 android:id="@+id/bottom_list"
+                android:paddingLeft="4dp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
