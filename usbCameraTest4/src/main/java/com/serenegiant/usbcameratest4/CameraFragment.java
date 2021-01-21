@@ -23,7 +23,9 @@
 
 package com.serenegiant.usbcameratest4;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import android.app.Activity;
 import android.app.Fragment;
@@ -71,6 +73,9 @@ public class CameraFragment extends BaseFragment {
 	private Surface addedSurface = null;
 
 	private boolean  attachWasSkipped = false;
+
+	private String conDevice;
+	private HashSet<String> badDevices = new HashSet<String>();
 
 	public CameraFragment() {
 		if (DEBUG) Log.v(TAG, "Constructor:");
@@ -232,7 +237,12 @@ public class CameraFragment extends BaseFragment {
 		openUVCCamera(0);
 	}
 
-	private void openUVCCamera(final int index) {
+	private String getDeviceKey( UsbDevice d)
+	{
+		return d.getVendorId() + "/" + d.getProductId();
+	}
+
+	private void openUVCCamera(int index) {
 		//REVIEW: as we do not show USB device selection dialog here, it might be good
 		//to record bad connection attempts with device's productId/VendorId.
 		//Then avoid connecting to this device again in the session (select "index" accordingly).
@@ -240,7 +250,11 @@ public class CameraFragment extends BaseFragment {
 		if (DEBUG) Log.v(TAG, "openUVCCamera:index=" + index);
 		if (!mUSBMonitor.isRegistered()) return;
 		final List<UsbDevice> list = mUSBMonitor.getDeviceList();
+
+		while ( (index+1) < list.size() && badDevices.contains( getDeviceKey( list.get(index)))) index++;
+
 		if (list.size() > index) {
+			this.conDevice = getDeviceKey(list.get(index) );
 			if (DEBUG) Log.v(TAG, "openUVCCamera:productId=" + list.get(index).getProductId() + ", vendorId=" + list.get(index).getVendorId() );
 			enableButtons(false);
 			if (mCameraClient == null)
@@ -280,6 +294,7 @@ public class CameraFragment extends BaseFragment {
 
 		@Override
 		public void onConnectionError() {
+			badDevices.add(conDevice);
 			showConnectionErrorToast();
 		}
 
