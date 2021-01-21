@@ -15,6 +15,7 @@
                 android:id="@+id/bottom_list"
                 android:layout_centerVertical="true"
                 android:layout_width="match_parent"
+                android:paddingLeft="3dp"
                 android:layout_height="wrap_content">
 
             <crazydude.com.telemetry.ui.TextViewStableSize
