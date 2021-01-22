@@ -100,7 +100,7 @@ class SensorsActivity : AppCompatActivity(), SensorsAdapterListener {
 
         recyclerView.viewTreeObserver.addOnGlobalLayoutListener {
             MaterialShowcaseView.Builder(this)
-                .setTarget(linearLayoutManager.findViewByPosition(1)!!.findViewById(R.id.move))
+                .setTarget(linearLayoutManager.findViewByPosition(1)?.findViewById(R.id.move) ?: linearLayoutManager.findViewByPosition(2)?.findViewById(R.id.move))
                 .setMaskColour(Color.argb(180, 0, 0, 0))
                 .setDismissText("GOT IT")
                 .singleUse("sensors_guide1")

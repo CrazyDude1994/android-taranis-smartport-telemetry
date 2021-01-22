@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent" android:layout_height="match_parent">
+
+    <FrameLayout
+            android:id="@+id/map_holder"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+    <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+        <SeekBar
+                android:id="@+id/seekbar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentBottom="true"
+                android:layout_margin="8dp"
+                android:layout_toStartOf="@+id/buttons_box"
+                android:layout_toLeftOf="@+id/buttons_box"
+                android:visibility="gone" />
+
+        <crazydude.com.telemetry.ui.TextViewOutline
+                android:textStyle="bold"
+                app:outlineSize="3dp"
+                app:outlineColor="@android:color/black"
+                android:id="@+id/mode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:drawablePadding="4dp"
+                android:ellipsize="end"
+                android:lines="1"
+                android:text="Disconnected"
+                android:layout_above="@id/seekbar"
+                android:textColor="@android:color/white"
+                android:textSize="18sp"
+                android:layout_alignWithParentIfMissing="true"
+                android:gravity="center"/>
+
+        <crazydude.com.telemetry.ui.HorizonView
+                android:id="@+id/horizon_view"
+                android:layout_width="128dp"
+                android:layout_height="128dp"
+                android:layout_alignParentTop="true"
+                android:layout_margin="8dp" />
+
+        <com.google.android.flexbox.FlexboxLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:app="http://schemas.android.com/apk/res-auto"
+                android:id="@+id/buttons_box"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_alignParentRight="true"
+                android:layout_alignParentBottom="true"
+                app:alignContent="flex_start"
+                app:alignItems="flex_start"
+                app:justifyContent="flex_start"
+                app:flexDirection="column_reverse"
+                app:flexWrap="wrap_reverse">
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@+id/map_type_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="8dp"
+                    android:src="@drawable/ic_layers"
+                    app:fabSize="mini" />
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@+id/follow_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="8dp"
+                    android:src="@drawable/ic_follow"
+                    app:fabSize="mini" />
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@+id/directions_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="8dp"
+                    android:src="@drawable/ic_directions"
+                    android:visibility="gone"
+                    app:fabSize="mini"
+                    tools:visibility="visible" />
+
+        </com.google.android.flexbox.FlexboxLayout>
+
+    </RelativeLayout>
+
+</FrameLayout>

@@ -13,26 +13,26 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbDeviceConnection
 import android.hardware.usb.UsbManager
 import android.net.Uri
-import android.os.Build
-import android.os.Bundle
-import android.os.Environment
-import android.os.IBinder
+import android.os.*
 import android.text.Html
 import android.text.method.LinkMovementMethod
+import android.util.TypedValue
 import android.view.View
+import android.view.WindowManager
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.google.android.gms.maps.*
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.MapView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.maps.android.SphericalUtil
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
 import com.nex3z.flowlayout.FlowLayout
+import com.serenegiant.usbcameratest4.CameraFragment
 import crazydude.com.telemetry.R
 import crazydude.com.telemetry.converter.Converter
 import crazydude.com.telemetry.converter.KmhToMphConverter
@@ -52,8 +52,8 @@ import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.math.roundToInt
 
-
-class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
+//class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
+class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener {
 
     companion object {
         private const val REQUEST_ENABLE_BT: Int = 0
@@ -77,13 +77,15 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     private lateinit var satellites: TextView
     private lateinit var current: TextView
     private lateinit var voltage: TextView
+    private lateinit var phoneBattery: TextView
     private lateinit var speed: TextView
     private lateinit var distance: TextView
     private lateinit var altitude: TextView
     private lateinit var mode: TextView
     private lateinit var followButton: FloatingActionButton
     private lateinit var mapTypeButton: FloatingActionButton
-    private lateinit var fullscreenButton: FloatingActionButton
+    private lateinit var fullscreenButton: ImageView
+    private lateinit var layoutButton: ImageView
     private lateinit var directionsButton: FloatingActionButton
     private lateinit var settingsButton: ImageView
     private lateinit var topLayout: RelativeLayout
@@ -92,6 +94,9 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     private lateinit var bottomList: FlowLayout
     private lateinit var rootLayout: CoordinatorLayout
     private lateinit var mapHolder: FrameLayout
+    private lateinit var videoHolder: AspectFrameLayout
+
+    private lateinit var mCameraFragment : com.serenegiant.usbcameratest4.CameraFragment
 
     private lateinit var sensorViewMap: HashMap<String, TextView>
     private lateinit var sensorsConverters: HashMap<String, Converter>
@@ -109,6 +114,9 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     private var dataService: DataService? = null
     private var lastVBAT = 0f
     private var lastCellVoltage = 0f
+    private var lastPhoneBattery = 0
+
+    private var fullscreenWindow = false
 
     private val serviceConnection: ServiceConnection = object : ServiceConnection {
         override fun onServiceDisconnected(p0: ComponentName?) {
@@ -136,6 +144,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         mapType = preferenceManager.getMapType()
         followMode = savedInstanceState?.getBoolean("follow_mode", true) ?: true
         replayFileString = savedInstanceState?.getString("replay_file_name")
+        fullscreenWindow = preferenceManager.isFullscreenWindow()
 
         rootLayout = findViewById(R.id.rootLayout)
         fuel = findViewById(R.id.fuel)
@@ -144,6 +153,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         connectButton = findViewById(R.id.connect_button)
         current = findViewById(R.id.current)
         voltage = findViewById(R.id.voltage)
+        phoneBattery = findViewById(R.id.phone_battery)
         speed = findViewById(R.id.speed)
         distance = findViewById(R.id.distance)
         altitude = findViewById(R.id.altitude)
@@ -155,10 +165,14 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         seekBar = findViewById(R.id.seekbar)
         horizonView = findViewById(R.id.horizon_view)
         fullscreenButton = findViewById(R.id.fullscreen_button)
+        layoutButton = findViewById(R.id.layout_button)
         directionsButton = findViewById(R.id.directions_button)
         topList = findViewById(R.id.top_list)
         bottomList = findViewById(R.id.bottom_list)
         mapHolder = findViewById(R.id.map_holder)
+        videoHolder = findViewById(R.id.viewHolder)
+
+        videoHolder.setAspectRatio(640.0/480)
 
         sensorViewMap = hashMapOf(
             Pair(PreferenceManager.sensors.elementAt(0).name, satellites),
@@ -167,7 +181,8 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             Pair(PreferenceManager.sensors.elementAt(3).name, current),
             Pair(PreferenceManager.sensors.elementAt(4).name, speed),
             Pair(PreferenceManager.sensors.elementAt(5).name, distance),
-            Pair(PreferenceManager.sensors.elementAt(6).name, altitude)
+            Pair(PreferenceManager.sensors.elementAt(6).name, altitude),
+            Pair(PreferenceManager.sensors.elementAt(7).name, phoneBattery)
         )
 
         firebaseAnalytics = FirebaseAnalytics.getInstance(this)
@@ -177,12 +192,24 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         }
 
         fullscreenButton.setOnClickListener {
-            if (window.decorView.systemUiVisibility == (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)) {
-                window.decorView.systemUiVisibility = 0
+            updateFullscreenState()
+            this.fullscreenWindow = !this.fullscreenWindow
+            preferenceManager.setFullscreenWindow(fullscreenWindow)
+            updateWindowFullscreenDecoration()
+        }
+
+        layoutButton.setOnClickListener {
+            if ( preferenceManager.getVideoContainerShown() ) {
+                videoHolder.visibility = View.GONE
+                preferenceManager.setVideoContainerShown(false)
+                mCameraFragment.onContainerVisibilityChange(false)
             } else {
-                window.decorView.systemUiVisibility =
-                    (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
+                videoHolder.visibility = View.VISIBLE
+                preferenceManager.setVideoContainerShown(true)
+                mCameraFragment.onContainerVisibilityChange(true)
             }
+
+            updateHorizonViewSize()
         }
 
         followButton.setOnClickListener {
@@ -221,7 +248,29 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         checkAppInstallDate()
         initMap(false)
         map?.onCreate(savedInstanceState)
+
+        mCameraFragment = getFragmentManager().findFragmentById(R.id.cameraFragment) as CameraFragment
+
+        updateWindowFullscreenDecoration()
+
+        this.registerReceiver(this.batInfoReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED));
     }
+
+    private fun updateWindowFullscreenDecoration() {
+        if (!this.fullscreenWindow) {
+            window.decorView.systemUiVisibility = 0
+        } else {
+            window.decorView.systemUiVisibility =
+                (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
+        }
+    }
+
+    private fun updateFullscreenState() {
+        //user may have brought system ui with a swipe. Update state
+        this.fullscreenWindow = window.decorView.systemUiVisibility ==
+            (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
+    }
+
 
     private fun initMap(simulateLifecycle: Boolean) {
         if (mapType in GoogleMap.MAP_TYPE_NORMAL..GoogleMap.MAP_TYPE_HYBRID) {
@@ -314,7 +363,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         val delta = System.currentTimeMillis() - installTime
 
         if (delta / 1000 / 60 / 60 / 24 > 3 && !preferenceManager.isYoutubeChannelShown()) {
-            AlertDialog.Builder(this)
+            this.showDialog( AlertDialog.Builder(this)
                 .setTitle("Thanks for using my application")
                 .setMessage(
                     "Thanks for using my application. As it's does not contain any ads and completely free, " +
@@ -330,7 +379,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
                 }
                 .setNegativeButton("Cancel", null)
                 .setOnDismissListener { preferenceManager.setYoutubeShown() }
-                .show()
+                .create() );
         }
     }
 
@@ -360,16 +409,17 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
                     val files =
                         dir.listFiles { file -> file.extension == "log" && file.length() > 0 }
                             .reversed()
-                    AlertDialog.Builder(this)
+                    this.showDialog( AlertDialog.Builder(this)
                         .setAdapter(
                             ArrayAdapter(
                                 this,
                                 android.R.layout.simple_list_item_1,
                                 files.map { i -> "${i.nameWithoutExtension} (${i.length() / 1024} Kb)" })
                         ) { _, i ->
-                            startReplay(files[i])
+                                updateWindowFullscreenDecoration()
+                                startReplay(files[i])
                         }
-                        .show()
+                        .create() );
                 }
             }
         } else {
@@ -383,7 +433,16 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             progressDialog.setCancelable(false)
             progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL)
             progressDialog.max = 100
-            progressDialog.show()
+
+            progressDialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
+            progressDialog.show();
+            if (!this.fullscreenWindow) {
+                progressDialog.getWindow().decorView.systemUiVisibility = 0
+            } else {
+                progressDialog.getWindow().decorView.systemUiVisibility =
+                    (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
+            }
+            progressDialog.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
 
             switchToReplayMode()
 
@@ -557,11 +616,12 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         map?.onLowMemory()
     }
 
-    override fun onSaveInstanceState(outState: Bundle?) {
+    override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         map?.onSaveInstanceState(outState)
         outState?.putBoolean("follow_mode", followMode)
         outState?.putString("replay_file_name", replayFileString)
+        preferenceManager.setFullscreenWindow(fullscreenWindow)
     }
 
     override fun onStart() {
@@ -584,6 +644,15 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         } else {
             horizonView.visibility = View.GONE
         }
+
+        if ( preferenceManager.getVideoContainerShown() ) {
+            videoHolder.visibility = View.VISIBLE
+        } else {
+            videoHolder.visibility = View.GONE
+        }
+
+        updateHorizonViewSize()
+
         updateSensorsPlacement()
     }
 
@@ -611,7 +680,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             .singleUse("replay_guide").build()
 
         if (showcaseView.hasFired()) {
-            AlertDialog.Builder(this)
+            this.showDialog( AlertDialog.Builder(this)
                 .setItems(arrayOf("Bluetooth", "USB Serial")) { dialogInterface, i ->
                     when (i) {
                         0 -> connectBluetooth()
@@ -619,7 +688,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
                     }
                 }
                 .setTitle("Choose connection method")
-                .show()
+                .create())
         } else {
             showcaseView.show(this)
         }
@@ -680,11 +749,13 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     override fun onResume() {
         super.onResume()
         map?.onResume()
+        updateWindowFullscreenDecoration();
     }
 
     override fun onPause() {
         super.onPause()
         map?.onPause()
+        updateFullscreenState()//check if user has brought system ui with swipe
     }
 
     override fun onStop() {
@@ -695,10 +766,10 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     private fun connectBluetooth() {
         val adapter = BluetoothAdapter.getDefaultAdapter()
         if (adapter == null) {
-            AlertDialog.Builder(this)
+            this.showDialog( AlertDialog.Builder(this)
                 .setMessage("It seems like your phone does not have bluetooth, or it does not supported")
                 .setPositiveButton("OK", null)
-                .show()
+                .create())
             return
         }
 
@@ -745,7 +816,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             adapter.startLeScan(callback)
         }
 
-        AlertDialog.Builder(this).setOnDismissListener {
+        this.showDialog( AlertDialog.Builder(this).setOnDismissListener {
             if (bleCheck()) {
                 adapter.stopLeScan(callback)
             }
@@ -756,12 +827,13 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             runOnUiThread {
                 connectToBluetoothDevice(devices[i])
             }
-        }.show()
+        }.create())
     }
 
     private fun resetUI() {
         satellites.text = "0"
         voltage.text = "-"
+        phoneBattery.text = "-"
         current.text = "-"
         fuel.text = "-"
         altitude.text = "-"
@@ -821,6 +893,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         if (!isChangingConfigurations) {
             dataService?.setDataListener(null)
         }
+        this.unregisterReceiver(this.batInfoReceiver)
         unbindService(serviceConnection)
     }
 
@@ -847,29 +920,29 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
                     map?.isMyLocationEnabled = true
                     checkSendDataDialogShown()
                 } else {
-                    AlertDialog.Builder(this)
+                    this.showDialog( AlertDialog.Builder(this)
                         .setMessage("Location permission is needed in order to discover BLE devices and show your location on map")
                         .setOnDismissListener { checkSendDataDialogShown() }
                         .setPositiveButton("OK", null)
-                        .show()
+                        .create())
                 }
             } else if (requestCode == REQUEST_WRITE_PERMISSION) {
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     connect()
                 } else {
-                    AlertDialog.Builder(this)
+                    this.showDialog(AlertDialog.Builder(this)
                         .setMessage("Write permission is required in order to log telemetry data. Disable logging or grant permission to continue")
                         .setPositiveButton("OK", null)
-                        .show()
+                        .create())
                 }
             } else if (requestCode == REQUEST_READ_PERMISSION) {
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     replay()
                 } else {
-                    AlertDialog.Builder(this)
+                    this.showDialog( AlertDialog.Builder(this)
                         .setMessage("Read permission is required in order to read and replay telemetry data")
                         .setPositiveButton("OK", null)
-                        .show()
+                        .create())
                 }
             }
         }
@@ -888,7 +961,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
 
     override fun onAltitudeData(altitude: Float) {
         runOnUiThread {
-            this.altitude.text = "$altitude m"
+            this.altitude.text = "${"%.2f".format(altitude)} m"
         }
     }
 
@@ -979,7 +1052,8 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
                     firebaseAnalytics.logEvent("telemetry_sharing_disabled", null)
                 }
                 .setCancelable(false)
-                .show()
+                .create()
+            this.showDialog(dialog)
             dialog.findViewById<TextView>(android.R.id.message)?.movementMethod =
                 LinkMovementMethod.getInstance()
         }
@@ -1006,7 +1080,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
 
         val fMapTypeDialog = builder.create()
         fMapTypeDialog.setCanceledOnTouchOutside(true)
-        fMapTypeDialog.show()
+        this.showDialog(fMapTypeDialog);
     }
 
     override fun onVBATData(voltage: Float) {
@@ -1018,7 +1092,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
 
     override fun onCurrentData(current: Float) {
         runOnUiThread {
-            this.current.text = "$current A"
+            this.current.text = "${"%.2f".format(current)} A"
         }
     }
 
@@ -1048,7 +1122,10 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     }
 
     private fun updateVoltage() {
-        this.voltage.text = "$lastVBAT (${"%.2f".format(lastCellVoltage)}) V"
+        if ( lastCellVoltage > 0 )
+            this.voltage.text = "${"%.2f".format(lastVBAT)} (${"%.2f".format(lastCellVoltage)}) V"
+        else
+            this.voltage.text = "${"%.2f".format(lastVBAT)} V"
     }
 
     override fun onDisconnected() {
@@ -1119,7 +1196,8 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             when (batteryUnits) {
                 "mAh", "mWh" -> {
                     this.fuel.text = "$fuel $batteryUnits"
-                    realFuel = ((1 - (4.2f - lastCellVoltage)).coerceIn(0f, 1f) * 100).toInt()
+                    if ( lastCellVoltage > 0)
+                        realFuel = ((1 - (4.2f - lastCellVoltage)).coerceIn(0f, 1f) * 100).toInt()
                 }
                 "Percentage" -> {
                     this.fuel.text = "$fuel%"
@@ -1194,4 +1272,49 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             switchToConnectedState()
         }
     }
+
+    private fun updateHorizonViewSize() {
+        var size = 96.0f;
+        if (preferenceManager.getVideoContainerShown()) {
+            size = 64.0f;
+        }
+        var sizeInt = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            size,
+            getResources().getDisplayMetrics()
+        )
+            .toInt();
+
+        var lp = horizonView.getLayoutParams()
+        lp.width = sizeInt;
+        lp.height = sizeInt;
+        horizonView.setLayoutParams(lp);
+    }
+
+    private val batInfoReceiver: BroadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(ctxt: Context?, intent: Intent) {
+            val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, 0)
+            lastPhoneBattery = level
+            runOnUiThread {
+                updatePhoneBattery()
+            }
+        }
+    }
+
+    private fun updatePhoneBattery() {
+        this.phoneBattery.text = "$lastPhoneBattery%"
+    }
+
+    private fun showDialog( dialog: AlertDialog ) {
+        dialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
+        dialog.show();
+        if (!this.fullscreenWindow) {
+            dialog.getWindow().decorView.systemUiVisibility = 0
+        } else {
+            dialog.getWindow().decorView.systemUiVisibility =
+                (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
+        }
+        dialog.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
+    }
+
 }
