@@ -1,16 +1,20 @@
 package crazydude.com.telemetry.protocol.pollers
 
 import android.annotation.SuppressLint
+import android.content.ContentResolver
 import android.os.AsyncTask
+import androidx.documentfile.provider.DocumentFile
 import crazydude.com.telemetry.maps.Position
 import crazydude.com.telemetry.protocol.*
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
+import crazydude.com.telemetry.utils.LogFile
 import java.io.File
 import java.io.FileInputStream
+import java.io.InputStream
 import java.util.*
 import kotlin.collections.ArrayList
 
-class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listener {
+class LogPlayer(val originalListener: DataDecoder.Listener, private val contentResolver: ContentResolver?) : DataDecoder.Listener {
 
     private var cachedData = ArrayList<Protocol.Companion.TelemetryData>()
     private var decodedCoordinates = ArrayList<Position>()
@@ -20,10 +24,10 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
     private lateinit var protocol: Protocol
 
     private val task = @SuppressLint("StaticFieldLeak") object :
-        AsyncTask<File, Long, ArrayList<Protocol.Companion.TelemetryData>>() {
+        AsyncTask<LogFile, Long, ArrayList<Protocol.Companion.TelemetryData>>() {
 
-        override fun doInBackground(vararg file: File): ArrayList<Protocol.Companion.TelemetryData> {
-            var logFile = FileInputStream(file[0])
+        override fun doInBackground(vararg file: LogFile): ArrayList<Protocol.Companion.TelemetryData> {
+            var logFile = file[0].inputStream
             val arrayList = ArrayList<Protocol.Companion.TelemetryData>()
             var tempProtocol: Protocol? = null
 
@@ -92,7 +96,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
 
             val buffer = ByteArray(1024)
 
-            while (logFile.read(buffer) == buffer.size && tempProtocol == null) {
+            while (logFile?.read(buffer) == buffer.size && tempProtocol == null) {
                 for (byte in buffer) {
                     if (tempProtocol == null) {
                         protocolDetector.feedData(byte.toUByte().toInt())
@@ -105,10 +109,10 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
             if (tempProtocol == null) {
                 publishProgress(100)
             } else {
-                logFile = FileInputStream(file[0])
+                logFile = file[0].inputStream
                 val size = (file[0].length() / 100).toInt()
                 val bytes = ByteArray(size)
-                var bytesRead = logFile.read(bytes)
+                var bytesRead = logFile!!.read(bytes)
                 var allBytes = bytesRead
                 while (bytesRead == size) {
                     for (i in 0 until bytesRead) {
@@ -134,7 +138,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
 
     }
 
-    fun load(file: File, dataReadyListener: DataReadyListener) {
+    fun load(file: LogFile, dataReadyListener: DataReadyListener) {
         this.dataReadyListener = dataReadyListener
         task.execute(file)
     }

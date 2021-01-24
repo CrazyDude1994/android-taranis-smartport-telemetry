@@ -7,13 +7,14 @@ import crazydude.com.telemetry.protocol.*
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import java.io.FileOutputStream
 import java.io.IOException
+import java.io.OutputStream
 import java.util.concurrent.Executors
 
 class UsbDataPoller(
     private val listener: DataDecoder.Listener,
     private val serialPort: UsbSerialPort,
     private val connection: UsbDeviceConnection,
-    private val logFile: FileOutputStream?
+    private val logFile: OutputStream?
 ) : DataPoller {
 
     private var outputManager: SerialInputOutputManager? = null

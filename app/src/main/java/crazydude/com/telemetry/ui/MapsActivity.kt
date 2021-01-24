@@ -1,6 +1,5 @@
 package crazydude.com.telemetry.ui
 
-import android.app.Activity
 import android.app.PendingIntent
 import android.app.ProgressDialog
 import android.bluetooth.BluetoothAdapter
@@ -17,6 +16,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.os.IBinder
+import android.provider.DocumentsContract
 import android.text.Html
 import android.text.method.LinkMovementMethod
 import android.view.View
@@ -26,6 +26,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.documentfile.provider.DocumentFile
 import com.google.android.gms.maps.*
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.analytics.FirebaseAnalytics
@@ -46,8 +47,14 @@ import crazydude.com.telemetry.maps.osm.OsmMapWrapper
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import crazydude.com.telemetry.protocol.pollers.LogPlayer
 import crazydude.com.telemetry.service.DataService
+import crazydude.com.telemetry.utils.DocumentLogFile
+import crazydude.com.telemetry.utils.LogFile
+import crazydude.com.telemetry.utils.StandardLogFile
 import uk.co.deanwild.materialshowcaseview.MaterialShowcaseView
 import java.io.File
+import java.io.FileOutputStream
+import java.io.OutputStream
+import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.math.roundToInt
@@ -60,6 +67,8 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         private const val REQUEST_LOCATION_PERMISSION: Int = 1
         private const val REQUEST_WRITE_PERMISSION: Int = 2
         private const val REQUEST_READ_PERMISSION: Int = 3
+        private const val REQUEST_FILE_TREE_REPLAY: Int = 4
+        private const val REQUEST_FILE_TREE_CREATE_LOG: Int = 5
         private const val ACTION_USB_DEVICE = "action_usb_device"
         private val MAP_TYPE_ITEMS = arrayOf("Road Map (Google)", "Satellite (Google)", "Terrain (Google)", "Hybrid (Google)", "OpenStreetMap (can be cached)")
     }
@@ -206,12 +215,16 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         }
 
         if (isInReplayMode()) {
-            startReplay(
-                File(
+            val logFile : LogFile
+            if (shouldUseStorageAPI()) {
+                logFile = DocumentLogFile(DocumentFile.fromSingleUri(this, Uri.parse(replayFileString))!!, contentResolver)
+            } else {
+                logFile = StandardLogFile(File(
                     Environment.getExternalStoragePublicDirectory("TelemetryLogs"),
                     replayFileString
-                )
-            )
+                ))
+            }
+            startReplay(logFile)
         } else {
             switchToIdleState()
         }
@@ -285,7 +298,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         marker?.let {
             val posString = "${it.position.lat},${it.position.lon}"
             val clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            clipboardManager.primaryClip = ClipData.newPlainText("Location", posString)
+            clipboardManager.setPrimaryClip(ClipData.newPlainText("Location", posString))
             Toast.makeText(
                 this,
                 "Current plane location copied to clipboard ($posString)",
@@ -344,40 +357,81 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
 
     private fun replay() {
         if (dataService?.isConnected() != true) {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    android.Manifest.permission.READ_EXTERNAL_STORAGE
-                ) == PackageManager.PERMISSION_DENIED
-            ) {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE),
-                    REQUEST_READ_PERMISSION
-                )
+            if (shouldUseStorageAPI()) {
+                replayWithStorageAPI()
             } else {
-                val dir = Environment.getExternalStoragePublicDirectory("TelemetryLogs")
-                if (dir.exists()) {
-                    val files =
-                        dir.listFiles { file -> file.extension == "log" && file.length() > 0 }
-                            .reversed()
-                    AlertDialog.Builder(this)
-                        .setAdapter(
-                            ArrayAdapter(
-                                this,
-                                android.R.layout.simple_list_item_1,
-                                files.map { i -> "${i.nameWithoutExtension} (${i.length() / 1024} Kb)" })
-                        ) { _, i ->
-                            startReplay(files[i])
-                        }
-                        .show()
-                }
+                replayWithFileAPI()
             }
         } else {
             Toast.makeText(this, "You need to disconnect first", Toast.LENGTH_SHORT).show()
         }
     }
 
-    private fun startReplay(file: File?) {
+    private fun replayWithFileAPI() {
+        if (ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.READ_EXTERNAL_STORAGE
+            ) == PackageManager.PERMISSION_DENIED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE),
+                `REQUEST_READ_PERMISSION`
+            )
+        } else {
+            val dir = Environment.getExternalStoragePublicDirectory("TelemetryLogs")
+            if (dir.exists()) {
+                val files =
+                    dir.listFiles { file -> file.extension == "log" && file.length() > 0 }
+                        .reversed()
+                AlertDialog.Builder(this)
+                    .setAdapter(
+                        ArrayAdapter(
+                            this,
+                            android.R.layout.simple_list_item_1,
+                            files.map { i -> "${i.nameWithoutExtension} (${i.length() / 1024} Kb)" })
+                    ) { _, i ->
+                        startReplay(StandardLogFile(files[i]))
+                    }
+                    .show()
+            }
+        }
+    }
+
+    private fun storageIntent() = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+        putExtra(DocumentsContract.EXTRA_INITIAL_URI, preferenceManager.getLogsStorageFolder())
+    }
+
+    private fun replayWithStorageAPI() {
+        if (preferenceManager.getLogsStorageFolder() == null) {
+            startActivityForResult(storageIntent(), REQUEST_FILE_TREE_REPLAY)
+        } else {
+            val tree = DocumentFile.fromTreeUri(
+                this,
+                Uri.parse(preferenceManager.getLogsStorageFolder())
+            )
+            if (tree?.canRead() == true) {
+                val files = tree?.listFiles()?.reversed()
+                AlertDialog.Builder(this)
+                    .setAdapter(
+                        ArrayAdapter<String>(
+                            this,
+                            android.R.layout.simple_list_item_1,
+                            files?.map { i -> "${i.name} (${i.length() / 1024} Kb)" }!!
+                                .toMutableList()
+                        )
+                    ) { _, i ->
+                        startReplay(DocumentLogFile(files[i], contentResolver))
+                    }
+                    .show()
+            } else {
+                startActivityForResult(intent, REQUEST_FILE_TREE_REPLAY)
+            }
+        }
+    }
+
+    private fun startReplay(file: LogFile) {
         file?.also {
             val progressDialog = ProgressDialog(this)
             progressDialog.setCancelable(false)
@@ -387,10 +441,14 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
 
             switchToReplayMode()
 
-            replayFileString = it.name
+            if (shouldUseStorageAPI()) {
+                replayFileString = it.uri.toString()
+            } else {
+                replayFileString = it.name
+            }
 
             val logPlayer =
-                LogPlayer(this)
+                LogPlayer(this, contentResolver)
             logPlayer.load(file, object : LogPlayer.DataReadyListener {
                 override fun onUpdate(percent: Int) {
                     progressDialog.progress = percent
@@ -419,6 +477,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
                 }
             })
         }
+
     }
 
     override fun onFlyModeData(
@@ -551,10 +610,10 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         map?.onLowMemory()
     }
 
-    override fun onSaveInstanceState(outState: Bundle?) {
+    override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         map?.onSaveInstanceState(outState)
-        outState?.putBoolean("follow_mode", followMode)
+        outState.putBoolean("follow_mode", followMode)
         outState?.putString("replay_file_name", replayFileString)
     }
 
@@ -701,20 +760,6 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
             return
         }
-        if (preferenceManager.isLoggingEnabled()) {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-                ) == PackageManager.PERMISSION_DENIED
-            ) {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE),
-                    REQUEST_WRITE_PERMISSION
-                )
-                return
-            }
-        }
 
         val devices = ArrayList<BluetoothDevice>(adapter.bondedDevices)
         val deviceNames = ArrayList<String>(devices.map {
@@ -787,13 +832,20 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             android.Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
 
+    private fun storageCheck() = ContextCompat.checkSelfPermission(
+        this,
+        android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+    ) == PackageManager.PERMISSION_GRANTED
+
 
     private fun connectToBluetoothDevice(device: BluetoothDevice) {
         startDataService()
         dataService?.let {
             connectButton.text = getString(R.string.connecting)
             connectButton.isEnabled = false
-            it.connect(device)
+            createLogFile()?.let { file->
+                it.connect(device, file)
+            }
         }
     }
 
@@ -803,9 +855,12 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     ) {
         startDataService()
         dataService?.let {
+            createLogFile()
             connectButton.text = getString(R.string.connecting)
             connectButton.isEnabled = false
-            it.connect(port, connection)
+            createLogFile()?.let { file->
+                it.connect(port, connection, file)
+            }
         }
     }
 
@@ -871,8 +926,16 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_ENABLE_BT && resultCode == Activity.RESULT_OK) {
+        if (requestCode == REQUEST_ENABLE_BT && resultCode == RESULT_OK) {
             connectBluetooth()
+        } else if (requestCode == REQUEST_FILE_TREE_REPLAY && resultCode == RESULT_OK) {
+            preferenceManager.setLogsStorageFolder(data?.dataString)
+            contentResolver.takePersistableUriPermission(data?.data!!, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+            replay()
+        } else if (requestCode == REQUEST_FILE_TREE_CREATE_LOG && resultCode == RESULT_OK) {
+            contentResolver.takePersistableUriPermission(data?.data!!, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+            preferenceManager.setLogsStorageFolder(data?.dataString)
+            connect()
         }
     }
 
@@ -1188,4 +1251,38 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             switchToConnectedState()
         }
     }
+
+    private fun createLogFile(): OutputStream? {
+        var fileOutputStream: OutputStream? = null
+        if (preferenceManager.isLoggingEnabled()) {
+            val name = SimpleDateFormat("yyyy-MM-dd HH-mm-ss").format(Date())
+            if (!shouldUseStorageAPI()) {
+                if (storageCheck()) {
+                    val dir = Environment.getExternalStoragePublicDirectory("TelemetryLogs")
+                    dir.mkdirs()
+                    val file = File(dir, "$name.log")
+                    fileOutputStream = FileOutputStream(file)
+                }
+            } else {
+                if (preferenceManager.getLogsStorageFolder() == null) {
+                    startActivityForResult(storageIntent(), REQUEST_FILE_TREE_CREATE_LOG)
+                } else {
+                    val tree = DocumentFile.fromTreeUri(
+                        this,
+                        Uri.parse(preferenceManager.getLogsStorageFolder())
+                    )
+                    if (tree?.canWrite() == true) {
+                        val documentFile = tree.createFile("application/octet-stream", "$name.log")!!
+                        fileOutputStream = DocumentLogFile(documentFile, contentResolver).outputStream
+                    } else {
+                        startActivityForResult(storageIntent(), REQUEST_FILE_TREE_CREATE_LOG)
+                    }
+                }
+            }
+        }
+
+        return fileOutputStream
+    }
 }
+
+fun shouldUseStorageAPI(): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
