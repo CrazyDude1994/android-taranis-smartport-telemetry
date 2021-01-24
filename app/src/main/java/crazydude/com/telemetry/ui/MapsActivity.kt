@@ -17,9 +17,11 @@ import android.os.Bundle
 import android.os.Environment
 import android.os.IBinder
 import android.provider.DocumentsContract
+import android.os.*
 import android.text.Html
 import android.text.method.LinkMovementMethod
 import android.view.View
+import android.view.WindowManager
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -28,6 +30,8 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.documentfile.provider.DocumentFile
 import com.google.android.gms.maps.*
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.MapView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.maps.android.SphericalUtil
@@ -86,6 +90,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     private lateinit var satellites: TextView
     private lateinit var current: TextView
     private lateinit var voltage: TextView
+    private lateinit var phoneBattery: TextView
     private lateinit var speed: TextView
     private lateinit var distance: TextView
     private lateinit var altitude: TextView
@@ -118,6 +123,9 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     private var dataService: DataService? = null
     private var lastVBAT = 0f
     private var lastCellVoltage = 0f
+    private var lastPhoneBattery = 0
+
+    private var fullscreenWindow = false
 
     private val serviceConnection: ServiceConnection = object : ServiceConnection {
         override fun onServiceDisconnected(p0: ComponentName?) {
@@ -145,6 +153,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         mapType = preferenceManager.getMapType()
         followMode = savedInstanceState?.getBoolean("follow_mode", true) ?: true
         replayFileString = savedInstanceState?.getString("replay_file_name")
+        fullscreenWindow = preferenceManager.isFullscreenWindow()
 
         rootLayout = findViewById(R.id.rootLayout)
         fuel = findViewById(R.id.fuel)
@@ -153,6 +162,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         connectButton = findViewById(R.id.connect_button)
         current = findViewById(R.id.current)
         voltage = findViewById(R.id.voltage)
+        phoneBattery = findViewById(R.id.phone_battery)
         speed = findViewById(R.id.speed)
         distance = findViewById(R.id.distance)
         altitude = findViewById(R.id.altitude)
@@ -176,7 +186,8 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             Pair(PreferenceManager.sensors.elementAt(3).name, current),
             Pair(PreferenceManager.sensors.elementAt(4).name, speed),
             Pair(PreferenceManager.sensors.elementAt(5).name, distance),
-            Pair(PreferenceManager.sensors.elementAt(6).name, altitude)
+            Pair(PreferenceManager.sensors.elementAt(6).name, altitude),
+            Pair(PreferenceManager.sensors.elementAt(7).name, phoneBattery)
         )
 
         firebaseAnalytics = FirebaseAnalytics.getInstance(this)
@@ -186,12 +197,10 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         }
 
         fullscreenButton.setOnClickListener {
-            if (window.decorView.systemUiVisibility == (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)) {
-                window.decorView.systemUiVisibility = 0
-            } else {
-                window.decorView.systemUiVisibility =
-                    (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
-            }
+            updateFullscreenState()
+            this.fullscreenWindow = !this.fullscreenWindow
+            preferenceManager.setFullscreenWindow(fullscreenWindow)
+            updateWindowFullscreenDecoration()
         }
 
         followButton.setOnClickListener {
@@ -234,7 +243,25 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         checkAppInstallDate()
         initMap(false)
         map?.onCreate(savedInstanceState)
+
+        this.registerReceiver(this.batInfoReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
     }
+
+    private fun updateWindowFullscreenDecoration() {
+        if (!this.fullscreenWindow) {
+            window.decorView.systemUiVisibility = 0
+        } else {
+            window.decorView.systemUiVisibility =
+                (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
+        }
+    }
+
+    private fun updateFullscreenState() {
+        //user may have brought system ui with a swipe. Update state
+        this.fullscreenWindow = window.decorView.systemUiVisibility ==
+            (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
+    }
+
 
     private fun initMap(simulateLifecycle: Boolean) {
         if (mapType in GoogleMap.MAP_TYPE_NORMAL..GoogleMap.MAP_TYPE_HYBRID) {
@@ -412,13 +439,13 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
                 Uri.parse(preferenceManager.getLogsStorageFolder())
             )
             if (tree?.canRead() == true) {
-                val files = tree?.listFiles()?.reversed()
+                val files = tree.listFiles().reversed()
                 AlertDialog.Builder(this)
                     .setAdapter(
                         ArrayAdapter<String>(
                             this,
                             android.R.layout.simple_list_item_1,
-                            files?.map { i -> "${i.name} (${i.length() / 1024} Kb)" }!!
+                            files.map { i -> "${i.name} (${i.length() / 1024} Kb)" }
                                 .toMutableList()
                         )
                     ) { _, i ->
@@ -432,12 +459,22 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     }
 
     private fun startReplay(file: LogFile) {
-        file?.also {
+        file.also {
+            updateWindowFullscreenDecoration()
             val progressDialog = ProgressDialog(this)
             progressDialog.setCancelable(false)
             progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL)
             progressDialog.max = 100
+
+            progressDialog.window?.setFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
             progressDialog.show()
+            if (!this.fullscreenWindow) {
+                progressDialog.window?.decorView?.systemUiVisibility = 0
+            } else {
+                progressDialog.window?.decorView?.systemUiVisibility =
+                    (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
+            }
+            progressDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
 
             switchToReplayMode()
 
@@ -455,7 +492,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
                 }
 
                 override fun onDataReady(size: Int) {
-                    progressDialog.hide()
+                    progressDialog.dismiss()
                     seekBar.max = size
                     seekBar.visibility = View.VISIBLE
                     seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -547,13 +584,13 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
                 mode.text = mode.text.toString() + " | GPS wait"
             }
             DataDecoder.Companion.FlyMode.CIRCLE -> {
-                mode.text = mode.text.toString() + " | CIRCLE"
+                mode.text = mode.text.toString() + " | Circle"
             }
             DataDecoder.Companion.FlyMode.STABILIZE -> {
-                mode.text = mode.text.toString() + " | STABILIZE"
+                mode.text = mode.text.toString() + " | Stabilize"
             }
             DataDecoder.Companion.FlyMode.TRAINING -> {
-                mode.text = mode.text.toString() + " | TRAINING"
+                mode.text = mode.text.toString() + " | Training"
             }
             DataDecoder.Companion.FlyMode.FBWA -> {
                 mode.text = mode.text.toString() + " | FBWA"
@@ -562,22 +599,28 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
                 mode.text = mode.text.toString() + " | FBWB"
             }
             DataDecoder.Companion.FlyMode.AUTOTUNE -> {
-                mode.text = mode.text.toString() + " | AUTOTUNE"
+                mode.text = mode.text.toString() + " | Autotune"
             }
             DataDecoder.Companion.FlyMode.LOITER -> {
-                mode.text = mode.text.toString() + " | LOITER"
+                mode.text = mode.text.toString() + " | Loiter"
             }
             DataDecoder.Companion.FlyMode.TAKEOFF -> {
-                mode.text = mode.text.toString() + " | TAKEOFF"
+                mode.text = mode.text.toString() + " | Takeoff"
             }
             DataDecoder.Companion.FlyMode.AVOID_ADSB -> {
                 mode.text = mode.text.toString() + " | AVOID_ADSB"
             }
             DataDecoder.Companion.FlyMode.GUIDED -> {
-                mode.text = mode.text.toString() + " | GUIDED"
+                mode.text = mode.text.toString() + " | Guided"
             }
             DataDecoder.Companion.FlyMode.INITIALISING -> {
-                mode.text = mode.text.toString() + " | INITIALISING"
+                mode.text = mode.text.toString() + " | Initializing"
+            }
+            DataDecoder.Companion.FlyMode.LANDING -> {
+                mode.text = mode.text.toString() + " | Landing"
+            }
+            DataDecoder.Companion.FlyMode.MISSION -> {
+                mode.text = mode.text.toString() + " | Mission"
             }
             DataDecoder.Companion.FlyMode.QSTABILIZE -> {
             mode.text = mode.text.toString() + " | QSTABILIZE"
@@ -614,7 +657,8 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         super.onSaveInstanceState(outState)
         map?.onSaveInstanceState(outState)
         outState.putBoolean("follow_mode", followMode)
-        outState?.putString("replay_file_name", replayFileString)
+        outState.putString("replay_file_name", replayFileString)
+        preferenceManager.setFullscreenWindow(fullscreenWindow)
     }
 
     override fun onStart() {
@@ -733,11 +777,13 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     override fun onResume() {
         super.onResume()
         map?.onResume()
+        updateWindowFullscreenDecoration()
     }
 
     override fun onPause() {
         super.onPause()
         map?.onPause()
+        updateFullscreenState()//check if user has brought system ui with swipe
     }
 
     override fun onStop() {
@@ -801,6 +847,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     private fun resetUI() {
         satellites.text = "0"
         voltage.text = "-"
+        phoneBattery.text = "-"
         current.text = "-"
         fuel.text = "-"
         altitude.text = "-"
@@ -870,6 +917,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         if (!isChangingConfigurations) {
             dataService?.setDataListener(null)
         }
+        this.unregisterReceiver(this.batInfoReceiver)
         unbindService(serviceConnection)
     }
 
@@ -934,7 +982,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             replay()
         } else if (requestCode == REQUEST_FILE_TREE_CREATE_LOG && resultCode == RESULT_OK) {
             contentResolver.takePersistableUriPermission(data?.data!!, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-            preferenceManager.setLogsStorageFolder(data?.dataString)
+            preferenceManager.setLogsStorageFolder(data.dataString)
             connect()
         }
     }
@@ -1282,6 +1330,19 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         }
 
         return fileOutputStream
+    }
+    private val batInfoReceiver: BroadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(ctxt: Context?, intent: Intent) {
+            val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, 0)
+            lastPhoneBattery = level
+            runOnUiThread {
+                updatePhoneBattery()
+            }
+        }
+    }
+
+    private fun updatePhoneBattery() {
+        this.phoneBattery.text = "$lastPhoneBattery%"
     }
 }
 

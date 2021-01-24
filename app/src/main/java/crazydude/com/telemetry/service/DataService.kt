@@ -8,12 +8,10 @@ import android.app.Service
 import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.hardware.usb.UsbDeviceConnection
 import android.os.*
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
-import androidx.core.content.ContextCompat
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import crazydude.com.telemetry.R
 import crazydude.com.telemetry.api.*
@@ -25,15 +23,11 @@ import crazydude.com.telemetry.protocol.pollers.BluetoothLeDataPoller
 import crazydude.com.telemetry.protocol.pollers.DataPoller
 import crazydude.com.telemetry.protocol.pollers.UsbDataPoller
 import crazydude.com.telemetry.ui.MapsActivity
-import crazydude.com.telemetry.ui.shouldUseStorageAPI
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import java.io.File
-import java.io.FileOutputStream
 import java.io.IOException
 import java.io.OutputStream
-import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -70,16 +64,9 @@ class DataService : Service(), DataDecoder.Listener {
 
 
         val notification = NotificationCompat.Builder(this, "bt_channel")
-            .setContentText("Telemetry service is running")
-            .setContentTitle("Telemetry service is running. To stop - disconnect and close the app")
-            .setContentIntent(
-                PendingIntent.getActivity(
-                    this,
-                    -1,
-                    Intent(this, MapsActivity::class.java),
-                    0
-                )
-            )
+            .setContentText("Telemetry service is running. To stop - disconnect and close the app")
+            .setContentTitle("Telemetry service is running")
+            .setContentIntent(PendingIntent.getActivity(this, -1, Intent(this, MapsActivity::class.java), 0))
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .build()
         startForeground(1, notification)

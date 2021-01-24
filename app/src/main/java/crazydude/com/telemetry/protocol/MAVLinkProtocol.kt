@@ -140,7 +140,7 @@ class MAVLinkProtocol : Protocol {
             val mode = byteBuffer.get()
             val state = byteBuffer.get()
             val version = byteBuffer.get()
-            dataDecoder.decodeData(Protocol.Companion.TelemetryData(FLYMODE, mode.toInt()))
+            dataDecoder.decodeData(Protocol.Companion.TelemetryData(FLYMODE, mode.toInt(), byteBuffer.array()))
         } else if (messageId == MAV_PACKET_RC_CHANNEL_ID && packetLength == MAV_PACKET_RC_CHANNEL_LENGTH) {
             //Channels RC
         } else if (messageId == MAV_PACKET_ATTITUDE_ID && packetLength == MAV_PACKET_ATTITUDE_LENGTH) {

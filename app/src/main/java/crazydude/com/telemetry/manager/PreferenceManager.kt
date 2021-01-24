@@ -19,7 +19,8 @@ class PreferenceManager(context: Context) {
             SensorSetting("Amperage", 3),
             SensorSetting("Speed", 0, "bottom"),
             SensorSetting("Distance", 1, "bottom"),
-            SensorSetting("Altitude", 2, "bottom")
+            SensorSetting("Altitude", 2, "bottom"),
+            SensorSetting("Phone Battery", 4)
         )
     }
 
@@ -137,4 +138,13 @@ class PreferenceManager(context: Context) {
         val position: String = "top",
         val shown: Boolean = true
     )
+
+    fun isFullscreenWindow(): Boolean {
+        return sharedPreferences.getBoolean("fullscreen_window", false)
+    }
+
+    fun setFullscreenWindow( state: Boolean ) {
+        sharedPreferences.edit().putBoolean("fullscreen_window", state).apply()
+    }
+
 }
