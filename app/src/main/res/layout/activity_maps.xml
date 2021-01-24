@@ -45,7 +45,8 @@
                 android:text="Disconnected"
                 android:layout_above="@id/seekbar"
                 android:textColor="@android:color/white"
-                android:textSize="18sp" />
+                android:textSize="18sp"
+                android:gravity="center"/>
 
         <include
                 android:id="@+id/bottom_layout"
