@@ -17,6 +17,7 @@ import android.os.*
 import android.text.Html
 import android.text.method.LinkMovementMethod
 import android.view.View
+import android.view.WindowManager
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -110,6 +111,8 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     private var lastCellVoltage = 0f
     private var lastPhoneBattery = 0
 
+    private var fullscreenWindow = false
+
     private val serviceConnection: ServiceConnection = object : ServiceConnection {
         override fun onServiceDisconnected(p0: ComponentName?) {
             onDisconnected()
@@ -136,6 +139,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         mapType = preferenceManager.getMapType()
         followMode = savedInstanceState?.getBoolean("follow_mode", true) ?: true
         replayFileString = savedInstanceState?.getString("replay_file_name")
+        fullscreenWindow = preferenceManager.isFullscreenWindow()
 
         rootLayout = findViewById(R.id.rootLayout)
         fuel = findViewById(R.id.fuel)
@@ -179,12 +183,10 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         }
 
         fullscreenButton.setOnClickListener {
-            if (window.decorView.systemUiVisibility == (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)) {
-                window.decorView.systemUiVisibility = 0
-            } else {
-                window.decorView.systemUiVisibility =
-                    (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
-            }
+            updateFullscreenState()
+            this.fullscreenWindow = !this.fullscreenWindow
+            preferenceManager.setFullscreenWindow(fullscreenWindow)
+            updateWindowFullscreenDecoration()
         }
 
         followButton.setOnClickListener {
@@ -226,6 +228,22 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
 
         this.registerReceiver(this.batInfoReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED));
     }
+
+    private fun updateWindowFullscreenDecoration() {
+        if (!this.fullscreenWindow) {
+            window.decorView.systemUiVisibility = 0
+        } else {
+            window.decorView.systemUiVisibility =
+                (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
+        }
+    }
+
+    private fun updateFullscreenState() {
+        //user may have brought system ui with a swipe. Update state
+        this.fullscreenWindow = window.decorView.systemUiVisibility ==
+            (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
+    }
+
 
     private fun initMap(simulateLifecycle: Boolean) {
         if (mapType in GoogleMap.MAP_TYPE_NORMAL..GoogleMap.MAP_TYPE_HYBRID) {
@@ -364,16 +382,27 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
                     val files =
                         dir.listFiles { file -> file.extension == "log" && file.length() > 0 }
                             .reversed()
-                    AlertDialog.Builder(this)
+                    var dialog : AlertDialog = AlertDialog.Builder(this)
                         .setAdapter(
                             ArrayAdapter(
                                 this,
                                 android.R.layout.simple_list_item_1,
                                 files.map { i -> "${i.nameWithoutExtension} (${i.length() / 1024} Kb)" })
                         ) { _, i ->
-                            startReplay(files[i])
+                                updateWindowFullscreenDecoration()
+                                startReplay(files[i])
                         }
-                        .show()
+                        .create()
+
+                    dialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
+                    dialog.show();
+                    if (!this.fullscreenWindow) {
+                        dialog.getWindow().decorView.systemUiVisibility = 0
+                    } else {
+                        dialog.getWindow().decorView.systemUiVisibility =
+                            (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
+                    }
+                    dialog.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
                 }
             }
         } else {
@@ -387,7 +416,16 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             progressDialog.setCancelable(false)
             progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL)
             progressDialog.max = 100
-            progressDialog.show()
+
+            progressDialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
+            progressDialog.show();
+            if (!this.fullscreenWindow) {
+                progressDialog.getWindow().decorView.systemUiVisibility = 0
+            } else {
+                progressDialog.getWindow().decorView.systemUiVisibility =
+                    (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
+            }
+            progressDialog.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
 
             switchToReplayMode()
 
@@ -566,6 +604,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         map?.onSaveInstanceState(outState)
         outState?.putBoolean("follow_mode", followMode)
         outState?.putString("replay_file_name", replayFileString)
+        preferenceManager.setFullscreenWindow(fullscreenWindow)
     }
 
     override fun onStart() {
@@ -684,11 +723,13 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     override fun onResume() {
         super.onResume()
         map?.onResume()
+        updateWindowFullscreenDecoration();
     }
 
     override fun onPause() {
         super.onPause()
         map?.onPause()
+        updateFullscreenState()//check if user has brought system ui with swipe
     }
 
     override fun onStop() {
