@@ -66,6 +66,7 @@ or you can donate to my patreon: https://www.patreon.com/android_rc_telemetry
 
 # Special thanks
 hyperion11 - Ardupilot support
+RomanLut - fixes, new features
 
 Alexey Stankevich - initial testing, feedback
 
