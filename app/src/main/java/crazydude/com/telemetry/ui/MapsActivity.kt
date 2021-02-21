@@ -283,7 +283,9 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     private fun initOSMMap() {
         val mapView = org.osmdroid.views.MapView(this)
         mapHolder.addView(mapView)
-        map = OsmMapWrapper(applicationContext, mapView)
+        map = OsmMapWrapper(applicationContext, mapView) {
+            initHeadingLine()
+        }
         map?.setOnCameraMoveStartedListener {
             followMode = false
         }
@@ -322,11 +324,27 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                 followMode = false
             }
             map?.setPadding(0, topLayout.measuredHeight, 0, 0)
+            initHeadingLine()
         }
         if (simulateLifecycle) {
             map?.onCreate(null)
             map?.onStart()
             map?.onResume()
+        }
+    }
+
+    private fun initHeadingLine() {
+        polyLine?.let { it.color = preferenceManager.getRouteColor() }
+        if (!isIdle()) {
+            if (preferenceManager.isHeadingLineEnabled() && headingPolyline == null) {
+                headingPolyline = createHeadingPolyline()
+                updateHeading()
+            } else if (!preferenceManager.isHeadingLineEnabled() && headingPolyline != null) {
+                headingPolyline?.remove()
+                headingPolyline = null
+            }
+            headingPolyline?.let { it.color = preferenceManager.getHeadLineColor() }
+            marker?.setIcon(R.drawable.ic_plane, preferenceManager.getPlaneColor())
         }
     }
 
@@ -627,18 +645,6 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     override fun onStart() {
         super.onStart()
         map?.onStart()
-        polyLine?.let { it.color = preferenceManager.getRouteColor() }
-        if (!isIdle()) {
-            headingPolyline?.let { it.color = preferenceManager.getHeadLineColor() }
-            if (preferenceManager.isHeadingLineEnabled() && headingPolyline == null) {
-                headingPolyline = createHeadingPolyline()
-                updateHeading()
-            } else if (!preferenceManager.isHeadingLineEnabled() && headingPolyline != null) {
-                headingPolyline?.remove()
-                headingPolyline = null
-            }
-            marker?.setIcon(R.drawable.ic_plane, preferenceManager.getPlaneColor())
-        }
         if (preferenceManager.showArtificialHorizonView()) {
             horizonView.visibility = View.VISIBLE
         } else {

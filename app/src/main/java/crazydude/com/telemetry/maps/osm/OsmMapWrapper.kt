@@ -15,7 +15,7 @@ import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 
 
-class OsmMapWrapper(private val context: Context, private val mapView: MapView) : MapWrapper {
+class OsmMapWrapper(private val context: Context, private val mapView: MapView, private val callback: () -> Unit) : MapWrapper {
 
     private val myLocationNewOverlay = MyLocationNewOverlay(mapView)
 
@@ -31,6 +31,7 @@ class OsmMapWrapper(private val context: Context, private val mapView: MapView) 
         mapView.overlayManager.add(myLocationNewOverlay)
         val mapController: IMapController = mapView.controller
         mapController.setZoom(4.toDouble())
+        callback()
     }
 
     override var mapType: Int
