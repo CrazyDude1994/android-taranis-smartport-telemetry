@@ -45,7 +45,7 @@ class ProtocolDetector(private val callback: Callback) {
 
 
         hits.forEachIndexed { index, i ->
-            if (i >= 10) {
+            if (i >= 2) {
                 when (index) {
                     0 -> callback.onProtocolDetected(sportProtocol)
                     1 -> callback.onProtocolDetected(crsfProtocol)

@@ -12,12 +12,8 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbDeviceConnection
 import android.hardware.usb.UsbManager
 import android.net.Uri
-import android.os.Build
-import android.os.Bundle
-import android.os.Environment
-import android.os.IBinder
-import android.provider.DocumentsContract
 import android.os.*
+import android.provider.DocumentsContract
 import android.text.Html
 import android.text.method.LinkMovementMethod
 import android.view.View
@@ -30,8 +26,6 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.documentfile.provider.DocumentFile
 import com.google.android.gms.maps.*
-import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.MapView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.maps.android.SphericalUtil
@@ -74,7 +68,13 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         private const val REQUEST_FILE_TREE_REPLAY: Int = 4
         private const val REQUEST_FILE_TREE_CREATE_LOG: Int = 5
         private const val ACTION_USB_DEVICE = "action_usb_device"
-        private val MAP_TYPE_ITEMS = arrayOf("Road Map (Google)", "Satellite (Google)", "Terrain (Google)", "Hybrid (Google)", "OpenStreetMap (can be cached)")
+        private val MAP_TYPE_ITEMS = arrayOf(
+            "Road Map (Google)",
+            "Satellite (Google)",
+            "Terrain (Google)",
+            "Hybrid (Google)",
+            "OpenStreetMap (can be cached)"
+        )
     }
 
     private var map: MapWrapper? = null
@@ -224,14 +224,19 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         }
 
         if (isInReplayMode()) {
-            val logFile : LogFile
+            val logFile: LogFile
             if (shouldUseStorageAPI()) {
-                logFile = DocumentLogFile(DocumentFile.fromSingleUri(this, Uri.parse(replayFileString))!!, contentResolver)
+                logFile = DocumentLogFile(
+                    DocumentFile.fromSingleUri(this, Uri.parse(replayFileString))!!,
+                    contentResolver
+                )
             } else {
-                logFile = StandardLogFile(File(
-                    Environment.getExternalStoragePublicDirectory("TelemetryLogs"),
-                    replayFileString
-                ))
+                logFile = StandardLogFile(
+                    File(
+                        Environment.getExternalStoragePublicDirectory("TelemetryLogs"),
+                        replayFileString
+                    )
+                )
             }
             startReplay(logFile)
         } else {
@@ -259,7 +264,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     private fun updateFullscreenState() {
         //user may have brought system ui with a swipe. Update state
         this.fullscreenWindow = window.decorView.systemUiVisibility ==
-            (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
+                (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
     }
 
 
@@ -466,7 +471,10 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL)
             progressDialog.max = 100
 
-            progressDialog.window?.setFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
+            progressDialog.window?.setFlags(
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+            )
             progressDialog.show()
             if (!this.fullscreenWindow) {
                 progressDialog.window?.decorView?.systemUiVisibility = 0
@@ -623,7 +631,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
                 mode.text = mode.text.toString() + " | Mission"
             }
             DataDecoder.Companion.FlyMode.QSTABILIZE -> {
-            mode.text = mode.text.toString() + " | QSTABILIZE"
+                mode.text = mode.text.toString() + " | QSTABILIZE"
             }
             DataDecoder.Companion.FlyMode.QHOVER -> {
                 mode.text = mode.text.toString() + " | QHOVER"
@@ -700,6 +708,33 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     }
 
     private fun connect() {
+        if (!shouldUseStorageAPI()) {
+            if (!storageWriteCheck()) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                    REQUEST_WRITE_PERMISSION
+                )
+                return
+            }
+        } else {
+            if (preferenceManager.getLogsStorageFolder() == null) {
+                Toast.makeText(this, "Please select log files save folder", Toast.LENGTH_LONG).show()
+                startActivityForResult(storageIntent(), REQUEST_FILE_TREE_CREATE_LOG)
+                return
+            } else {
+                val tree = DocumentFile.fromTreeUri(
+                    this,
+                    Uri.parse(preferenceManager.getLogsStorageFolder())
+                )
+                if (tree?.canWrite() == false) {
+                    Toast.makeText(this, "Please select log files save folder", Toast.LENGTH_LONG).show()
+                    startActivityForResult(storageIntent(), REQUEST_FILE_TREE_CREATE_LOG)
+                    return
+                }
+            }
+
+        }
         val showcaseView = MaterialShowcaseView.Builder(this)
             .setTarget(replayButton)
             .setMaskColour(Color.argb(230, 0, 0, 0))
@@ -879,7 +914,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             android.Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
 
-    private fun storageCheck() = ContextCompat.checkSelfPermission(
+    private fun storageWriteCheck() = ContextCompat.checkSelfPermission(
         this,
         android.Manifest.permission.WRITE_EXTERNAL_STORAGE
     ) == PackageManager.PERMISSION_GRANTED
@@ -890,7 +925,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         dataService?.let {
             connectButton.text = getString(R.string.connecting)
             connectButton.isEnabled = false
-            createLogFile()?.let { file->
+            createLogFile()?.let { file ->
                 it.connect(device, file)
             }
         }
@@ -902,10 +937,9 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     ) {
         startDataService()
         dataService?.let {
-            createLogFile()
             connectButton.text = getString(R.string.connecting)
             connectButton.isEnabled = false
-            createLogFile()?.let { file->
+            createLogFile()?.let { file ->
                 it.connect(port, connection, file)
             }
         }
@@ -978,10 +1012,16 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             connectBluetooth()
         } else if (requestCode == REQUEST_FILE_TREE_REPLAY && resultCode == RESULT_OK) {
             preferenceManager.setLogsStorageFolder(data?.dataString)
-            contentResolver.takePersistableUriPermission(data?.data!!, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+            contentResolver.takePersistableUriPermission(
+                data?.data!!,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            )
             replay()
         } else if (requestCode == REQUEST_FILE_TREE_CREATE_LOG && resultCode == RESULT_OK) {
-            contentResolver.takePersistableUriPermission(data?.data!!, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+            contentResolver.takePersistableUriPermission(
+                data?.data!!,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            )
             preferenceManager.setLogsStorageFolder(data.dataString)
             connect()
         }
@@ -1043,7 +1083,8 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         runOnUiThread {
             this.hasGPSFix = gpsFix
             if (gpsFix && marker == null) {
-                marker = map?.addMarker(R.drawable.ic_plane, preferenceManager.getPlaneColor(), lastGPS)
+                marker =
+                    map?.addMarker(R.drawable.ic_plane, preferenceManager.getPlaneColor(), lastGPS)
                 if (headingPolyline == null && preferenceManager.isHeadingLineEnabled()) {
                     headingPolyline = createHeadingPolyline()
                 }
@@ -1140,7 +1181,8 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     private fun updateHeading() {
         headingPolyline?.let { headingLine ->
             headingLine.setPoint(0, lastGPS)
-            val computeOffset = SphericalUtil.computeOffset(lastGPS.toLatLng(), 1000.0, lastHeading.toDouble())
+            val computeOffset =
+                SphericalUtil.computeOffset(lastGPS.toLatLng(), 1000.0, lastHeading.toDouble())
             headingLine.setPoint(1, Position(computeOffset.latitude, computeOffset.longitude))
         }
     }
@@ -1153,7 +1195,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     }
 
     private fun updateVoltage() {
-        if ( lastCellVoltage > 0 )
+        if (lastCellVoltage > 0)
             this.voltage.text = "${"%.2f".format(lastVBAT)} (${"%.2f".format(lastCellVoltage)}) V"
         else
             this.voltage.text = "${"%.2f".format(lastVBAT)} V"
@@ -1227,7 +1269,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             when (batteryUnits) {
                 "mAh", "mWh" -> {
                     this.fuel.text = "$fuel $batteryUnits"
-                    if ( lastCellVoltage > 0)
+                    if (lastCellVoltage > 0)
                         realFuel = ((1 - (4.2f - lastCellVoltage)).coerceIn(0f, 1f) * 100).toInt()
                 }
                 "Percentage" -> {
@@ -1309,32 +1351,27 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         if (preferenceManager.isLoggingEnabled()) {
             val name = SimpleDateFormat("yyyy-MM-dd HH-mm-ss").format(Date())
             if (!shouldUseStorageAPI()) {
-                if (storageCheck()) {
-                    val dir = Environment.getExternalStoragePublicDirectory("TelemetryLogs")
-                    dir.mkdirs()
-                    val file = File(dir, "$name.log")
-                    fileOutputStream = FileOutputStream(file)
-                }
+                val dir = Environment.getExternalStoragePublicDirectory("TelemetryLogs")
+                dir.mkdirs()
+                val file = File(dir, "$name.log")
+                fileOutputStream = FileOutputStream(file)
             } else {
-                if (preferenceManager.getLogsStorageFolder() == null) {
-                    startActivityForResult(storageIntent(), REQUEST_FILE_TREE_CREATE_LOG)
-                } else {
-                    val tree = DocumentFile.fromTreeUri(
-                        this,
-                        Uri.parse(preferenceManager.getLogsStorageFolder())
-                    )
-                    if (tree?.canWrite() == true) {
-                        val documentFile = tree.createFile("application/octet-stream", "$name.log")!!
-                        fileOutputStream = DocumentLogFile(documentFile, contentResolver).outputStream
-                    } else {
-                        startActivityForResult(storageIntent(), REQUEST_FILE_TREE_CREATE_LOG)
-                    }
-                }
+                val tree = DocumentFile.fromTreeUri(
+                    this,
+                    Uri.parse(preferenceManager.getLogsStorageFolder())
+                )
+                val documentFile =
+                    tree?.createFile("application/octet-stream", "$name.log")!!
+                fileOutputStream =
+                    DocumentLogFile(documentFile, contentResolver).outputStream
             }
+
+            return fileOutputStream
         }
 
-        return fileOutputStream
+        return null
     }
+
     private val batInfoReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(ctxt: Context?, intent: Intent) {
             val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, 0)

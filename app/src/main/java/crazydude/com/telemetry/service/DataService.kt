@@ -90,7 +90,7 @@ class DataService : Service(), DataDecoder.Listener {
             var isBle = false
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-                isBle = device.type == BluetoothDevice.DEVICE_TYPE_LE
+                isBle = (device.type == BluetoothDevice.DEVICE_TYPE_LE) or (device.type == BluetoothDevice.DEVICE_TYPE_DUAL)
             }
 
             if (!isBle) {
@@ -167,6 +167,7 @@ class DataService : Service(), DataDecoder.Listener {
             createSession()
         }
     }
+
 
     fun createSession() {
         if (!isConnected()) {
