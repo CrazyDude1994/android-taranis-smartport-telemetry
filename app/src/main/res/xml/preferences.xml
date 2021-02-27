@@ -1,39 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
-                  xmlns:app="http://schemas.android.com/apk/res-auto">
+        xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <SwitchPreference
-            android:title="Telemetry logging"
+            android:defaultValue="true"
+            android:key="logging_enabled"
             android:summary="Save telemetry data to sdcard. They are saved to TelemetryLog at external storage (sdcard)"
             android:text="Logging enabled"
-            android:defaultValue="true"
-            android:key="logging_enabled"/>
+            android:title="Telemetry logging" />
+
+    <Preference
+            android:key="log_folder"
+            android:title="Logs directory" />
 
     <com.jaredrummler.android.colorpicker.ColorPreferenceCompat
             android:defaultValue="@color/colorPlane"
             android:key="plane_color"
-            app:cpv_showAlphaSlider="false"
-            app:cpv_allowPresets="false"
-            app:cpv_allowCustom="true"
             android:summary="Color of the plane icon on the map"
-            android:title="Plane color"/>
+            android:title="Plane color"
+            app:cpv_allowCustom="true"
+            app:cpv_allowPresets="false"
+            app:cpv_showAlphaSlider="false" />
 
     <PreferenceCategory android:title="Heading line">
 
         <SwitchPreference
-                android:title="Show heading line"
-                android:summary="Shows heading line on the map"
                 android:defaultValue="true"
-                android:key="show_heading_line"/>
+                android:key="show_heading_line"
+                android:summary="Shows heading line on the map"
+                android:title="Show heading line" />
 
         <com.jaredrummler.android.colorpicker.ColorPreferenceCompat
                 android:defaultValue="@color/colorHeadline"
                 android:key="headline_color"
-                app:cpv_showAlphaSlider="false"
-                app:cpv_allowPresets="false"
-                app:cpv_allowCustom="true"
                 android:summary="Color of the heading line on the map"
-                android:title="Heading line color"/>
+                android:title="Heading line color"
+                app:cpv_allowCustom="true"
+                app:cpv_allowPresets="false"
+                app:cpv_showAlphaSlider="false" />
 
     </PreferenceCategory>
 
@@ -42,67 +46,68 @@
         <com.jaredrummler.android.colorpicker.ColorPreferenceCompat
                 android:defaultValue="@color/colorRoute"
                 android:key="route_color"
-                app:cpv_showAlphaSlider="false"
-                app:cpv_allowPresets="false"
-                app:cpv_allowCustom="true"
                 android:summary="Color of the route line on the map"
-                android:title="Route line color"/>
+                android:title="Route line color"
+                app:cpv_allowCustom="true"
+                app:cpv_allowPresets="false"
+                app:cpv_showAlphaSlider="false" />
 
     </PreferenceCategory>
 
     <PreferenceCategory android:title="Sensors">
 
         <Preference
-                android:title="Sensor display settings"
-                android:summary="Changes which data is shown and changes data format">
-            <intent android:targetClass="crazydude.com.telemetry.ui.SensorsActivity"
-                    android:targetPackage="crazydude.com.telemetry"
-                    android:action="android.intent.action.VIEW"/>
+                android:summary="Changes which data is shown and changes data format"
+                android:title="Sensor display settings">
+            <intent
+                    android:action="android.intent.action.VIEW"
+                    android:targetClass="crazydude.com.telemetry.ui.SensorsActivity"
+                    android:targetPackage="crazydude.com.telemetry" />
         </Preference>
 
         <ListPreference
-                android:title="Battery units (CLI smartport_fuel_unit)"
-                android:summary="%s"
+                android:defaultValue="mAh"
                 android:entries="@array/BatteryUnits"
                 android:entryValues="@array/BatteryUnits"
-                android:defaultValue="mAh"
-                android:key="battery_units"/>
+                android:key="battery_units"
+                android:summary="%s"
+                android:title="Battery units (CLI smartport_fuel_unit)" />
 
         <SwitchPreference
-                android:title="Use pitot tube"
-                android:summary="Uses pitot tube sensor as air speed source"
                 android:defaultValue="false"
-                android:key="use_pitot_tube"/>
+                android:key="use_pitot_tube"
+                android:summary="Uses pitot tube sensor as air speed source"
+                android:title="Use pitot tube" />
 
         <SwitchPreference
-                android:title="Show artificial horizon view"
-                android:summary="Shows attitude. Works only on Inav 2.0.+ You need to set frsky_pitch_roll = ON CLI in order it to work"
                 android:defaultValue="true"
-                android:key="show_artificial_horizon"/>
+                android:key="show_artificial_horizon"
+                android:summary="Shows attitude. Works only on Inav 2.0.+ You need to set frsky_pitch_roll = ON CLI in order it to work"
+                android:title="Show artificial horizon view" />
 
     </PreferenceCategory>
 
     <PreferenceCategory android:title="UAV Radar">
         <SwitchPreference
-                android:title="Send data to uavradar server"
-                android:summary="Sends telemetry data to uavradar server. It allows other users to see your aircraft at the https://uavradar.org/ Data is sent when acquired valid GPS fix and aircraft is armed"
                 android:defaultValue="false"
-                android:key="send_telemetry_data"/>
+                android:key="send_telemetry_data"
+                android:summary="Sends telemetry data to uavradar server. It allows other users to see your aircraft at the https://uavradar.org/ Data is sent when acquired valid GPS fix and aircraft is armed"
+                android:title="Send data to uavradar server" />
 
         <EditTextPreference
-                android:title="Callsign"
                 android:dependency="send_telemetry_data"
-                android:key="callsign"/>
+                android:key="callsign"
+                android:title="Callsign" />
 
         <EditTextPreference
-                android:title="Model"
                 android:dependency="send_telemetry_data"
-                android:key="model"/>
+                android:key="model"
+                android:title="Model" />
 
         <Preference android:title="Go to UAV radar">
             <intent
                     android:action="android.intent.action.VIEW"
-                    android:data="https://uavradar.org"/>
+                    android:data="https://uavradar.org" />
         </Preference>
 
     </PreferenceCategory>

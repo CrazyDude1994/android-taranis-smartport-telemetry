@@ -17,13 +17,13 @@ android {
             storePassword keystoreProperties['storePassword']
         }
     }
-    compileSdkVersion 28
+    compileSdkVersion 30
     defaultConfig {
         applicationId "crazydude.com.telemetry"
         minSdkVersion 17
-        targetSdkVersion 28
-        versionCode 28
-        versionName "1.8"
+        targetSdkVersion 30
+        versionCode 31
+        versionName "1.8.2"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {

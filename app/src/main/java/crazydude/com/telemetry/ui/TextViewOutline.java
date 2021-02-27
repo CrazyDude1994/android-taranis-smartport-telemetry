@@ -6,6 +6,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.util.AttributeSet;
+import android.util.TypedValue;
 
 import androidx.appcompat.widget.AppCompatTextView;
 
@@ -73,10 +74,35 @@ public class TextViewOutline extends AppCompatTextView {
         super.setShadowLayer(0, 0, 0, Color.TRANSPARENT);
     }
 
+    private int measureDimension(int desiredSize, int measureSpec) {
+        int result;
+        int specMode = MeasureSpec.getMode(measureSpec);
+        int specSize = MeasureSpec.getSize(measureSpec);
+
+        if (specMode == MeasureSpec.EXACTLY) {
+            result = specSize;
+        } else {
+            result = desiredSize;
+            if (specMode == MeasureSpec.AT_MOST) {
+                result = Math.min(result, specSize);
+            }
+        }
+        return result;
+    }
+
+    public static int dpToPx(float dp, Context context) {
+        return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, context.getResources().getDisplayMetrics());
+    }
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         setPaintToOutline();
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+
+        int outlineWidth = this.dpToPx(mOutlineSize, getContext());
+
+        this.setMeasuredDimension( this.measureDimension( getMeasuredWidth()+outlineWidth, widthMeasureSpec),
+                this.measureDimension( getMeasuredHeight()+outlineWidth, heightMeasureSpec));
     }
 
     @Override

@@ -1,6 +1,5 @@
 package crazydude.com.telemetry.ui
 
-import android.app.Activity
 import android.app.PendingIntent
 import android.app.ProgressDialog
 import android.bluetooth.BluetoothAdapter
@@ -13,19 +12,19 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbDeviceConnection
 import android.hardware.usb.UsbManager
 import android.net.Uri
-import android.os.Build
-import android.os.Bundle
-import android.os.Environment
-import android.os.IBinder
+import android.os.*
+import android.provider.DocumentsContract
 import android.text.Html
 import android.text.method.LinkMovementMethod
 import android.view.View
+import android.view.WindowManager
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.documentfile.provider.DocumentFile
 import com.google.android.gms.maps.*
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.analytics.FirebaseAnalytics
@@ -46,8 +45,14 @@ import crazydude.com.telemetry.maps.osm.OsmMapWrapper
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import crazydude.com.telemetry.protocol.pollers.LogPlayer
 import crazydude.com.telemetry.service.DataService
+import crazydude.com.telemetry.utils.DocumentLogFile
+import crazydude.com.telemetry.utils.LogFile
+import crazydude.com.telemetry.utils.StandardLogFile
 import uk.co.deanwild.materialshowcaseview.MaterialShowcaseView
 import java.io.File
+import java.io.FileOutputStream
+import java.io.OutputStream
+import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.math.roundToInt
@@ -60,8 +65,16 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         private const val REQUEST_LOCATION_PERMISSION: Int = 1
         private const val REQUEST_WRITE_PERMISSION: Int = 2
         private const val REQUEST_READ_PERMISSION: Int = 3
+        private const val REQUEST_FILE_TREE_REPLAY: Int = 4
+        private const val REQUEST_FILE_TREE_CREATE_LOG: Int = 5
         private const val ACTION_USB_DEVICE = "action_usb_device"
-        private val MAP_TYPE_ITEMS = arrayOf("Road Map (Google)", "Satellite (Google)", "Terrain (Google)", "Hybrid (Google)", "OpenStreetMap (can be cached)")
+        private val MAP_TYPE_ITEMS = arrayOf(
+            "Road Map (Google)",
+            "Satellite (Google)",
+            "Terrain (Google)",
+            "Hybrid (Google)",
+            "OpenStreetMap (can be cached)"
+        )
     }
 
     private var map: MapWrapper? = null
@@ -77,6 +90,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     private lateinit var satellites: TextView
     private lateinit var current: TextView
     private lateinit var voltage: TextView
+    private lateinit var phoneBattery: TextView
     private lateinit var speed: TextView
     private lateinit var distance: TextView
     private lateinit var altitude: TextView
@@ -109,6 +123,9 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     private var dataService: DataService? = null
     private var lastVBAT = 0f
     private var lastCellVoltage = 0f
+    private var lastPhoneBattery = 0
+
+    private var fullscreenWindow = false
 
     private val serviceConnection: ServiceConnection = object : ServiceConnection {
         override fun onServiceDisconnected(p0: ComponentName?) {
@@ -136,6 +153,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         mapType = preferenceManager.getMapType()
         followMode = savedInstanceState?.getBoolean("follow_mode", true) ?: true
         replayFileString = savedInstanceState?.getString("replay_file_name")
+        fullscreenWindow = preferenceManager.isFullscreenWindow()
 
         rootLayout = findViewById(R.id.rootLayout)
         fuel = findViewById(R.id.fuel)
@@ -144,6 +162,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         connectButton = findViewById(R.id.connect_button)
         current = findViewById(R.id.current)
         voltage = findViewById(R.id.voltage)
+        phoneBattery = findViewById(R.id.phone_battery)
         speed = findViewById(R.id.speed)
         distance = findViewById(R.id.distance)
         altitude = findViewById(R.id.altitude)
@@ -167,7 +186,8 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             Pair(PreferenceManager.sensors.elementAt(3).name, current),
             Pair(PreferenceManager.sensors.elementAt(4).name, speed),
             Pair(PreferenceManager.sensors.elementAt(5).name, distance),
-            Pair(PreferenceManager.sensors.elementAt(6).name, altitude)
+            Pair(PreferenceManager.sensors.elementAt(6).name, altitude),
+            Pair(PreferenceManager.sensors.elementAt(7).name, phoneBattery)
         )
 
         firebaseAnalytics = FirebaseAnalytics.getInstance(this)
@@ -177,12 +197,10 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         }
 
         fullscreenButton.setOnClickListener {
-            if (window.decorView.systemUiVisibility == (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)) {
-                window.decorView.systemUiVisibility = 0
-            } else {
-                window.decorView.systemUiVisibility =
-                    (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
-            }
+            updateFullscreenState()
+            this.fullscreenWindow = !this.fullscreenWindow
+            preferenceManager.setFullscreenWindow(fullscreenWindow)
+            updateWindowFullscreenDecoration()
         }
 
         followButton.setOnClickListener {
@@ -206,12 +224,21 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         }
 
         if (isInReplayMode()) {
-            startReplay(
-                File(
-                    Environment.getExternalStoragePublicDirectory("TelemetryLogs"),
-                    replayFileString
+            val logFile: LogFile
+            if (shouldUseStorageAPI()) {
+                logFile = DocumentLogFile(
+                    DocumentFile.fromSingleUri(this, Uri.parse(replayFileString))!!,
+                    contentResolver
                 )
-            )
+            } else {
+                logFile = StandardLogFile(
+                    File(
+                        Environment.getExternalStoragePublicDirectory("TelemetryLogs"),
+                        replayFileString
+                    )
+                )
+            }
+            startReplay(logFile)
         } else {
             switchToIdleState()
         }
@@ -221,7 +248,25 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         checkAppInstallDate()
         initMap(false)
         map?.onCreate(savedInstanceState)
+
+        this.registerReceiver(this.batInfoReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
     }
+
+    private fun updateWindowFullscreenDecoration() {
+        if (!this.fullscreenWindow) {
+            window.decorView.systemUiVisibility = 0
+        } else {
+            window.decorView.systemUiVisibility =
+                (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
+        }
+    }
+
+    private fun updateFullscreenState() {
+        //user may have brought system ui with a swipe. Update state
+        this.fullscreenWindow = window.decorView.systemUiVisibility ==
+                (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
+    }
+
 
     private fun initMap(simulateLifecycle: Boolean) {
         if (mapType in GoogleMap.MAP_TYPE_NORMAL..GoogleMap.MAP_TYPE_HYBRID) {
@@ -234,7 +279,9 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     private fun initOSMMap() {
         val mapView = org.osmdroid.views.MapView(this)
         mapHolder.addView(mapView)
-        map = OsmMapWrapper(applicationContext, mapView)
+        map = OsmMapWrapper(applicationContext, mapView) {
+            initHeadingLine()
+        }
         map?.setOnCameraMoveStartedListener {
             followMode = false
         }
@@ -273,6 +320,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
                 followMode = false
             }
             map?.setPadding(0, topLayout.measuredHeight, 0, 0)
+            initHeadingLine()
         }
         if (simulateLifecycle) {
             map?.onCreate(null)
@@ -281,11 +329,26 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         }
     }
 
+    private fun initHeadingLine() {
+        polyLine?.let { it.color = preferenceManager.getRouteColor() }
+        if (!isIdle()) {
+            if (preferenceManager.isHeadingLineEnabled() && headingPolyline == null) {
+                headingPolyline = createHeadingPolyline()
+                updateHeading()
+            } else if (!preferenceManager.isHeadingLineEnabled() && headingPolyline != null) {
+                headingPolyline?.remove()
+                headingPolyline = null
+            }
+            headingPolyline?.let { it.color = preferenceManager.getHeadLineColor() }
+            marker?.setIcon(R.drawable.ic_plane, preferenceManager.getPlaneColor())
+        }
+    }
+
     private fun showAndCopyCurrentGPSLocation() {
         marker?.let {
             val posString = "${it.position.lat},${it.position.lon}"
             val clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            clipboardManager.primaryClip = ClipData.newPlainText("Location", posString)
+            clipboardManager.setPrimaryClip(ClipData.newPlainText("Location", posString))
             Toast.makeText(
                 this,
                 "Current plane location copied to clipboard ($posString)",
@@ -344,53 +407,111 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
 
     private fun replay() {
         if (dataService?.isConnected() != true) {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    android.Manifest.permission.READ_EXTERNAL_STORAGE
-                ) == PackageManager.PERMISSION_DENIED
-            ) {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE),
-                    REQUEST_READ_PERMISSION
-                )
+            if (shouldUseStorageAPI()) {
+                replayWithStorageAPI()
             } else {
-                val dir = Environment.getExternalStoragePublicDirectory("TelemetryLogs")
-                if (dir.exists()) {
-                    val files =
-                        dir.listFiles { file -> file.extension == "log" && file.length() > 0 }
-                            .reversed()
-                    AlertDialog.Builder(this)
-                        .setAdapter(
-                            ArrayAdapter(
-                                this,
-                                android.R.layout.simple_list_item_1,
-                                files.map { i -> "${i.nameWithoutExtension} (${i.length() / 1024} Kb)" })
-                        ) { _, i ->
-                            startReplay(files[i])
-                        }
-                        .show()
-                }
+                replayWithFileAPI()
             }
         } else {
             Toast.makeText(this, "You need to disconnect first", Toast.LENGTH_SHORT).show()
         }
     }
 
-    private fun startReplay(file: File?) {
-        file?.also {
+    private fun replayWithFileAPI() {
+        if (ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.READ_EXTERNAL_STORAGE
+            ) == PackageManager.PERMISSION_DENIED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE),
+                `REQUEST_READ_PERMISSION`
+            )
+        } else {
+            val dir = Environment.getExternalStoragePublicDirectory("TelemetryLogs")
+            if (dir.exists()) {
+                val files =
+                    dir.listFiles { file -> file.extension == "log" && file.length() > 0 }
+                        .reversed()
+                AlertDialog.Builder(this)
+                    .setAdapter(
+                        ArrayAdapter(
+                            this,
+                            android.R.layout.simple_list_item_1,
+                            files.map { i -> "${i.nameWithoutExtension} (${i.length() / 1024} Kb)" })
+                    ) { _, i ->
+                        startReplay(StandardLogFile(files[i]))
+                    }
+                    .show()
+            }
+        }
+    }
+
+    private fun storageIntent() = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+        putExtra(DocumentsContract.EXTRA_INITIAL_URI, preferenceManager.getLogsStorageFolder())
+    }
+
+    private fun replayWithStorageAPI() {
+        if (preferenceManager.getLogsStorageFolder() == null) {
+            startActivityForResult(storageIntent(), REQUEST_FILE_TREE_REPLAY)
+        } else {
+            val tree = DocumentFile.fromTreeUri(
+                this,
+                Uri.parse(preferenceManager.getLogsStorageFolder())
+            )
+            if (tree?.canRead() == true) {
+                val files = tree.listFiles().reversed()
+                AlertDialog.Builder(this)
+                    .setAdapter(
+                        ArrayAdapter<String>(
+                            this,
+                            android.R.layout.simple_list_item_1,
+                            files.map { i -> "${i.name} (${i.length() / 1024} Kb)" }
+                                .toMutableList()
+                        )
+                    ) { _, i ->
+                        startReplay(DocumentLogFile(files[i], contentResolver))
+                    }
+                    .show()
+            } else {
+                startActivityForResult(intent, REQUEST_FILE_TREE_REPLAY)
+            }
+        }
+    }
+
+    private fun startReplay(file: LogFile) {
+        file.also {
+            updateWindowFullscreenDecoration()
             val progressDialog = ProgressDialog(this)
             progressDialog.setCancelable(false)
             progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL)
             progressDialog.max = 100
+
+            progressDialog.window?.setFlags(
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+            )
             progressDialog.show()
+            if (!this.fullscreenWindow) {
+                progressDialog.window?.decorView?.systemUiVisibility = 0
+            } else {
+                progressDialog.window?.decorView?.systemUiVisibility =
+                    (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
+            }
+            progressDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
 
             switchToReplayMode()
 
-            replayFileString = it.name
+            if (shouldUseStorageAPI()) {
+                replayFileString = it.uri.toString()
+            } else {
+                replayFileString = it.name
+            }
 
             val logPlayer =
-                LogPlayer(this)
+                LogPlayer(this, contentResolver)
             logPlayer.load(file, object : LogPlayer.DataReadyListener {
                 override fun onUpdate(percent: Int) {
                     progressDialog.progress = percent
@@ -419,6 +540,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
                 }
             })
         }
+
     }
 
     override fun onFlyModeData(
@@ -527,7 +649,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
                 mode.text = mode.text.toString() + " | Mission"
             }
             DataDecoder.Companion.FlyMode.QSTABILIZE -> {
-            mode.text = mode.text.toString() + " | QSTABILIZE"
+                mode.text = mode.text.toString() + " | QSTABILIZE"
             }
             DataDecoder.Companion.FlyMode.QHOVER -> {
                 mode.text = mode.text.toString() + " | QHOVER"
@@ -557,28 +679,17 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         map?.onLowMemory()
     }
 
-    override fun onSaveInstanceState(outState: Bundle?) {
+    override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         map?.onSaveInstanceState(outState)
-        outState?.putBoolean("follow_mode", followMode)
-        outState?.putString("replay_file_name", replayFileString)
+        outState.putBoolean("follow_mode", followMode)
+        outState.putString("replay_file_name", replayFileString)
+        preferenceManager.setFullscreenWindow(fullscreenWindow)
     }
 
     override fun onStart() {
         super.onStart()
         map?.onStart()
-        polyLine?.let { it.color = preferenceManager.getRouteColor() }
-        if (!isIdle()) {
-            headingPolyline?.let { it.color = preferenceManager.getHeadLineColor() }
-            if (preferenceManager.isHeadingLineEnabled() && headingPolyline == null) {
-                headingPolyline = createHeadingPolyline()
-                updateHeading()
-            } else if (!preferenceManager.isHeadingLineEnabled() && headingPolyline != null) {
-                headingPolyline?.remove()
-                headingPolyline = null
-            }
-            marker?.setIcon(R.drawable.ic_plane, preferenceManager.getPlaneColor())
-        }
         if (preferenceManager.showArtificialHorizonView()) {
             horizonView.visibility = View.VISIBLE
         } else {
@@ -603,6 +714,33 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     }
 
     private fun connect() {
+        if (!shouldUseStorageAPI()) {
+            if (!storageWriteCheck()) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                    REQUEST_WRITE_PERMISSION
+                )
+                return
+            }
+        } else {
+            if (preferenceManager.getLogsStorageFolder() == null) {
+                Toast.makeText(this, "Please select log files save folder", Toast.LENGTH_LONG).show()
+                startActivityForResult(storageIntent(), REQUEST_FILE_TREE_CREATE_LOG)
+                return
+            } else {
+                val tree = DocumentFile.fromTreeUri(
+                    this,
+                    Uri.parse(preferenceManager.getLogsStorageFolder())
+                )
+                if (tree?.canWrite() == false) {
+                    Toast.makeText(this, "Please select log files save folder", Toast.LENGTH_LONG).show()
+                    startActivityForResult(storageIntent(), REQUEST_FILE_TREE_CREATE_LOG)
+                    return
+                }
+            }
+
+        }
         val showcaseView = MaterialShowcaseView.Builder(this)
             .setTarget(replayButton)
             .setMaskColour(Color.argb(230, 0, 0, 0))
@@ -680,11 +818,13 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     override fun onResume() {
         super.onResume()
         map?.onResume()
+        updateWindowFullscreenDecoration()
     }
 
     override fun onPause() {
         super.onPause()
         map?.onPause()
+        updateFullscreenState()//check if user has brought system ui with swipe
     }
 
     override fun onStop() {
@@ -706,20 +846,6 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
             return
-        }
-        if (preferenceManager.isLoggingEnabled()) {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-                ) == PackageManager.PERMISSION_DENIED
-            ) {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE),
-                    REQUEST_WRITE_PERMISSION
-                )
-                return
-            }
         }
 
         val devices = ArrayList<BluetoothDevice>(adapter.bondedDevices)
@@ -762,6 +888,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     private fun resetUI() {
         satellites.text = "0"
         voltage.text = "-"
+        phoneBattery.text = "-"
         current.text = "-"
         fuel.text = "-"
         altitude.text = "-"
@@ -793,13 +920,20 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             android.Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
 
+    private fun storageWriteCheck() = ContextCompat.checkSelfPermission(
+        this,
+        android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+    ) == PackageManager.PERMISSION_GRANTED
+
 
     private fun connectToBluetoothDevice(device: BluetoothDevice) {
         startDataService()
         dataService?.let {
             connectButton.text = getString(R.string.connecting)
             connectButton.isEnabled = false
-            it.connect(device)
+            createLogFile()?.let { file ->
+                it.connect(device, file)
+            }
         }
     }
 
@@ -811,7 +945,9 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         dataService?.let {
             connectButton.text = getString(R.string.connecting)
             connectButton.isEnabled = false
-            it.connect(port, connection)
+            createLogFile()?.let { file ->
+                it.connect(port, connection, file)
+            }
         }
     }
 
@@ -821,6 +957,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         if (!isChangingConfigurations) {
             dataService?.setDataListener(null)
         }
+        this.unregisterReceiver(this.batInfoReceiver)
         unbindService(serviceConnection)
     }
 
@@ -877,8 +1014,22 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_ENABLE_BT && resultCode == Activity.RESULT_OK) {
+        if (requestCode == REQUEST_ENABLE_BT && resultCode == RESULT_OK) {
             connectBluetooth()
+        } else if (requestCode == REQUEST_FILE_TREE_REPLAY && resultCode == RESULT_OK) {
+            preferenceManager.setLogsStorageFolder(data?.dataString)
+            contentResolver.takePersistableUriPermission(
+                data?.data!!,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            )
+            replay()
+        } else if (requestCode == REQUEST_FILE_TREE_CREATE_LOG && resultCode == RESULT_OK) {
+            contentResolver.takePersistableUriPermission(
+                data?.data!!,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            )
+            preferenceManager.setLogsStorageFolder(data.dataString)
+            connect()
         }
     }
 
@@ -888,7 +1039,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
 
     override fun onAltitudeData(altitude: Float) {
         runOnUiThread {
-            this.altitude.text = "$altitude m"
+            this.altitude.text = "${"%.2f".format(altitude)} m"
         }
     }
 
@@ -938,7 +1089,8 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         runOnUiThread {
             this.hasGPSFix = gpsFix
             if (gpsFix && marker == null) {
-                marker = map?.addMarker(R.drawable.ic_plane, preferenceManager.getPlaneColor(), lastGPS)
+                marker =
+                    map?.addMarker(R.drawable.ic_plane, preferenceManager.getPlaneColor(), lastGPS)
                 if (headingPolyline == null && preferenceManager.isHeadingLineEnabled()) {
                     headingPolyline = createHeadingPolyline()
                 }
@@ -1018,7 +1170,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
 
     override fun onCurrentData(current: Float) {
         runOnUiThread {
-            this.current.text = "$current A"
+            this.current.text = "${"%.2f".format(current)} A"
         }
     }
 
@@ -1035,7 +1187,8 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     private fun updateHeading() {
         headingPolyline?.let { headingLine ->
             headingLine.setPoint(0, lastGPS)
-            val computeOffset = SphericalUtil.computeOffset(lastGPS.toLatLng(), 1000.0, lastHeading.toDouble())
+            val computeOffset =
+                SphericalUtil.computeOffset(lastGPS.toLatLng(), 1000.0, lastHeading.toDouble())
             headingLine.setPoint(1, Position(computeOffset.latitude, computeOffset.longitude))
         }
     }
@@ -1048,7 +1201,10 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     }
 
     private fun updateVoltage() {
-        this.voltage.text = "$lastVBAT (${"%.2f".format(lastCellVoltage)}) V"
+        if (lastCellVoltage > 0)
+            this.voltage.text = "${"%.2f".format(lastVBAT)} (${"%.2f".format(lastCellVoltage)}) V"
+        else
+            this.voltage.text = "${"%.2f".format(lastVBAT)} V"
     }
 
     override fun onDisconnected() {
@@ -1119,7 +1275,8 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             when (batteryUnits) {
                 "mAh", "mWh" -> {
                     this.fuel.text = "$fuel $batteryUnits"
-                    realFuel = ((1 - (4.2f - lastCellVoltage)).coerceIn(0f, 1f) * 100).toInt()
+                    if (lastCellVoltage > 0)
+                        realFuel = ((1 - (4.2f - lastCellVoltage)).coerceIn(0f, 1f) * 100).toInt()
                 }
                 "Percentage" -> {
                     this.fuel.text = "$fuel%"
@@ -1194,4 +1351,46 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             switchToConnectedState()
         }
     }
+
+    private fun createLogFile(): OutputStream? {
+        var fileOutputStream: OutputStream? = null
+        if (preferenceManager.isLoggingEnabled()) {
+            val name = SimpleDateFormat("yyyy-MM-dd HH-mm-ss").format(Date())
+            if (!shouldUseStorageAPI()) {
+                val dir = Environment.getExternalStoragePublicDirectory("TelemetryLogs")
+                dir.mkdirs()
+                val file = File(dir, "$name.log")
+                fileOutputStream = FileOutputStream(file)
+            } else {
+                val tree = DocumentFile.fromTreeUri(
+                    this,
+                    Uri.parse(preferenceManager.getLogsStorageFolder())
+                )
+                val documentFile =
+                    tree?.createFile("application/octet-stream", "$name.log")!!
+                fileOutputStream =
+                    DocumentLogFile(documentFile, contentResolver).outputStream
+            }
+
+            return fileOutputStream
+        }
+
+        return null
+    }
+
+    private val batInfoReceiver: BroadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(ctxt: Context?, intent: Intent) {
+            val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, 0)
+            lastPhoneBattery = level
+            runOnUiThread {
+                updatePhoneBattery()
+            }
+        }
+    }
+
+    private fun updatePhoneBattery() {
+        this.phoneBattery.text = "$lastPhoneBattery%"
+    }
 }
+
+fun shouldUseStorageAPI(): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R

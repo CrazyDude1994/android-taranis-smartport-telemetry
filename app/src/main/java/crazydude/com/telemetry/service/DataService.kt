@@ -8,33 +8,26 @@ import android.app.Service
 import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.hardware.usb.UsbDeviceConnection
 import android.os.*
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
-import androidx.core.content.ContextCompat
-import com.google.android.gms.maps.model.LatLng
-import com.google.firebase.analytics.FirebaseAnalytics
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import crazydude.com.telemetry.R
 import crazydude.com.telemetry.api.*
 import crazydude.com.telemetry.manager.PreferenceManager
 import crazydude.com.telemetry.maps.Position
+import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import crazydude.com.telemetry.protocol.pollers.BluetoothDataPoller
 import crazydude.com.telemetry.protocol.pollers.BluetoothLeDataPoller
-import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import crazydude.com.telemetry.protocol.pollers.DataPoller
 import crazydude.com.telemetry.protocol.pollers.UsbDataPoller
 import crazydude.com.telemetry.ui.MapsActivity
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import java.io.File
-import java.io.FileOutputStream
 import java.io.IOException
-import java.lang.NullPointerException
-import java.text.SimpleDateFormat
+import java.io.OutputStream
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -90,17 +83,15 @@ class DataService : Service(), DataDecoder.Listener {
     }
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
-    fun connect(device: BluetoothDevice) {
+    fun connect(device: BluetoothDevice, logFile: OutputStream) {
         try {
             dataPoller?.disconnect()
 
             var isBle = false
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-                isBle = device.type == BluetoothDevice.DEVICE_TYPE_LE
+                isBle = (device.type == BluetoothDevice.DEVICE_TYPE_LE) or (device.type == BluetoothDevice.DEVICE_TYPE_DUAL)
             }
-
-            val logFile = createLogFile()
 
             if (!isBle) {
                 val socket =
@@ -121,30 +112,12 @@ class DataService : Service(), DataDecoder.Listener {
                     )
             }
         } catch (e: IOException) {
+            onConnectionFailed()
             Toast.makeText(this, "Failed to connect to bluetooth", Toast.LENGTH_LONG).show()
         }
     }
 
-    private fun createLogFile() : FileOutputStream? {
-        var fileOutputStream: FileOutputStream? = null
-        if (preferenceManager.isLoggingEnabled()
-            && ContextCompat.checkSelfPermission(
-                this,
-                android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            val name = SimpleDateFormat("yyyy-MM-dd HH-mm-ss").format(Date())
-            val dir = Environment.getExternalStoragePublicDirectory("TelemetryLogs")
-            dir.mkdirs()
-            val file = File(dir, "$name.log")
-            fileOutputStream = FileOutputStream(file)
-        }
-
-        return fileOutputStream
-    }
-
-    fun connect(serialPort: UsbSerialPort, connection: UsbDeviceConnection) {
-        val logFile = createLogFile()
+    fun connect(serialPort: UsbSerialPort, connection: UsbDeviceConnection, logFile : OutputStream) {
         dataPoller = UsbDataPoller(
             this,
             serialPort,
@@ -195,6 +168,7 @@ class DataService : Service(), DataDecoder.Listener {
         }
     }
 
+
     fun createSession() {
         if (!isConnected()) {
             return
@@ -229,13 +203,23 @@ class DataService : Service(), DataDecoder.Listener {
         apiHandler.postDelayed({
             if (hasGPSFix && isArmed) {
                 ApiManager.apiService.sendData(
-                    AddLogRequest(sessionId, lastLatitude, lastLongitude, lastAltitude, lastHeading, lastSpeed)
+                    AddLogRequest(
+                        sessionId,
+                        lastLatitude,
+                        lastLongitude,
+                        lastAltitude,
+                        lastHeading,
+                        lastSpeed
+                    )
                 ).enqueue(object : Callback<AddLogResponse?> {
                     override fun onFailure(call: Call<AddLogResponse?>, t: Throwable) {
                         sendTelemetryData(sessionId)
                     }
 
-                    override fun onResponse(call: Call<AddLogResponse?>, response: Response<AddLogResponse?>) {
+                    override fun onResponse(
+                        call: Call<AddLogResponse?>,
+                        response: Response<AddLogResponse?>
+                    ) {
                         try {
                             sendTelemetryData(sessionId)
                         } catch (e: NullPointerException) {

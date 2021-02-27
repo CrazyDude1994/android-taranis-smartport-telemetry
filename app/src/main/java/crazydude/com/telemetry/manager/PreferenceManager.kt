@@ -19,7 +19,8 @@ class PreferenceManager(context: Context) {
             SensorSetting("Amperage", 3),
             SensorSetting("Speed", 0, "bottom"),
             SensorSetting("Distance", 1, "bottom"),
-            SensorSetting("Altitude", 2, "bottom")
+            SensorSetting("Altitude", 2, "bottom"),
+            SensorSetting("Phone Battery", 4)
         )
     }
 
@@ -105,7 +106,7 @@ class PreferenceManager(context: Context) {
             SensorSetting(
                 it.name,
                 sharedPreferences.getInt(it.name + "_index", it.index),
-                sharedPreferences.getString(it.name + "_position", it.position),
+                sharedPreferences.getString(it.name + "_position", it.position) ?: "top",
                 sharedPreferences.getBoolean(it.name + "_shown", it.shown)
             )
         }
@@ -121,10 +122,29 @@ class PreferenceManager(context: Context) {
         commit.apply()
     }
 
+    fun getLogsStorageFolder() : String? {
+        return sharedPreferences.getString("log_folder", null)
+    }
+
+    fun setLogsStorageFolder(folder: String?) {
+        sharedPreferences.edit()
+            .putString("log_folder", folder)
+            .apply()
+    }
+
     data class SensorSetting(
         val name: String,
         val index: Int,
         val position: String = "top",
         val shown: Boolean = true
     )
+
+    fun isFullscreenWindow(): Boolean {
+        return sharedPreferences.getBoolean("fullscreen_window", false)
+    }
+
+    fun setFullscreenWindow( state: Boolean ) {
+        sharedPreferences.edit().putBoolean("fullscreen_window", state).apply()
+    }
+
 }

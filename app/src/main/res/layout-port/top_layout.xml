@@ -83,6 +83,22 @@
                     android:textAlignment="center"
                     android:textColor="@android:color/white"
                     android:textSize="16sp" />
+
+            <TextView
+                    android:id="@+id/phone_battery"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="6dp"
+                    android:layout_marginRight="6dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="2dp"
+                    android:drawableTop="@drawable/ic_phone_battery"
+                    android:drawablePadding="0dp"
+                    android:text="-"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp" />
+
         </com.nex3z.flowlayout.FlowLayout>
 
 
