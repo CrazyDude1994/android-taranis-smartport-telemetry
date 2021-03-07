@@ -1010,7 +1010,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     }
 
     private fun updateSpeed(speed: Float) {
-        this.speed.text = "${KmhToMphConverter().convert(speed).roundToInt()} km/h"
+        this.speed.text = "${speed.roundToInt()} km/h"
     }
 
     override fun onGPSState(satellites: Int, gpsFix: Boolean) {
