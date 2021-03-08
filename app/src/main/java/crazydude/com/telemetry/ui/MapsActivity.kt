@@ -95,10 +95,11 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     private lateinit var rootLayout: CoordinatorLayout
     private lateinit var mapHolder: FrameLayout
     private lateinit var videoHolder: AspectFrameLayout
+    private lateinit var rc_widget : RCWidget
 
     private lateinit var mCameraFragment : com.serenegiant.usbcameratest4.CameraFragment
 
-    private lateinit var sensorViewMap: HashMap<String, TextView>
+    private lateinit var sensorViewMap: HashMap<String, View>
     private lateinit var sensorsConverters: HashMap<String, Converter>
 
     private lateinit var preferenceManager: PreferenceManager
@@ -171,6 +172,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         bottomList = findViewById(R.id.bottom_list)
         mapHolder = findViewById(R.id.map_holder)
         videoHolder = findViewById(R.id.viewHolder)
+        rc_widget = findViewById(R.id.rc_widget)
 
         videoHolder.setAspectRatio(640.0/480)
 
@@ -182,7 +184,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             Pair(PreferenceManager.sensors.elementAt(4).name, speed),
             Pair(PreferenceManager.sensors.elementAt(5).name, distance),
             Pair(PreferenceManager.sensors.elementAt(6).name, altitude),
-            Pair(PreferenceManager.sensors.elementAt(7).name, phoneBattery)
+            Pair(PreferenceManager.sensors.elementAt(7).name, phoneBattery),
+            Pair(PreferenceManager.sensors.elementAt(8).name, rc_widget)
         )
 
         firebaseAnalytics = FirebaseAnalytics.getInstance(this)
@@ -665,7 +668,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     }
 
     private fun updateSensorsPlacement() {
-        val sensorsSettings = preferenceManager.getSensorsSettings()
+        val sensorsSettings = preferenceManager.getSensorsSettings().sortedBy { it.index }
         topList.removeAllViews()
         bottomList.removeAllViews()
         sensorsSettings.forEach {

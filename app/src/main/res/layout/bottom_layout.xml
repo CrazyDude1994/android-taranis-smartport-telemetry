@@ -65,6 +65,15 @@
                     android:textSize="16sp"
                     app:minText="000,00 m"
                     app:iconWidthDp="29"/>
+
+            <crazydude.com.telemetry.ui.RCWidget
+                    android:id="@+id/rc_widget"
+                    android:layout_width="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_horizontal"
+                    android:layout_height="36dp">
+
+            </crazydude.com.telemetry.ui.RCWidget>
         </com.nex3z.flowlayout.FlowLayout>
 
     </RelativeLayout>
