@@ -2,6 +2,7 @@ package crazydude.com.telemetry.ui
 
 import android.graphics.Color
 import android.os.Bundle
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -99,13 +100,21 @@ class SensorsActivity : AppCompatActivity(), SensorsAdapterListener {
         touchHelper.attachToRecyclerView(recyclerView)
 
         recyclerView.viewTreeObserver.addOnGlobalLayoutListener {
-            MaterialShowcaseView.Builder(this)
-                .setTarget(linearLayoutManager.findViewByPosition(1)?.findViewById(R.id.move) ?: linearLayoutManager.findViewByPosition(2)?.findViewById(R.id.move))
-                .setMaskColour(Color.argb(180, 0, 0, 0))
-                .setDismissText("GOT IT")
-                .singleUse("sensors_guide1")
-                .setContentText("You can drag sensor to change sensor order")
-                .show()
+            //if all sensors are moved to bottom bar, search target in bottom section
+            var target = linearLayoutManager.findViewByPosition(1)?.findViewById<View>(R.id.move) ?: linearLayoutManager.findViewByPosition(2)?.findViewById<View>(R.id.move)
+            //GlobalLayout event is also fired when user is trying to move sensor.
+            //At this point a list might be scrolled far to bottom, and upper list item views can be deleted (because they are out of screen).
+            //As ShowcaseView should has been shown already, just test for target !=null
+            if ( target !== null)
+            {
+                MaterialShowcaseView.Builder(this)
+                    .setTarget(target)
+                    .setMaskColour(Color.argb(180, 0, 0, 0))
+                    .setDismissText("GOT IT")
+                    .singleUse("sensors_guide1")
+                    .setContentText("You can drag sensor to change sensor order")
+                    .show()
+            }
         }
 
     }
