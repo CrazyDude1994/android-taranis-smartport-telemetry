@@ -6,6 +6,7 @@ import android.app.ProgressDialog
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.content.*
+import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Color
@@ -35,7 +36,6 @@ import com.nex3z.flowlayout.FlowLayout
 import com.serenegiant.usbcameratest4.CameraFragment
 import crazydude.com.telemetry.R
 import crazydude.com.telemetry.converter.Converter
-import crazydude.com.telemetry.converter.KmhToMphConverter
 import crazydude.com.telemetry.manager.PreferenceManager
 import crazydude.com.telemetry.maps.MapLine
 import crazydude.com.telemetry.maps.MapMarker
@@ -252,6 +252,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         mCameraFragment = getFragmentManager().findFragmentById(R.id.cameraFragment) as CameraFragment
 
         updateWindowFullscreenDecoration()
+
+        updateScreenOrientation()
 
         this.registerReceiver(this.batInfoReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED));
     }
@@ -755,7 +757,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     override fun onResume() {
         super.onResume()
         map?.onResume()
-        updateWindowFullscreenDecoration();
+        updateWindowFullscreenDecoration()
+        updateScreenOrientation()
     }
 
     override fun onPause() {
@@ -1321,6 +1324,15 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                 (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
         }
         dialog.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
+    }
+
+    protected fun updateScreenOrientation() {
+        val screenRotation : String = preferenceManager.getScreenOrientationLock()
+        requestedOrientation = when (screenRotation) {
+            "Portrait" -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            "Landscape" -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+            else -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
     }
 
 }

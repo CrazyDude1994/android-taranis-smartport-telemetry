@@ -18,6 +18,14 @@
             android:summary="Color of the plane icon on the map"
             android:title="Plane color"/>
 
+    <ListPreference
+            android:title="Lock screen orientation"
+            android:summary="%s"
+            android:entries="@array/ScreenOrientationLock"
+            android:entryValues="@array/ScreenOrientationLock"
+            android:defaultValue="No"
+            android:key="screen_orientation_lock"/>
+
     <PreferenceCategory android:title="Heading line">
 
         <SwitchPreference

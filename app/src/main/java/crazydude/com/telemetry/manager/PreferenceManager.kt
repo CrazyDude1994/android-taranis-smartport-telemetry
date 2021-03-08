@@ -145,4 +145,8 @@ class PreferenceManager(context: Context) {
         sharedPreferences.edit().putBoolean("fullscreen_window", state).apply()
     }
 
+    fun getScreenOrientationLock() : String {
+        return sharedPreferences.getString("screen_orientation_lock", "No") ?: "No"
+    }
+
 }
