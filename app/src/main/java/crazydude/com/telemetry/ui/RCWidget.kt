@@ -15,6 +15,7 @@ class RCWidget @JvmOverloads constructor(
     private val paint: Paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private var height: Float = 0f
 
+    private var rcChannels : IntArray = IntArray(0);
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val widthMode = MeasureSpec.getMode(widthMeasureSpec)
@@ -24,7 +25,8 @@ class RCWidget @JvmOverloads constructor(
         val width: Int
         val height: Int
 
-        val desiredWidth =  Math.ceil(0.1*heightSize + 0.3 * heightSize*15 + 0.2 * heightSize).toInt();
+        val desiredWidth =
+            Math.ceil(0.1 * heightSize + 0.3 * heightSize * 15 + 0.2 * heightSize).toInt();
         val desiredHeight = heightSize
 
         //Measure Width
@@ -60,11 +62,17 @@ class RCWidget @JvmOverloads constructor(
         height = h.toFloat()
     }
 
+    //1000...2000 -> 0...1
+    private fun getRCChannelFloat( channelIndex : Int) : Float
+    {
+        if ( this.rcChannels.size > channelIndex ) {
+            return (this.rcChannels[channelIndex]- 1000) / 1000.0f;
+        }
+        return 1.0f;
+    }
+
     override fun onDraw(canvas: Canvas?) {
         super.onDraw(canvas)
-
-        //var barHeight : Float = this.size * 0.6;
-
 
         canvas?.let {
 
@@ -76,38 +84,49 @@ class RCWidget @JvmOverloads constructor(
 
  */
 
-            for( ch  in 0..15)
-            {
-                var  x = height * 0.1f + ch*height*0.3f;
+            for (ch in 0..15) {
+                var x = height * 0.1f + ch * height * 0.3f;
                 var x2 = x + height * 0.15f
-                var top = height *0.1f;
-                var bottom = height*0.75f;
-                var middleY = (top+bottom)/2.0f
+                var top = height * 0.1f;
+                var bottom = height * 0.75f;
+                var middleY = (top + bottom) / 2.0f
+                var h = (bottom - top);
+                var strokeWidth = this.height / 25.0f;
 
-                paint.color = Color.rgb(34, 177,76)
-                paint.style=Paint.Style.FILL;
-                it.drawRect(x, top, x2, middleY, paint)
+                //paint.color = Color.rgb(34, 177, 76)
+                paint.color = Color.rgb(255, 255, 255)
+                paint.style = Paint.Style.FILL;
 
-                paint.color = Color.parseColor("#FFFFFF")
+                var v = this.getRCChannelFloat(ch);
+                it.drawRect(x, bottom - strokeWidth/2.0f, x2, bottom - strokeWidth/2.0f - ( h- strokeWidth)*v, paint)
+
+                //paint.color = Color.rgb(255, 255, 255)
+                paint.color = Color.rgb(180, 180, 180)
                 paint.style = Paint.Style.STROKE;
-                paint.strokeWidth = this.height / 20;
+                paint.strokeWidth = strokeWidth;
 
-                it.drawRect(x, top, x2, height*0.75f, paint)
-                it.drawLine(x, middleY, x2, middleY,paint )
+                it.drawRect(x, top, x2, height * 0.75f, paint)
+                it.drawLine(x, middleY, x2, middleY, paint)
             }
 
+            paint.color = Color.rgb(180, 180, 180)
             paint.style = Paint.Style.FILL;
             paint.textSize = this.height / 5.0f
             paint.textAlign = Paint.Align.CENTER
             paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
 
-            for( ch  in 0..15)
-            {
-                var  x = height * 0.1f + ch*height*0.3f + height*0.15f / 2.0f;
-                canvas.drawText((ch+1).toString(), x, height*0.95f, paint);
+            for (ch in 0..15) {
+                var x = height * 0.1f + ch * height * 0.3f + height * 0.15f / 2.0f;
+                canvas.drawText((ch + 1).toString(), x, height * 0.95f, paint);
             }
 
         }
+    }
+
+    public fun setChannels(channels: IntArray)
+    {
+        this.rcChannels = channels.clone();
+        invalidate()
     }
 
 }
