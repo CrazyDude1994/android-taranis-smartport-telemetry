@@ -130,12 +130,15 @@ class PreferenceManager(context: Context) {
         val shown: Boolean = true
     )
 
-    fun getVideoContainerShown(): Boolean {
-        return sharedPreferences.getBoolean("video_container_shown", false)
+    //0 - map
+    //1 - video+map
+    //2- video
+    fun getMainLayout(): Int {
+        return sharedPreferences.getInt("main_layout", 0)
     }
 
-    fun setVideoContainerShown(shown: Boolean) {
-        sharedPreferences.edit().putBoolean("video_container_shown", shown).apply()
+    fun setMainLayout(layout : Int) {
+        sharedPreferences.edit().putInt("main_layout", layout).apply()
     }
 
     fun isFullscreenWindow(): Boolean {

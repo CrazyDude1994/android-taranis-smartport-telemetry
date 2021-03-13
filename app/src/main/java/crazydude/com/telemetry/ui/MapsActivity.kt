@@ -89,12 +89,14 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     private lateinit var directionsButton: FloatingActionButton
     private lateinit var settingsButton: ImageView
     private lateinit var topLayout: RelativeLayout
+    private lateinit var bottomLayout: RelativeLayout
     private lateinit var horizonView: HorizonView
     private lateinit var topList: FlowLayout
     private lateinit var bottomList: FlowLayout
     private lateinit var rootLayout: CoordinatorLayout
     private lateinit var mapHolder: FrameLayout
     private lateinit var videoHolder: AspectFrameLayout
+    private lateinit var mapViewHolder: FrameLayout
     private lateinit var rc_widget : RCWidget
 
     private lateinit var mCameraFragment : com.serenegiant.usbcameratest4.CameraFragment
@@ -151,6 +153,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         fuel = findViewById(R.id.fuel)
         satellites = findViewById(R.id.satellites)
         topLayout = findViewById(R.id.top_layout)
+        bottomLayout = findViewById(R.id.bottom_layout)
         connectButton = findViewById(R.id.connect_button)
         current = findViewById(R.id.current)
         voltage = findViewById(R.id.voltage)
@@ -172,6 +175,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         bottomList = findViewById(R.id.bottom_list)
         mapHolder = findViewById(R.id.map_holder)
         videoHolder = findViewById(R.id.viewHolder)
+        mapViewHolder = findViewById(R.id.mapViewHolder)
         rc_widget = findViewById(R.id.rc_widget)
 
         videoHolder.setAspectRatio(640.0/480)
@@ -202,17 +206,17 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         }
 
         layoutButton.setOnClickListener {
-            if ( preferenceManager.getVideoContainerShown() ) {
-                videoHolder.visibility = View.GONE
-                preferenceManager.setVideoContainerShown(false)
-                mCameraFragment.onContainerVisibilityChange(false)
-            } else {
-                videoHolder.visibility = View.VISIBLE
-                preferenceManager.setVideoContainerShown(true)
-                mCameraFragment.onContainerVisibilityChange(true)
-            }
+            setNextLayout();
+        }
 
-            updateHorizonViewSize()
+        videoHolder.setOnClickListener {
+            var layout = preferenceManager.getMainLayout()
+            if ( layout == 2 ) setNextLayout()
+        }
+
+        rootLayout.setOnClickListener {
+            var layout = preferenceManager.getMainLayout()
+            if ( layout == 2 ) setNextLayout()
         }
 
         followButton.setOnClickListener {
@@ -656,11 +660,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             horizonView.visibility = View.GONE
         }
 
-        if ( preferenceManager.getVideoContainerShown() ) {
-            videoHolder.visibility = View.VISIBLE
-        } else {
-            videoHolder.visibility = View.GONE
-        }
+        updateLayout();
 
         updateHorizonViewSize()
 
@@ -1285,9 +1285,44 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         }
     }
 
+    private fun setNextLayout() {
+        var layout = preferenceManager.getMainLayout();
+        layout++;
+        if ( layout > 2) layout = 0;
+        preferenceManager.setMainLayout(layout)
+        updateLayout();
+        updateHorizonViewSize();
+    }
+
+    private fun updateLayout() {
+        var layout = preferenceManager.getMainLayout()
+        if ( layout == 0 ) {
+            mapViewHolder.visibility = View.VISIBLE;
+            videoHolder.visibility = View.GONE
+            topLayout.visibility = View.VISIBLE;
+            bottomLayout.visibility = View.VISIBLE;
+            mCameraFragment.onContainerVisibilityChange(false)
+        } else if (layout == 1 ){
+            mapViewHolder.visibility = View.VISIBLE;
+            videoHolder.visibility = View.VISIBLE
+            topLayout.visibility = View.VISIBLE;
+            bottomLayout.visibility = View.VISIBLE;
+            mCameraFragment.onContainerVisibilityChange(true)
+        }else if (layout == 2 ){
+            mapViewHolder.visibility = View.GONE;
+            videoHolder.visibility = View.VISIBLE
+            topLayout.visibility = View.GONE;
+            bottomLayout.visibility = View.GONE;
+            mCameraFragment.onContainerVisibilityChange(true)
+        }
+
+        updateHorizonViewSize()
+    }
+
+
     private fun updateHorizonViewSize() {
         var size = 96.0f;
-        if (preferenceManager.getVideoContainerShown()) {
+        if (preferenceManager.getMainLayout() == 1) {
             size = 64.0f;
         }
         var sizeInt = TypedValue.applyDimension(
