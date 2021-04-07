@@ -9,10 +9,8 @@ import android.os.Looper
 import androidx.annotation.RequiresApi
 import crazydude.com.telemetry.protocol.*
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
-import java.io.FileOutputStream
 import java.io.IOException
 import java.io.OutputStream
-import java.io.OutputStreamWriter
 import java.util.*
 import kotlin.collections.HashMap
 
@@ -52,14 +50,20 @@ class BluetoothLeDataPoller(
                         } else {
                             characteristic.value?.let { bytes ->
                                 bytes.forEach {
-                                    protocolDetectors[characteristic.uuid]?.feedData(it.toUByte().toInt())
+                                    protocolDetectors[characteristic.uuid]?.feedData(
+                                        it.toUByte().toInt()
+                                    )
                                 }
                             }
                         }
                     }
                 }
 
-                override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
+                override fun onConnectionStateChange(
+                    gatt: BluetoothGatt?,
+                    status: Int,
+                    newState: Int
+                ) {
                     super.onConnectionStateChange(gatt, status, newState)
                     if (newState == BluetoothProfile.STATE_CONNECTED) {
                         connected = true
@@ -102,10 +106,11 @@ class BluetoothLeDataPoller(
                                             if (protocol != null) {
                                                 notifyCharacteristicList.filter { it.uuid != characteristic.uuid }
                                                     .forEach {
-                                                        val reg=gatt.setCharacteristicNotification(
-                                                            it,
-                                                            false
-                                                        )
+                                                        val reg =
+                                                            gatt.setCharacteristicNotification(
+                                                                it,
+                                                                false
+                                                            )
                                                         if (reg) {
                                                             for (descriptor in it.getDescriptors()) {
                                                                 descriptor.value =
@@ -159,7 +164,8 @@ class BluetoothLeDataPoller(
                                         }
                                     })
                             protocolDetectors.put(characteristic.uuid, protocolDetector)
-                            val registered=gatt.setCharacteristicNotification(characteristic, true)
+                            val registered =
+                                gatt.setCharacteristicNotification(characteristic, true)
                             if (registered) {
                                 for (descriptor in characteristic.getDescriptors()) {
                                     descriptor.value =
@@ -171,7 +177,7 @@ class BluetoothLeDataPoller(
                                 Thread.sleep(10000)
                                 if (!serviceSelected) {
                                     notifyCharacteristicList.forEach {
-                                        val reg=gatt.setCharacteristicNotification(it, false)
+                                        val reg = gatt.setCharacteristicNotification(it, false)
                                         if (reg) {
                                             for (descriptor in it.getDescriptors()) {
                                                 descriptor.value =
