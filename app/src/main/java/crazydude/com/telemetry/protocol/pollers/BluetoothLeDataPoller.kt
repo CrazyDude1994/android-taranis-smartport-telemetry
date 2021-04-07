@@ -102,10 +102,17 @@ class BluetoothLeDataPoller(
                                             if (protocol != null) {
                                                 notifyCharacteristicList.filter { it.uuid != characteristic.uuid }
                                                     .forEach {
-                                                        gatt.setCharacteristicNotification(
+                                                        val reg=gatt.setCharacteristicNotification(
                                                             it,
                                                             false
                                                         )
+                                                        if (reg) {
+                                                            for (descriptor in it.getDescriptors()) {
+                                                                descriptor.value =
+                                                                    BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE
+                                                                gatt.writeDescriptor(descriptor)
+                                                            }
+                                                        }
                                                     }
                                                 when (protocol) {
                                                     is FrSkySportProtocol -> {
@@ -152,12 +159,26 @@ class BluetoothLeDataPoller(
                                         }
                                     })
                             protocolDetectors.put(characteristic.uuid, protocolDetector)
-                            gatt.setCharacteristicNotification(characteristic, true)
+                            val registered=gatt.setCharacteristicNotification(characteristic, true)
+                            if (registered) {
+                                for (descriptor in characteristic.getDescriptors()) {
+                                    descriptor.value =
+                                        BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                                    gatt.writeDescriptor(descriptor)
+                                }
+                            }
                             AsyncTask.execute {
-                                Thread.sleep(5000)
+                                Thread.sleep(10000)
                                 if (!serviceSelected) {
                                     notifyCharacteristicList.forEach {
-                                        gatt.setCharacteristicNotification(it, false)
+                                        val reg=gatt.setCharacteristicNotification(it, false)
+                                        if (reg) {
+                                            for (descriptor in it.getDescriptors()) {
+                                                descriptor.value =
+                                                    BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE
+                                                gatt.writeDescriptor(descriptor)
+                                            }
+                                        }
                                         protocolDetectors.clear()
                                         runOnMainThread(Runnable {
                                             listener.onConnectionFailed()
