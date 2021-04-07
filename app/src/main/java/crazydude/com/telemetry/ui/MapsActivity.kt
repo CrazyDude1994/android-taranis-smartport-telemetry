@@ -34,7 +34,6 @@ import com.hoho.android.usbserial.driver.UsbSerialProber
 import com.nex3z.flowlayout.FlowLayout
 import crazydude.com.telemetry.R
 import crazydude.com.telemetry.converter.Converter
-import crazydude.com.telemetry.converter.KmhToMphConverter
 import crazydude.com.telemetry.manager.PreferenceManager
 import crazydude.com.telemetry.maps.MapLine
 import crazydude.com.telemetry.maps.MapMarker
@@ -725,7 +724,8 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             }
         } else {
             if (preferenceManager.getLogsStorageFolder() == null) {
-                Toast.makeText(this, "Please select log files save folder", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Please select log files save folder", Toast.LENGTH_LONG)
+                    .show()
                 startActivityForResult(storageIntent(), REQUEST_FILE_TREE_CREATE_LOG)
                 return
             } else {
@@ -734,7 +734,8 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
                     Uri.parse(preferenceManager.getLogsStorageFolder())
                 )
                 if (tree?.canWrite() == false) {
-                    Toast.makeText(this, "Please select log files save folder", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, "Please select log files save folder", Toast.LENGTH_LONG)
+                        .show()
                     startActivityForResult(storageIntent(), REQUEST_FILE_TREE_CREATE_LOG)
                     return
                 }
@@ -750,10 +751,17 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
 
         if (showcaseView.hasFired()) {
             AlertDialog.Builder(this)
-                .setItems(arrayOf("Bluetooth", "USB Serial")) { dialogInterface, i ->
+                .setItems(
+                    arrayOf(
+                        "Bluetooth (Classic)",
+                        "Bluetooth LE",
+                        "USB Serial"
+                    )
+                ) { dialogInterface, i ->
                     when (i) {
                         0 -> connectBluetooth()
-                        1 -> connectUSB()
+                        1 -> connectBluetoothLE()
+                        2 -> connectUSB()
                     }
                 }
                 .setTitle("Choose connection method")
@@ -859,6 +867,104 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         val deviceAdapter =
             ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, deviceNames)
 
+        AlertDialog.Builder(this)
+            .setNeutralButton(R.string.pair_new_device) { dialog, which ->
+                showPairDeviceDialog()
+            }
+            .setAdapter(deviceAdapter) { _, i ->
+                runOnUiThread {
+                    connectToBluetoothDevice(devices[i], false)
+                }
+            }.show()
+    }
+
+    private fun showPairDeviceDialog() {
+        val devices = ArrayList<BluetoothDevice>()
+        val deviceNames = ArrayList<String>()
+        val deviceAdapter =
+            ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, deviceNames)
+        AlertDialog.Builder(this)
+            .setAdapter(deviceAdapter) { _, i ->
+                pairDevice(devices[i])
+            }.show()
+        val listener = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                when (intent?.action) {
+                    BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
+                        unregisterReceiver(this)
+                    }
+                    BluetoothDevice.ACTION_FOUND -> {
+                        val name = intent.getStringExtra(BluetoothDevice.EXTRA_NAME)
+                            ?: devices.last().address
+                        val device =
+                            intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)!!
+                        if (!deviceNames.contains(name) && device.bondState == BluetoothDevice.BOND_NONE) {
+                            devices.add(device)
+                            deviceNames.add(name)
+                            deviceAdapter.notifyDataSetChanged()
+                        }
+                    }
+                    BluetoothAdapter.ACTION_DISCOVERY_STARTED -> {
+
+                    }
+                }
+            }
+        }
+        registerReceiver(listener, IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_STARTED).apply {
+            addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
+            addAction(BluetoothDevice.ACTION_FOUND)
+        })
+        BluetoothAdapter.getDefaultAdapter().startDiscovery()
+    }
+
+    private fun pairDevice(bluetoothDevice: BluetoothDevice) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            if (!bluetoothDevice.createBond()) {
+                Toast.makeText(this, "Failed to pair bluetooth device", Toast.LENGTH_LONG).show()
+            } else {
+                val receiver = object : BroadcastReceiver() {
+                    override fun onReceive(context: Context?, intent: Intent?) {
+                        if (intent?.action == BluetoothDevice.ACTION_BOND_STATE_CHANGED) {
+                            val device =
+                                intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
+                            val newBondState: Int =
+                                intent.getIntExtra(
+                                    BluetoothDevice.EXTRA_BOND_STATE,
+                                    BluetoothDevice.BOND_NONE
+                                )
+                            if (newBondState == BluetoothDevice.BOND_BONDED) {
+                                device?.let { connectToBluetoothDevice(it, false) }
+                            } else if (newBondState == BluetoothDevice.BOND_NONE) {
+                                Toast.makeText(
+                                    this@MapsActivity,
+                                    "Failed to pair new device",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        }
+                    }
+                }
+
+                registerReceiver(receiver, IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED))
+            }
+        } else {
+            AlertDialog.Builder(this)
+                .setMessage(getString(R.string.pair_not_supported_message))
+                .show()
+        }
+    }
+
+    private fun connectBluetoothLE() {
+        if (!bleCheck()) {
+            Toast.makeText(this, "Bluetooth LE is not supported or application does not have needed permissions", Toast.LENGTH_LONG).show()
+            return
+        }
+        val adapter = BluetoothAdapter.getDefaultAdapter()
+        val devices = ArrayList<BluetoothDevice>()
+        val deviceNames = ArrayList<String>()
+        val deviceAdapter =
+            ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, deviceNames)
+
         val callback = BluetoothAdapter.LeScanCallback { bluetoothDevice, i, bytes ->
             if (!devices.contains(bluetoothDevice) && bluetoothDevice.name != null) {
                 devices.add(bluetoothDevice)
@@ -867,21 +973,13 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             }
         }
 
-        if (bleCheck()) {
-            adapter.startLeScan(callback)
-        }
+        adapter.startLeScan(callback)
 
         AlertDialog.Builder(this).setOnDismissListener {
-            if (bleCheck()) {
-                adapter.stopLeScan(callback)
-            }
+            adapter.stopLeScan(callback)
         }.setAdapter(deviceAdapter) { _, i ->
-            if (bleCheck()) {
-                adapter.stopLeScan(callback)
-            }
-            runOnUiThread {
-                connectToBluetoothDevice(devices[i])
-            }
+            adapter.stopLeScan(callback)
+            connectToBluetoothDevice(devices[i], true)
         }.show()
     }
 
@@ -926,13 +1024,13 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     ) == PackageManager.PERMISSION_GRANTED
 
 
-    private fun connectToBluetoothDevice(device: BluetoothDevice) {
+    private fun connectToBluetoothDevice(device: BluetoothDevice, isBLE: Boolean) {
         startDataService()
         dataService?.let {
             connectButton.text = getString(R.string.connecting)
             connectButton.isEnabled = false
             createLogFile()?.let { file ->
-                it.connect(device, file)
+                it.connect(device, file, isBLE)
             }
         }
     }

@@ -25,7 +25,6 @@ class BluetoothLeDataPoller(
 ) : DataPoller {
 
     private lateinit var selectedProtocol: Protocol
-    private var outputStreamWriter: OutputStreamWriter? = null
     private var connected = false
     private var bluetoothGatt: BluetoothGatt?
 
@@ -71,6 +70,11 @@ class BluetoothLeDataPoller(
                         if (connected) {
                             runOnMainThread(Runnable {
                                 listener.onDisconnected()
+                                try {
+                                    outputStream?.close()
+                                } catch (e: IOException) {
+
+                                }
                             })
                         } else {
                             runOnMainThread(Runnable {
@@ -173,17 +177,6 @@ class BluetoothLeDataPoller(
 
     fun closeConnection() {
         bluetoothGatt?.close()
-
-        try {
-            outputStreamWriter?.close()
-        } catch (e: IOException) {
-
-        }
-        try {
-            outputStream?.close()
-        } catch (e: IOException) {
-
-        }
     }
 
 

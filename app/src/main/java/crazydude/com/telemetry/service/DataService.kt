@@ -45,6 +45,8 @@ class DataService : Service(), DataDecoder.Listener {
     private var lastSpeed: Float = 0.0f
     private var lastHeading: Float = 0.0f
     private val apiHandler = Handler()
+    private var logFile : OutputStream? = null
+    private var device: BluetoothDevice? = null
     private lateinit var preferenceManager: PreferenceManager
     val points: ArrayList<Position> = ArrayList()
 
@@ -83,17 +85,22 @@ class DataService : Service(), DataDecoder.Listener {
     }
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
-    fun connect(device: BluetoothDevice, logFile: OutputStream) {
+    fun connect(device: BluetoothDevice, logFile: OutputStream, isBLE: Boolean) {
         try {
             dataPoller?.disconnect()
 
-            var isBle = false
+            this.device = device
+            this.logFile = logFile
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-                isBle = (device.type == BluetoothDevice.DEVICE_TYPE_LE) or (device.type == BluetoothDevice.DEVICE_TYPE_DUAL)
-            }
+            if (isBLE) {
 
-            if (!isBle) {
+                dataPoller = BluetoothLeDataPoller(
+                    this,
+                    device,
+                    this,
+                    logFile
+                )
+            } else {
                 val socket =
                     device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
                 dataPoller =
@@ -102,18 +109,9 @@ class DataService : Service(), DataDecoder.Listener {
                         this,
                         logFile
                     )
-            } else {
-                dataPoller =
-                    BluetoothLeDataPoller(
-                        this,
-                        device,
-                        this,
-                        logFile
-                    )
             }
         } catch (e: IOException) {
             onConnectionFailed()
-            Toast.makeText(this, "Failed to connect to bluetooth", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -154,6 +152,7 @@ class DataService : Service(), DataDecoder.Listener {
     override fun onConnectionFailed() {
         dataListener?.onConnectionFailed()
         dataPoller = null
+        Toast.makeText(this, "Failed to connect to bluetooth", Toast.LENGTH_LONG).show()
     }
 
     override fun onFuelData(fuel: Int) {
