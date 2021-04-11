@@ -885,6 +885,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, deviceNames)
         AlertDialog.Builder(this)
             .setAdapter(deviceAdapter) { _, i ->
+                BluetoothAdapter.getDefaultAdapter().cancelDiscovery()
                 pairDevice(devices[i])
             }.show()
         val listener = object : BroadcastReceiver() {
@@ -894,10 +895,10 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
                         unregisterReceiver(this)
                     }
                     BluetoothDevice.ACTION_FOUND -> {
-                        val name = intent.getStringExtra(BluetoothDevice.EXTRA_NAME)
-                            ?: devices.last().address
                         val device =
                             intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)!!
+                        val name = intent.getStringExtra(BluetoothDevice.EXTRA_NAME)
+                            ?: device.address
                         if (!deviceNames.contains(name) && device.bondState == BluetoothDevice.BOND_NONE) {
                             devices.add(device)
                             deviceNames.add(name)
@@ -934,12 +935,14 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
                                 )
                             if (newBondState == BluetoothDevice.BOND_BONDED) {
                                 device?.let { connectToBluetoothDevice(it, false) }
+                                unregisterReceiver(this)
                             } else if (newBondState == BluetoothDevice.BOND_NONE) {
                                 Toast.makeText(
                                     this@MapsActivity,
                                     "Failed to pair new device",
                                     Toast.LENGTH_LONG
                                 ).show()
+                                unregisterReceiver(this)
                             }
                         }
                     }
