@@ -74,11 +74,6 @@ class BluetoothLeDataPoller(
                         if (connected) {
                             runOnMainThread(Runnable {
                                 listener.onDisconnected()
-                                try {
-                                    outputStream?.close()
-                                } catch (e: IOException) {
-
-                                }
                             })
                         } else {
                             runOnMainThread(Runnable {
@@ -204,6 +199,12 @@ class BluetoothLeDataPoller(
 
     fun closeConnection() {
         bluetoothGatt?.close()
+
+        try {
+            outputStream?.close()
+        } catch (e: IOException) {
+
+        }
     }
 
 
