@@ -32,7 +32,7 @@ class CrsfProtocol : Protocol {
         private const val MIN_FLIGHT_MODE_PACKET_LEN = 6
         private const val GPS_PACKET_LEN = 16
         private const val ATTITUDE_PACKET_LEN = 7
-        private const val BATTERY_PACKET_LEN = 8
+        private const val BATTERY_PACKET_LEN = 9
     }
 
     override fun process(data: Int) {
