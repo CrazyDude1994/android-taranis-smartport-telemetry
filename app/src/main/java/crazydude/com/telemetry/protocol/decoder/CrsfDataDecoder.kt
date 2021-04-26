@@ -42,7 +42,7 @@ class CrsfDataDecoder(listener: Listener) : DataDecoder(listener) {
                 listener.onAltitudeData(altitude)
             }
             Protocol.GSPEED -> {
-                val speed = data.data / 100f
+                val speed = data.data / 10f
                 listener.onGSpeedData(speed)
             }
             Protocol.FUEL -> {
