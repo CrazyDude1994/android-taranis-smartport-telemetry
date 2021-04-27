@@ -23,6 +23,7 @@ import crazydude.com.telemetry.protocol.pollers.BluetoothLeDataPoller
 import crazydude.com.telemetry.protocol.pollers.DataPoller
 import crazydude.com.telemetry.protocol.pollers.UsbDataPoller
 import crazydude.com.telemetry.ui.MapsActivity
+import crazydude.com.telemetry.utils.FileLogger
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -48,12 +49,14 @@ class DataService : Service(), DataDecoder.Listener {
     private var logFile : OutputStream? = null
     private var device: BluetoothDevice? = null
     private lateinit var preferenceManager: PreferenceManager
+    private lateinit var fileLogger: FileLogger
     val points: ArrayList<Position> = ArrayList()
 
     override fun onCreate() {
         super.onCreate()
 
         preferenceManager = PreferenceManager(this)
+        fileLogger = FileLogger(this)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val importance = NotificationManager.IMPORTANCE_LOW
@@ -87,6 +90,7 @@ class DataService : Service(), DataDecoder.Listener {
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
     fun connect(device: BluetoothDevice, logFile: OutputStream, isBLE: Boolean) {
         try {
+            fileLogger.log("Connect to bl. Type[${device.type}] isBle[$isBLE] bondState[${device.bondState}] uuids[${device.uuids?.joinToString(",")}]")
             dataPoller?.disconnect()
 
             this.device = device
@@ -111,11 +115,13 @@ class DataService : Service(), DataDecoder.Listener {
                     )
             }
         } catch (e: IOException) {
+            fileLogger.log("Connect exception: ${e.message}")
             onConnectionFailed()
         }
     }
 
     fun connect(serialPort: UsbSerialPort, connection: UsbDeviceConnection, logFile : OutputStream) {
+        fileLogger.log("Usb connection")
         dataPoller = UsbDataPoller(
             this,
             serialPort,

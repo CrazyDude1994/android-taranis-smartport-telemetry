@@ -45,6 +45,7 @@ import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import crazydude.com.telemetry.protocol.pollers.LogPlayer
 import crazydude.com.telemetry.service.DataService
 import crazydude.com.telemetry.utils.DocumentLogFile
+import crazydude.com.telemetry.utils.FileLogger
 import crazydude.com.telemetry.utils.LogFile
 import crazydude.com.telemetry.utils.StandardLogFile
 import uk.co.deanwild.materialshowcaseview.MaterialShowcaseView
@@ -744,6 +745,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         }
         val showcaseView = MaterialShowcaseView.Builder(this)
             .setTarget(replayButton)
+            .setDismissTextColor(Color.GREEN)
             .setMaskColour(Color.argb(230, 0, 0, 0))
             .setDismissText("GOT IT")
             .setContentText("You can replay your logged flights by clicking this button")

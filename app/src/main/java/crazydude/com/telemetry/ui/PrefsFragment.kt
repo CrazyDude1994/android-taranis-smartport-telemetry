@@ -1,13 +1,14 @@
 package crazydude.com.telemetry.ui
 
 import android.app.Activity.RESULT_OK
-import android.content.Intent
-import android.content.SharedPreferences
+import android.content.*
 import android.os.Bundle
+import android.widget.Toast
 import androidx.preference.PreferenceFragmentCompat
 import com.google.firebase.analytics.FirebaseAnalytics
 import crazydude.com.telemetry.R
 import crazydude.com.telemetry.manager.PreferenceManager
+import crazydude.com.telemetry.utils.FileLogger
 
 class PrefsFragment : PreferenceFragmentCompat() {
 
@@ -40,6 +41,22 @@ class PrefsFragment : PreferenceFragmentCompat() {
             }
             startActivityForResult(intent, REQUEST_FILE_TREE)
             return@setOnPreferenceClickListener true
+        }
+        findPreference("copy_debug_info").setOnPreferenceClickListener {
+            context?.let {
+                val clipboardManager =
+                    it.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                clipboardManager.setPrimaryClip(ClipData.newPlainText(null, FileLogger(it).copyLogFile()))
+                Toast.makeText(it, "Debug data has been copied", Toast.LENGTH_SHORT).show()
+            }
+            return@setOnPreferenceClickListener false
+        }
+        findPreference("clear_debug_info").setOnPreferenceClickListener {
+            context?.let {
+                FileLogger(it).clearLogFile()
+                Toast.makeText(it, "Debug data has been cleared", Toast.LENGTH_SHORT).show()
+            }
+            return@setOnPreferenceClickListener false
         }
         updateSummary()
     }
