@@ -9,6 +9,8 @@ import com.google.firebase.analytics.FirebaseAnalytics
 import crazydude.com.telemetry.R
 import crazydude.com.telemetry.manager.PreferenceManager
 import crazydude.com.telemetry.utils.FileLogger
+import java.io.IOException
+import java.lang.Exception
 
 class PrefsFragment : PreferenceFragmentCompat() {
 
@@ -46,7 +48,12 @@ class PrefsFragment : PreferenceFragmentCompat() {
             context?.let {
                 val clipboardManager =
                     it.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                clipboardManager.setPrimaryClip(ClipData.newPlainText(null, FileLogger(it).copyLogFile()))
+                try {
+                    clipboardManager.setPrimaryClip(ClipData.newPlainText(null, FileLogger(it).copyLogFile()))
+                } catch (e: IOException) {
+                    Toast.makeText(it, "No log data available yet", Toast.LENGTH_SHORT).show()
+                    return@let
+                }
                 Toast.makeText(it, "Debug data has been copied", Toast.LENGTH_SHORT).show()
             }
             return@setOnPreferenceClickListener false
