@@ -432,8 +432,11 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             val dir = Environment.getExternalStoragePublicDirectory("TelemetryLogs")
             if (dir.exists()) {
                 val files =
-                    dir.listFiles { file -> file.extension == "log" && file.length() > 0 }
-                        .reversed()
+                    dir.listFiles { file -> file.extension == "log" && file.length() > 0 }?.reversed()
+                if (files == null) {
+                    Toast.makeText(this, "No log files available", Toast.LENGTH_SHORT).show()
+                    return
+                }
                 AlertDialog.Builder(this)
                     .setAdapter(
                         ArrayAdapter(
