@@ -510,7 +510,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             if (shouldUseStorageAPI()) {
                 replayFileString = it.uri.toString()
             } else {
-                replayFileString = it.name
+                replayFileString = "${it.name}.log"
             }
 
             val logPlayer =
