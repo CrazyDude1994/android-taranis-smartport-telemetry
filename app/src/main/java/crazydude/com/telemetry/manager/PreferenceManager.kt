@@ -21,7 +21,7 @@ class PreferenceManager(context: Context) {
             SensorSetting("Distance", 1, "bottom"),
             SensorSetting("Altitude", 2, "bottom"),
             SensorSetting("Phone Battery", 4),
-            SensorSetting("RC Channels", 3, "bottom")
+            SensorSetting("RC Channels", 3, "bottom", false)
         )
     }
 
