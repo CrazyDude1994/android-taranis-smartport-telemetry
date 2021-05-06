@@ -25,12 +25,12 @@ package com.serenegiant.usbcameratest4;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
+import android.Manifest;
 import android.app.Activity;
-import android.app.Fragment;
 import android.content.Intent;
 import android.hardware.usb.UsbDevice;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -43,16 +43,17 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.serenegiant.common.BaseFragment;
+import com.serenegiant.dialog.MessageDialogFragment;
 import com.serenegiant.service.UVCService;
 import com.serenegiant.serviceclient.CameraClient;
 import com.serenegiant.serviceclient.ICameraClient;
 import com.serenegiant.serviceclient.ICameraClientCallback;
 
-import com.serenegiant.usb.CameraDialog;
 import com.serenegiant.usb.DeviceFilter;
 import com.serenegiant.usb.USBMonitor;
 import com.serenegiant.usb.USBMonitor.OnDeviceConnectListener;
 import com.serenegiant.usb.USBMonitor.UsbControlBlock;
+import com.serenegiant.utils.PermissionCheck;
 import com.serenegiant.widget.CameraViewInterface;
 
 public class CameraFragment extends BaseFragment {
@@ -73,6 +74,8 @@ public class CameraFragment extends BaseFragment {
 	private Surface addedSurface = null;
 
 	private boolean  attachWasSkipped = false;
+
+	private boolean cameraPermissiondialogShownOnce = false;
 
 	private String conDevice;
 	private HashSet<String> badDevices = new HashSet<String>();
@@ -224,11 +227,41 @@ public class CameraFragment extends BaseFragment {
 	};
 
 	private boolean updateCameraDialog() {
+		/*
 		final Fragment fragment = getFragmentManager().findFragmentByTag("CameraDialog");
 		if (fragment instanceof CameraDialog) {
 			((CameraDialog)fragment).updateDevices();
 			return true;
 		}
+		return false;
+		*/
+
+		//return false if connection to camera cam be started
+		//return true if connection should be postponed
+
+		//on Android 10+, we need CAMERA permission to connect ot USB cameras.
+		//Unfortunately runtime permission dialog will not be shown when service will try to connect to camera.
+		//We have to explicitly request it here with Dialog.
+
+		//no camera permission required for USB camera on Android 9 and less
+		if (android.os.Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+			return false;
+		}
+
+		//already have permission?
+		if (PermissionCheck.hasCamera(getActivity())) return false;
+
+		//already asked for permission? allow connection to camera only if permission has been granted then.
+		if ( this.cameraPermissiondialogShownOnce) {
+			return !PermissionCheck.hasCamera(getActivity());
+		}
+		this.cameraPermissiondialogShownOnce = true;
+
+		MessageDialogFragment.showDialog(this, REQUEST_PERMISSION_CAMERA,
+				//com.serenegiant.common.R.string.permission_title , com.serenegiant.common.R.string.permission_camera,
+				com.serenegiant.usbcameratest4.R.string.camera_permission_title, com.serenegiant.usbcameratest4.R.string.camera_permission_text,
+				new String[]{Manifest.permission.CAMERA});
+
 		return false;
 	}
 

@@ -284,6 +284,10 @@ public class CameraClient implements ICameraClient {
 			mCameraTask = cameraTask;
 		}
 
+		public boolean isSelected() {
+			return mCameraTask.mServiceId != 0;
+		}
+
 		public boolean isRecording() {
 			final IUVCService service = mCameraTask.mParent.getService();
 			if (service != null)
@@ -426,7 +430,12 @@ public class CameraClient implements ICameraClient {
 				final IUVCService service = mParent.getService();
 				if (service != null) {
 					try {
-						mServiceId = service.select(device, this);
+						// mServiceId = 0 - no permission to access camera
+						mServiceId = service.select(device, this) ;
+						if ( mServiceId == 0 )	{
+							if (DEBUG) Log.e(TAG_CAMERA, "select: serviceId=0");
+							//wil will fire onConnectionError when connect() is called
+						}
 					} catch (final RemoteException e) {
 						if (DEBUG) Log.e(TAG_CAMERA, "select:", e);
 					}
@@ -445,7 +454,12 @@ public class CameraClient implements ICameraClient {
 				if (service != null)
 				try {
 					if (!mIsConnected/*!service.isConnected(mServiceId)*/) {
-						service.connect(mServiceId);
+						if ( mServiceId!=0) {
+							service.connect(mServiceId);
+						}
+						else {
+							onConnectionError();
+						}
 					} else {
 						onConnected();
 					}
@@ -532,7 +546,7 @@ public class CameraClient implements ICameraClient {
 			public void handleResize(final int width, final int height) {
 				if (DEBUG) Log.v(TAG, String.format("handleResize(%d,%d)", width, height));
 				final IUVCService service = mParent.getService();
-				if (service != null)
+				if (service != null && mServiceId!=0)
 				try {
 					service.resize(mServiceId, width, height);
 				} catch (final RemoteException e) {

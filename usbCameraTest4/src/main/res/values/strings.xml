@@ -23,4 +23,6 @@
   -->
 <resources>
     <string name="app_name">USBCamera</string>
+    <string name="camera_permission_title">USB Camera access permission required</string>
+    <string name="camera_permission_text">Application requires Camera access permission. Please grant permission in the following dialog.</string>
 </resources>

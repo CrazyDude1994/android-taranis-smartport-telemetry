@@ -332,7 +332,9 @@ public class BaseFragment extends Fragment
 	protected boolean checkPermissionCamera() {
 		if (!PermissionCheck.hasCamera(getActivity())) {
 			MessageDialogFragment.showDialog(this, REQUEST_PERMISSION_CAMERA,
-				com.serenegiant.common.R.string.permission_title, com.serenegiant.common.R.string.permission_camera_request,
+				//com.serenegiant.common.R.string.permission_title, com.serenegiant.common.R.string.permission_camera_request,
+					com.serenegiant.common.R.string.permission_title , com.serenegiant.common.R.string.permission_camera,
+					//"Camera permission", "Application requires access permission for USB cameras.",
 				new String[]{Manifest.permission.CAMERA});
 			return false;
 		}
