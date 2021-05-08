@@ -29,6 +29,8 @@ import com.google.android.gms.maps.*
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.maps.android.SphericalUtil
+import com.hoho.android.usbserial.driver.CdcAcmSerialDriver
+import com.hoho.android.usbserial.driver.ProbeTable
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
 import com.nex3z.flowlayout.FlowLayout
@@ -45,7 +47,6 @@ import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import crazydude.com.telemetry.protocol.pollers.LogPlayer
 import crazydude.com.telemetry.service.DataService
 import crazydude.com.telemetry.utils.DocumentLogFile
-import crazydude.com.telemetry.utils.FileLogger
 import crazydude.com.telemetry.utils.LogFile
 import crazydude.com.telemetry.utils.StandardLogFile
 import uk.co.deanwild.materialshowcaseview.MaterialShowcaseView
@@ -778,7 +779,11 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
 
     private fun connectUSB() {
         val usbManager = getSystemService(Context.USB_SERVICE) as UsbManager
-        val drivers = UsbSerialProber.getDefaultProber().findAllDrivers(usbManager)
+
+        val customTable = UsbSerialProber.getDefaultProbeTable()
+        customTable.addProduct(0x0483, 0x5740, CdcAcmSerialDriver::class.java) // STM32 Virtual COM Port
+        val drivers = UsbSerialProber(customTable).findAllDrivers(usbManager)
+
         val driver = drivers.firstOrNull()
         if (driver == null) {
             Toast.makeText(this, "No valid usb driver has been found", Toast.LENGTH_SHORT).show()
