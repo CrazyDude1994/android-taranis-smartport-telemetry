@@ -855,9 +855,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             return
         }
 
-        if (!adapter.isEnabled) {
-            val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
+        if (!bluetoothEnabled()) {
             return
         }
 
@@ -881,6 +879,16 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
                     connectToBluetoothDevice(devices[i], false)
                 }
             }.show()
+    }
+
+    private fun bluetoothEnabled(): Boolean {
+        val enabled = BluetoothAdapter.getDefaultAdapter().isEnabled
+        if (!enabled) {
+            val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
+        }
+
+        return enabled
     }
 
     private fun showPairDeviceDialog() {
@@ -967,6 +975,11 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             Toast.makeText(this, "Bluetooth LE is not supported or application does not have needed permissions", Toast.LENGTH_LONG).show()
             return
         }
+
+        if (!bluetoothEnabled()) {
+            return
+        }
+
         val adapter = BluetoothAdapter.getDefaultAdapter()
         val devices = ArrayList<BluetoothDevice>()
         val deviceNames = ArrayList<String>()
@@ -1121,7 +1134,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_ENABLE_BT && resultCode == RESULT_OK) {
-            connectBluetooth()
+            connect()
         } else if (requestCode == REQUEST_FILE_TREE_REPLAY && resultCode == RESULT_OK) {
             preferenceManager.setLogsStorageFolder(data?.dataString)
             contentResolver.takePersistableUriPermission(
