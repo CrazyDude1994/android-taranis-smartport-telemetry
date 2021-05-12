@@ -1,111 +1,131 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
-        xmlns:custom="http://schemas.android.com/apk/res-auto"
-        xmlns:tools="http://schemas.android.com/tools"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:id="@+id/rootLayout"
-        android:keepScreenOn="true">
+        xmlns:tools="http://schemas.android.com/tools">
 
-    <FrameLayout
-            android:id="@+id/map_holder"
+    <data>
+        <import type="android.view.View"/>
+        <import type="crazydude.com.telemetry.service.DataService.ConnectionState"/>
+        <import type="androidx.lifecycle.LiveData"/>
+        <import type="crazydude.com.telemetry.protocol.TelemetryModel"/>
+        <variable
+                name="telemetry"
+                type="LiveData&lt;TelemetryModel>" />
+        <variable
+                name="connectionState"
+                type="LiveData&lt;ConnectionState>" />
+
+    </data>
+
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+            android:id="@+id/rootLayout"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
+            android:layout_height="match_parent"
+            android:keepScreenOn="true">
 
-    <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
-        <SeekBar
-                android:id="@+id/seekbar"
+        <FrameLayout
+                android:id="@+id/map_holder"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_above="@+id/bottom_layout"
-                android:layout_margin="8dp"
-                android:layout_toStartOf="@+id/map_type_button"
-                android:layout_toLeftOf="@+id/map_type_button"
-                android:visibility="gone" />
+                android:layout_height="match_parent" />
 
-        <include
-                android:id="@+id/top_layout"
-                layout="@layout/top_layout" />
+        <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
 
-        <crazydude.com.telemetry.ui.TextViewOutline
-                android:textStyle="bold"
-                app:outlineSize="3dp"
-                app:outlineColor="@android:color/black"
-                android:id="@+id/mode"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="8dp"
-                android:drawablePadding="4dp"
-                android:ellipsize="end"
-                android:lines="1"
-                android:text="Disconnected"
-                android:layout_above="@id/seekbar"
-                android:textColor="@android:color/white"
-                android:textSize="18sp"
-                android:gravity="center"/>
+            <SeekBar
+                    android:id="@+id/seekbar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_above="@+id/bottom_layout"
+                    android:layout_margin="8dp"
+                    android:layout_toStartOf="@+id/map_type_button"
+                    android:layout_toLeftOf="@+id/map_type_button"
+                    android:visibility="@{connectionState == ConnectionState.REPLAY ? View.VISIBLE : View.GONE}" />
 
-        <include
-                android:id="@+id/bottom_layout"
-                layout="@layout/bottom_layout" />
+            <include
+                    android:id="@+id/top_layout"
+                    app:telemetry="@{telemetry}"
+                    app:connectionState="@{connectionState}"
+                    layout="@layout/top_layout" />
 
-        <crazydude.com.telemetry.ui.HorizonView
-                android:id="@+id/horizon_view"
-                android:layout_width="128dp"
-                android:layout_height="128dp"
-                android:layout_below="@id/top_layout"
-                android:layout_margin="8dp" />
+            <crazydude.com.telemetry.ui.TextViewOutline
+                    android:id="@+id/mode"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_above="@id/seekbar"
+                    android:layout_margin="8dp"
+                    android:drawablePadding="4dp"
+                    android:ellipsize="end"
+                    android:gravity="center"
+                    android:lines="1"
+                    android:text="@{telemetry.decodeCurrentModes()}"
+                    tools:text="Disarmed"
+                    android:textColor="@android:color/white"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    app:outlineColor="@android:color/black"
+                    app:outlineSize="3dp" />
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-                android:id="@id/map_type_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_above="@id/bottom_layout"
-                android:layout_alignParentEnd="true"
-                android:layout_alignParentRight="true"
-                android:layout_margin="8dp"
-                android:src="@drawable/ic_layers"
-                app:fabSize="mini" />
+            <include
+                    app:telemetry="@{telemetry}"
+                    android:id="@+id/bottom_layout"
+                    layout="@layout/bottom_layout" />
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-                android:id="@+id/follow_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_above="@id/map_type_button"
-                android:layout_alignParentEnd="true"
-                android:layout_alignParentRight="true"
-                android:layout_margin="8dp"
-                android:src="@drawable/ic_follow"
-                app:fabSize="mini" />
+            <crazydude.com.telemetry.ui.HorizonView
+                    android:id="@+id/horizon_view"
+                    android:layout_width="128dp"
+                    android:layout_height="128dp"
+                    android:layout_below="@id/top_layout"
+                    android:layout_margin="8dp" />
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-                android:id="@+id/fullscreen_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_above="@id/follow_button"
-                android:layout_alignParentEnd="true"
-                android:layout_alignParentRight="true"
-                android:layout_margin="8dp"
-                android:src="@drawable/ic_fullscreen"
-                app:fabSize="mini" />
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@id/map_type_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_above="@id/bottom_layout"
+                    android:layout_alignParentEnd="true"
+                    android:layout_alignParentRight="true"
+                    android:layout_margin="8dp"
+                    android:src="@drawable/ic_layers"
+                    app:fabSize="mini" />
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-                android:id="@+id/directions_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_above="@id/fullscreen_button"
-                android:layout_alignParentEnd="true"
-                android:layout_alignParentRight="true"
-                android:layout_margin="8dp"
-                android:src="@drawable/ic_directions"
-                android:visibility="gone"
-                app:fabSize="mini"
-                tools:visibility="visible" />
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@+id/follow_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_above="@id/map_type_button"
+                    android:layout_alignParentEnd="true"
+                    android:layout_alignParentRight="true"
+                    android:layout_margin="8dp"
+                    android:src="@drawable/ic_follow"
+                    app:fabSize="mini" />
 
-    </RelativeLayout>
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@+id/fullscreen_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_above="@id/follow_button"
+                    android:layout_alignParentEnd="true"
+                    android:layout_alignParentRight="true"
+                    android:layout_margin="8dp"
+                    android:src="@drawable/ic_fullscreen"
+                    app:fabSize="mini" />
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@+id/directions_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_above="@id/fullscreen_button"
+                    android:layout_alignParentEnd="true"
+                    android:layout_alignParentRight="true"
+                    android:layout_margin="8dp"
+                    android:src="@drawable/ic_directions"
+                    android:visibility="@{connectionState == ConnectionState.REPLAY ? View.VISIBLE : View.GONE}"
+                    app:fabSize="mini"
+                    tools:visibility="visible" />
+
+        </RelativeLayout>
 
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+</layout>

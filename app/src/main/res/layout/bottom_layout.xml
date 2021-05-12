@@ -1,58 +1,75 @@
 <?xml version="1.0" encoding="utf-8"?>
-<merge xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-        android:orientation="vertical">
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <RelativeLayout
-            android:id="@id/bottom_layout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:background="#AA000000">
+    <data>
 
-        <com.nex3z.flowlayout.FlowLayout
-                android:id="@+id/bottom_list"
+        <variable
+                name="telemetry"
+                type="crazydude.com.telemetry.protocol.TelemetryModel" />
+    </data>
+
+    <merge android:orientation="vertical">
+
+        <RelativeLayout
+                android:id="@id/bottom_layout"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:layout_alignParentBottom="true"
+                android:background="#AA000000">
 
-            <TextView
-                    android:id="@+id/speed"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="6dp"
-                    android:drawableStart="@drawable/ic_speed"
-                    android:drawableLeft="@drawable/ic_speed"
-                    android:drawablePadding="4dp"
-                    android:text="-"
-                    android:textColor="@android:color/white"
-                    android:textSize="16sp" />
+            <com.nex3z.flowlayout.FlowLayout
+                    android:id="@+id/bottom_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
 
-            <TextView
-                    android:id="@+id/distance"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="6dp"
-                    android:drawableStart="@drawable/ic_distance"
-                    android:drawableLeft="@drawable/ic_distance"
-                    android:drawablePadding="4dp"
-                    android:text="-"
-                    android:textColor="@android:color/white"
-                    android:textSize="16sp" />
+                <TextView
+                        android:id="@+id/speed"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="6dp"
+                        android:layout_marginTop="6dp"
+                        android:layout_marginRight="6dp"
+                        android:layout_marginBottom="2dp"
+                        android:drawableTop="@drawable/ic_speed"
+                        android:drawablePadding="0dp"
+                        android:text="-"
+                        android:textAlignment="center"
+                        android:textColor="@android:color/white"
+                        android:textSize="16sp" />
 
-            <TextView
-                    android:id="@+id/altitude"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="6dp"
-                    android:drawableStart="@drawable/ic_altitutde"
-                    android:drawableLeft="@drawable/ic_altitutde"
-                    android:drawablePadding="4dp"
-                    android:text="-"
-                    android:textColor="@android:color/white"
-                    android:textSize="16sp" />
-        </com.nex3z.flowlayout.FlowLayout>
+                <TextView
+                        android:id="@+id/distance"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="6dp"
+                        android:layout_marginTop="6dp"
+                        android:layout_marginRight="6dp"
+                        android:layout_marginBottom="2dp"
+                        android:drawableTop="@drawable/ic_distance"
+                        android:drawablePadding="0dp"
+                        android:text="@{String.valueOf(telemetry.distance) + ` m`}"
+                        android:textAlignment="center"
+                        android:textColor="@android:color/white"
+                        android:textSize="16sp" />
 
-    </RelativeLayout>
+                <TextView
+                        android:id="@+id/altitude"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="6dp"
+                        android:layout_marginTop="6dp"
+                        android:layout_marginRight="6dp"
+                        android:layout_marginBottom="2dp"
+                        android:drawableTop="@drawable/ic_altitutde"
+                        android:drawablePadding="0dp"
+                        android:text="@{String.valueOf(telemetry.altitude) + ` m`}"
+                        android:textAlignment="center"
+                        android:textColor="@android:color/white"
+                        android:textSize="16sp" />
+            </com.nex3z.flowlayout.FlowLayout>
+
+        </RelativeLayout>
 
 
-</merge>
+    </merge>
+</layout>
