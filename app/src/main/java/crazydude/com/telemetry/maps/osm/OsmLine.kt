@@ -39,6 +39,7 @@ class OsmLine(private val mapView: MapView) : MapLine {
 
     override fun setPoints(points: List<Position>) {
         line.setPoints(points.map { it.toGeoPoint() })
+        mapView.invalidate()
     }
 
     override val size: Int

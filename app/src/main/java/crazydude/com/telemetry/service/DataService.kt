@@ -32,6 +32,7 @@ import java.io.IOException
 import java.io.OutputStream
 import java.util.*
 import kotlin.collections.ArrayList
+import kotlin.math.log
 
 class DataService : Service(), DataDecoder.Listener {
 
@@ -374,5 +375,13 @@ class DataService : Service(), DataDecoder.Listener {
         telemetryModel = TelemetryModel()
         mutableTelemetryLiveData.postValue(telemetryModel)
         mutableConnectionStateLiveData.postValue(ConnectionState.DISCONNECTED)
+    }
+
+    fun getReplaySize() : Int {
+        return logPlayer.getReplaySize()
+    }
+
+    fun getSeekPosition(): Int {
+        return logPlayer.getSeekPosition()
     }
 }

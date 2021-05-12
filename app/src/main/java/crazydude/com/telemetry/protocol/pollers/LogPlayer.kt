@@ -16,11 +16,13 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
     private var dataReadyListener: DataReadyListener? = null
     private var currentPosition: Int = 0
     private var uniqueData = HashMap<Int, Int>()
+    private var seekPosition = 0
     private lateinit var protocol: Protocol
 
     private var task : AsyncTask<LogFile, Long, ArrayList<Protocol.Companion.TelemetryData>>? = null
 
     fun load(file: LogFile, dataReadyListener: DataReadyListener) {
+        seekPosition = 0
         this.dataReadyListener = dataReadyListener
         task = @SuppressLint("StaticFieldLeak")
         object :
@@ -133,7 +135,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
 
             override fun onPostExecute(result: ArrayList<Protocol.Companion.TelemetryData>) {
                 cachedData = result
-                dataReadyListener?.onDataReady(result.size)
+                dataReadyListener.onDataReady(result.size)
             }
 
         }
@@ -141,6 +143,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
     }
 
     fun seek(position: Int) {
+        seekPosition = position
         uniqueData.clear()
         decodedCoordinates.clear()
         val addToEnd: Boolean
@@ -277,6 +280,14 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
         dataReadyListener = null
         decodedCoordinates.clear()
         uniqueData.clear()
+    }
+
+    fun getReplaySize() : Int {
+        return cachedData.size
+    }
+
+    fun getSeekPosition(): Int {
+        return seekPosition
     }
 
     interface DataReadyListener {

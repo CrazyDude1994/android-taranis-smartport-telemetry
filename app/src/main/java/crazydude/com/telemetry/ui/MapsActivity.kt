@@ -257,6 +257,28 @@ class MapsActivity : AppCompatActivity() {
                 (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
     }
 
+    fun setSeekbarListener() {
+        binding.seekbar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(
+                seekbar: SeekBar,
+                position: Int,
+                p2: Boolean
+            ) {
+                dataService?.seekReplay(position)
+            }
+
+            override fun onStartTrackingTouch(p0: SeekBar?) {
+            }
+
+            override fun onStopTrackingTouch(p0: SeekBar?) {
+
+            }
+        })
+    }
+
+    fun removeSeekbarListener() {
+        binding.seekbar.setOnSeekBarChangeListener(null)
+    }
 
     private fun initMap(simulateLifecycle: Boolean) {
         if (mapType in GoogleMap.MAP_TYPE_NORMAL..GoogleMap.MAP_TYPE_HYBRID) {
@@ -270,7 +292,6 @@ class MapsActivity : AppCompatActivity() {
         val mapView = org.osmdroid.views.MapView(this)
         binding.mapHolder.addView(mapView)
         map = OsmMapWrapper(applicationContext, mapView) {
-            initHeadingLine()
         }
         map?.setOnCameraMoveStartedListener {
             viewModel.followMode = false
@@ -311,7 +332,6 @@ class MapsActivity : AppCompatActivity() {
                 viewModel.followMode = false
             }
             map?.setPadding(0,  binding.topLayout.root.measuredHeight, 0, 0)
-            initHeadingLine()
             startDataService()
         }
         if (simulateLifecycle) {
@@ -460,7 +480,7 @@ class MapsActivity : AppCompatActivity() {
                 val files = tree.listFiles().reversed().filter { it.length() > 0 }
                 AlertDialog.Builder(this)
                     .setAdapter(
-                        ArrayAdapter<String>(
+                        ArrayAdapter(
                             this,
                             android.R.layout.simple_list_item_1,
                             files.map { i -> "${i.name} (${i.length() / 1024} Kb)" }
@@ -483,32 +503,14 @@ class MapsActivity : AppCompatActivity() {
             progressDialog.max = 100
             progressDialog.show()
 
-            switchToReplayMode()
-
             dataService?.startReplay(file, object : LogPlayer.DataReadyListener {
                 override fun onUpdate(percent: Int) {
                     progressDialog.progress = percent
                 }
 
                 override fun onDataReady(size: Int) {
-                    progressDialog.dismiss()
                     binding.seekbar.max = size
-                    binding.seekbar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-                        override fun onProgressChanged(
-                            seekbar: SeekBar,
-                            position: Int,
-                            p2: Boolean
-                        ) {
-                            dataService?.seekReplay(position)
-                        }
-
-                        override fun onStartTrackingTouch(p0: SeekBar?) {
-                        }
-
-                        override fun onStopTrackingTouch(p0: SeekBar?) {
-
-                        }
-                    })
+                    progressDialog.dismiss()
                 }
             })
         }
@@ -853,7 +855,6 @@ class MapsActivity : AppCompatActivity() {
 
 
     private fun connectToBluetoothDevice(device: BluetoothDevice, isBLE: Boolean) {
-        startDataService()
         dataService?.let {
             createLogFile()?.let { file ->
                 it.connect(device, file, isBLE)
@@ -865,7 +866,6 @@ class MapsActivity : AppCompatActivity() {
         port: UsbSerialPort,
         connection: UsbDeviceConnection
     ) {
-        startDataService()
         dataService?.let {
             createLogFile()?.let { file ->
                 it.connect(port, connection, file)
@@ -878,6 +878,11 @@ class MapsActivity : AppCompatActivity() {
         map?.onDestroy()
         this.unregisterReceiver(this.batInfoReceiver)
         unbindService(serviceConnection)
+        dataService?.let {
+            if (!isChangingConfigurations && !it.isConnected()) {
+                stopDataService()
+            }
+        }
     }
 
     private fun startDataService() {
@@ -889,6 +894,11 @@ class MapsActivity : AppCompatActivity() {
         }
         startService(intent)
         bindService(intent, serviceConnection, 0)
+    }
+
+    private fun stopDataService() {
+        val intent = Intent(this, DataService::class.java)
+        stopService(intent)
     }
 
     override fun onRequestPermissionsResult(
@@ -953,81 +963,10 @@ class MapsActivity : AppCompatActivity() {
         }
     }
 
-/*    override fun onVSpeedData(vspeed: Float) {
-
-    }
-
-    override fun onAltitudeData(altitude: Float) {
-        runOnUiThread {
-            this.altitude.text = "${"%.2f".format(altitude)} m"
-        }
-    }
-
-    override fun onGPSAltitudeData(altitude: Float) {
-
-    }
-
-    override fun onDistanceData(distance: Int) {
-        runOnUiThread {
-            this.distance.text = "$distance m"
-        }
-    }
-
-    override fun onRollData(rollAngle: Float) {
-        runOnUiThread {
-            horizonView.setRoll(rollAngle)
-        }
-    }
-
-    override fun onPitchData(pitchAngle: Float) {
-        runOnUiThread {
-            horizonView.setPitch(pitchAngle)
-        }
-    }
-
-    override fun onGSpeedData(speed: Float) {
-        runOnUiThread {
-            if (!preferenceManager.usePitotTube()) {
-                updateSpeed(speed)
-            }
-        }
-    }
-
-    override fun onAirSpeed(speed: Float) {
-        runOnUiThread {
-            if (preferenceManager.usePitotTube()) {
-                updateSpeed(speed)
-            }
-        }
-    }*/
-
-    private fun updateSpeed(speed: Float) {
-//        this.speed.text = "${speed.roundToInt()} km/h"
-    }
-
-/*    override fun onGPSState(satellites: Int, gpsFix: Boolean) {
-        runOnUiThread {
-            this.hasGPSFix = gpsFix
-            if (gpsFix && marker == null) {
-                marker =
-                    map?.addMarker(R.drawable.ic_plane, preferenceManager.getPlaneColor(), lastGPS)
-                if (headingPolyline == null && preferenceManager.isHeadingLineEnabled()) {
-                    headingPolyline = createHeadingPolyline()
-                }
-                map?.moveCamera(lastGPS, 15f)
-            }
-            this.satellites.text = satellites.toString()
-        }
-    }*/
-
     private fun createHeadingPolyline(): MapLine? {
-        val lastGPS = binding.telemetry?.value?.position?.last() ?: Position(0.0, 0.0)
+        val lastGPS = binding.telemetry?.value?.position?.lastOrNull() ?: Position(0.0, 0.0)
         return map?.addPolyline(3f, preferenceManager.getHeadLineColor(), lastGPS, lastGPS)
     }
-
-/*    override fun onRSSIData(rssi: Int) {
-
-    }*/
 
     private fun checkSendDataDialogShown() {
         if (!preferenceManager.isSendDataDialogShown()) {
@@ -1082,19 +1021,6 @@ class MapsActivity : AppCompatActivity() {
         fMapTypeDialog.show()
     }
 
-    /*override fun onVBATData(voltage: Float) {
-        lastVBAT = voltage
-        runOnUiThread {
-            updateVoltage()
-        }
-    }
-
-    override fun onCurrentData(current: Float) {
-        runOnUiThread {
-            this.current.text = "${"%.2f".format(current)} A"
-        }
-    }*/
-
     private fun updateHeading() {
         headingPolyline?.let { headingLine ->
             val lastGPS = binding.telemetry?.value?.position?.lastOrNull() ?: Position(0.0, 0.0)
@@ -1115,15 +1041,16 @@ class MapsActivity : AppCompatActivity() {
     }
 
     private fun switchToReplayMode() {
-//        binding.seekbar.apply {
-//            setOnSeekBarChangeListener(null)
-//            progress = 0
-//        }
+        removeSeekbarListener()
+        binding.seekbar.max = dataService?.getReplaySize() ?: 0
+        binding.seekbar.progress = dataService?.getSeekPosition() ?: 0
+        setSeekbarListener()
         binding.directionsButton.show()
         binding.topLayout.replayButton.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_close))
         binding.topLayout.replayButton.setOnClickListener {
             dataService?.stopReplay()
         }
+        initHeadingLine()
     }
 
     private fun switchToIdleState() {
@@ -1138,10 +1065,12 @@ class MapsActivity : AppCompatActivity() {
         marker = null
         polyLine?.clear()
         headingPolyline?.remove()
+        headingPolyline = null
     }
 
     private fun switchToConnectedState() {
-/*
+        initHeadingLine()
+    /*
         connectButton.text = getString(R.string.disconnect)
         connectButton.isEnabled = true
         connectButton.setOnClickListener {
