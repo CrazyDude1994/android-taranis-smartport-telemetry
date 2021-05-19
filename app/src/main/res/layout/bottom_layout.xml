@@ -64,7 +64,7 @@
                     android:textColor="@android:color/white"
                     android:textSize="16sp"
                     app:minText="000,00 m"
-                    app:iconWidthDp="29"/>
+                    app:iconWidthDp="19"/>
 
             <crazydude.com.telemetry.ui.RCWidget
                     android:id="@+id/rc_widget"
