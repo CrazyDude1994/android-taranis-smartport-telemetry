@@ -212,7 +212,7 @@ class MAVLinkDataDecoder(listener: Listener) : DataDecoder(listener) {
         if (newLatitude && newLongitude) {
             listener.onGPSData(latitude, longitude)
 
-            if (originLatitude > 0 && originLatitude > 0 && latitude > 0 && longitude > 0) {
+            if (originLatitude > 0 && originLongitude > 0 && latitude > 0 && longitude > 0) {
 
                 val distance = SphericalUtil.computeDistanceBetween(
                     LatLng(
