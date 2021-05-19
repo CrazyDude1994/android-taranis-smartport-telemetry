@@ -48,7 +48,7 @@
                     android:textColor="@android:color/white"
                     android:textSize="16sp"
                     app:minText="000 m"
-                    app:iconWidthDp="29"/>
+                    app:iconWidthDp="26"/>
 
             <crazydude.com.telemetry.ui.TextViewStableSize
                     android:id="@+id/altitude"
@@ -64,7 +64,7 @@
                     android:textColor="@android:color/white"
                     android:textSize="16sp"
                     app:minText="000,00 m"
-                    app:iconWidthDp="19"/>
+                    app:iconWidthDp="16"/>
 
             <crazydude.com.telemetry.ui.RCWidget
                     android:id="@+id/rc_widget"
