@@ -23,6 +23,7 @@ import crazydude.com.telemetry.protocol.pollers.BluetoothLeDataPoller
 import crazydude.com.telemetry.protocol.pollers.DataPoller
 import crazydude.com.telemetry.protocol.pollers.UsbDataPoller
 import crazydude.com.telemetry.ui.MapsActivity
+import crazydude.com.telemetry.utils.FileLogger
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -45,13 +46,17 @@ class DataService : Service(), DataDecoder.Listener {
     private var lastSpeed: Float = 0.0f
     private var lastHeading: Float = 0.0f
     private val apiHandler = Handler()
+    private var logFile : OutputStream? = null
+    private var device: BluetoothDevice? = null
     private lateinit var preferenceManager: PreferenceManager
+    private lateinit var fileLogger: FileLogger
     val points: ArrayList<Position> = ArrayList()
 
     override fun onCreate() {
         super.onCreate()
 
         preferenceManager = PreferenceManager(this)
+        fileLogger = FileLogger(this)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val importance = NotificationManager.IMPORTANCE_LOW
@@ -83,17 +88,23 @@ class DataService : Service(), DataDecoder.Listener {
     }
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
-    fun connect(device: BluetoothDevice, logFile: OutputStream) {
+    fun connect(device: BluetoothDevice, logFile: OutputStream, isBLE: Boolean) {
         try {
+            fileLogger.log("Connect to bl. Type[${device.type}] isBle[$isBLE] bondState[${device.bondState}] uuids[${device.uuids?.joinToString(",")}]")
             dataPoller?.disconnect()
 
-            var isBle = false
+            this.device = device
+            this.logFile = logFile
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-                isBle = (device.type == BluetoothDevice.DEVICE_TYPE_LE) or (device.type == BluetoothDevice.DEVICE_TYPE_DUAL)
-            }
+            if (isBLE) {
 
-            if (!isBle) {
+                dataPoller = BluetoothLeDataPoller(
+                    this,
+                    device,
+                    this,
+                    logFile
+                )
+            } else {
                 val socket =
                     device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
                 dataPoller =
@@ -102,22 +113,15 @@ class DataService : Service(), DataDecoder.Listener {
                         this,
                         logFile
                     )
-            } else {
-                dataPoller =
-                    BluetoothLeDataPoller(
-                        this,
-                        device,
-                        this,
-                        logFile
-                    )
             }
         } catch (e: IOException) {
+            fileLogger.log("Connect exception: ${e.message}")
             onConnectionFailed()
-            Toast.makeText(this, "Failed to connect to bluetooth", Toast.LENGTH_LONG).show()
         }
     }
 
     fun connect(serialPort: UsbSerialPort, connection: UsbDeviceConnection, logFile : OutputStream) {
+        fileLogger.log("Usb connection")
         dataPoller = UsbDataPoller(
             this,
             serialPort,
@@ -154,6 +158,7 @@ class DataService : Service(), DataDecoder.Listener {
     override fun onConnectionFailed() {
         dataListener?.onConnectionFailed()
         dataPoller = null
+        Toast.makeText(this, "Failed to connect to bluetooth", Toast.LENGTH_LONG).show()
     }
 
     override fun onFuelData(fuel: Int) {

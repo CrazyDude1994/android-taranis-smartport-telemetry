@@ -111,6 +111,15 @@
         </Preference>
 
     </PreferenceCategory>
+    <PreferenceCategory android:title="UAV Radar">
+        <Preference android:title="Copy debug info"
+                android:key="copy_debug_info">
+        </Preference>
+        <Preference android:title="Clear debug info"
+                android:key="clear_debug_info">
+        </Preference>
+
+    </PreferenceCategory>
 
 
 </PreferenceScreen>
