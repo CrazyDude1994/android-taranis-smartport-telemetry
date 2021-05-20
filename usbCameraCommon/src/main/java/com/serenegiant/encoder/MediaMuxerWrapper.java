@@ -151,6 +151,7 @@ public class MediaMuxerWrapper {
 		if ((mEncoderCount > 0) && (mStatredCount <= 0)) {
 			try {
 				mMediaMuxer.stop();
+				mMediaMuxer.release();
 			} catch (final Exception e) {
 				Log.w(TAG, e);
 			}
