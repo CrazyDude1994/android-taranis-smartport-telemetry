@@ -29,9 +29,12 @@ import java.lang.reflect.Field;
 import java.util.Date;
 
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.media.MediaScannerConnection;
 import android.media.SoundPool;
+import android.os.BatteryManager;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
@@ -41,6 +44,7 @@ import android.os.RemoteException;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Surface;
+import android.content.BroadcastReceiver;
 
 import com.serenegiant.encoder.MediaAudioEncoder;
 import com.serenegiant.encoder.MediaEncoder;
@@ -75,6 +79,32 @@ public final class CameraServer extends Handler {
 
 	private Date mRecordingStartTime = new Date();
 
+	private final BroadcastReceiver mShutdownReceiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(final Context context, final Intent intent) {
+			if (DEBUG) Log.d(TAG, "SHUTDOWN");
+			if ( isRecording())
+			{
+				stopRecording();
+				//can still be corrupted because mediaMuxer is encoding some time after shutdown:(
+			}
+		}
+	};
+
+	private final BroadcastReceiver mBatteryInfoReceiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(final Context context, final Intent intent) {
+			int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, 0);
+			if ( level <= 5 ) {
+				if (DEBUG) Log.d(TAG, "BATTERY LOW");
+				if ( isRecording())
+				{
+					stopRecording();
+				}
+			}
+		}
+	};
+
 	public static CameraServer createServer(final Context context, final UsbControlBlock ctrlBlock, final int vid, final int pid) {
 		if (DEBUG) Log.d(TAG, "createServer:");
 		final CameraThread thread = new CameraThread(context, ctrlBlock);
@@ -87,6 +117,12 @@ public final class CameraServer extends Handler {
 		mWeakThread = new WeakReference<CameraThread>(thread);
 		mRegisteredCallbackCount = 0;
 		mRendererHolder = new RendererHolder(mFrameWidth, mFrameHeight, mRenderHolderCallback);
+
+		final IntentFilter filter = new IntentFilter(Intent.ACTION_SHUTDOWN);
+		mWeakThread.get().mWeakContext.get().getApplicationContext().registerReceiver(mShutdownReceiver, filter);
+
+		final IntentFilter filter2 = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
+		mWeakThread.get().mWeakContext.get().getApplicationContext().registerReceiver(mBatteryInfoReceiver, filter2);
 	}
 
 	@Override
@@ -117,6 +153,20 @@ public final class CameraServer extends Handler {
 		if (mRendererHolder != null) {
 			mRendererHolder.release();
 			mRendererHolder = null;
+		}
+
+		final CameraThread thread = mWeakThread.get();
+		if ( thread != null )
+		{
+			final Context context = thread.mWeakContext.get();
+			if (context != null) {
+				final Context context2 =context.getApplicationContext();
+				if ( context2 != null )
+				{
+					context2.unregisterReceiver(mShutdownReceiver);
+					context2.unregisterReceiver(mBatteryInfoReceiver);
+				}
+			}
 		}
 	}
 
@@ -261,6 +311,20 @@ public final class CameraServer extends Handler {
 					mCallbacks.getBroadcastItem(i).onConnectionError();
 				} catch (final Exception e) {
 					Log.e(TAG, "failed to call IOverlayCallback#onConnectionError");
+				}
+		}
+		mCallbacks.finishBroadcast();
+	}
+
+	private void processOnStoppedRecording() {
+		if (DEBUG) Log.d(TAG, "processOnStoppedRecording:");
+		final int n = mCallbacks.beginBroadcast();
+		for (int i = 0; i < n; i++) {
+			if (((CallbackCookie)mCallbacks.getBroadcastCookie(i)).isConnected)
+				try {
+					mCallbacks.getBroadcastItem(i).onStoppedRecording();
+				} catch (final Exception e) {
+					Log.e(TAG, "failed to call IOverlayCallback#onStoppedRecording");
 				}
 		}
 		mCallbacks.finishBroadcast();
@@ -537,6 +601,8 @@ public final class CameraServer extends Handler {
 				mMuxer.stopRecording();
 				mMuxer = null;
 				// you should not wait here
+
+				mHandler.processOnStoppedRecording();
 			}
 		}
 
@@ -612,7 +678,7 @@ public final class CameraServer extends Handler {
 				if ((encoder instanceof MediaSurfaceEncoder))
 				try {
 					mIsRecording = false;
-					if (mEncoderSurfaceId > 0) {
+					if (mEncoderSurfaceId > 0 && mHandler.mRendererHolder!=null) {
 						try {
 							mHandler.mRendererHolder.removeSurface(mEncoderSurfaceId);
 						} catch (final Exception e) {

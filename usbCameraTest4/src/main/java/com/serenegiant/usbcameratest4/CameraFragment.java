@@ -80,6 +80,8 @@ public class CameraFragment extends BaseFragment {
 	private String conDevice;
 	private HashSet<String> badDevices = new HashSet<String>();
 
+	private boolean buttonEnabled = false;
+
 	public CameraFragment() {
 		if (DEBUG) Log.v(TAG, "Constructor:");
 //		setRetainInstance(true);
@@ -139,6 +141,7 @@ public class CameraFragment extends BaseFragment {
 		}
 		mUSBMonitor.unregister();
 		enableButtons(false);
+		updateButtonColor();
 		updateRecordingTime();
 		super.onPause();
 		if (DEBUG) Log.v(TAG, "onPause finished:");
@@ -214,6 +217,7 @@ public class CameraFragment extends BaseFragment {
 				}
 			}, 0);
 			enableButtons(false);
+			updateButtonColor();
 			updateRecordingTime();
 			updateCameraDialog();
 		}
@@ -222,6 +226,7 @@ public class CameraFragment extends BaseFragment {
 		public void onCancel(final UsbDevice device) {
 			if (DEBUG) Log.v(TAG, "OnDeviceConnectListener#onCancel:");
 			enableButtons(false);
+			updateButtonColor();
 			updateRecordingTime();
 		}
 	};
@@ -305,6 +310,7 @@ public class CameraFragment extends BaseFragment {
 			addedSurface = mCameraView.getSurface();
 			mCameraClient.addSurface(addedSurface, false);
 			enableButtons(true);
+			updateButtonColor();
 			updateRecordingTime();
 			// start UVCService
 			final Intent intent = new Intent(getActivity(), UVCService.class);
@@ -317,6 +323,7 @@ public class CameraFragment extends BaseFragment {
 		public void onDisconnect() {
 			if (DEBUG) Log.v(TAG, "onDisconnect:");
 			enableButtons(false);
+			updateButtonColor();
 			updateRecordingTime();
 		}
 
@@ -330,6 +337,12 @@ public class CameraFragment extends BaseFragment {
 			badDevices.add(conDevice);
 			showConnectionErrorToast();
 		}
+
+		public void onStoppedRecording() {
+			updateButtonColor();
+			updateRecordingTime();
+		}
+
 
 	};
 
@@ -353,6 +366,8 @@ public class CameraFragment extends BaseFragment {
 				// stop service
 				doReleaseCameraClient( false );
 				enableButtons(false);
+				updateButtonColor();
+				updateRecordingTime();
 			} else if (id == R.id.record_button) {
 				if (DEBUG) Log.v(TAG, "onClick:record");
 				if (checkPermissionWriteExternalStorage() && checkPermissionAudio()) {
@@ -387,8 +402,17 @@ public class CameraFragment extends BaseFragment {
 		getActivity().runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
+				buttonEnabled = enable;
 				mRecordButton.setEnabled(enable);
-				if (enable && mCameraClient.isRecording())
+			}
+		});
+	}
+
+	private final void updateButtonColor() {
+		getActivity().runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				if (buttonEnabled && mCameraClient != null && mCameraClient.isRecording())
 					mRecordButton.setColorFilter(0x7fff0000);
 				else
 					mRecordButton.setColorFilter(0);
@@ -403,7 +427,10 @@ public class CameraFragment extends BaseFragment {
 		getActivity().runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
-				if ( mCameraClient == null ) return;
+				if ( mCameraClient == null ) {
+					mRecordingTime.setText( "" );
+					return;
+				}
 				if (mCameraClient.isRecording()) {
 					int s = mCameraClient.getRecordingLengthSeconds();
 					mRecordingTime.setText( String.format("%02d", s / 60 ) +":" + String.format("%02d", s % 60 ));

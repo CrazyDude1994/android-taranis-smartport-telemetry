@@ -27,4 +27,5 @@ interface IUVCServiceCallback {
 	oneway void onConnected();
 	oneway void onDisConnected();
     oneway void onConnectionError();
+    oneway void onStoppedRecording();
 }

@@ -424,6 +424,16 @@ public class CameraClient implements ICameraClient {
 				}
 			}
 
+			@Override
+			public void onStoppedRecording() throws RemoteException {
+				if (DEBUG) Log.v(TAG_CAMERA, "onStoppedRecording:");
+				if (mParent != null) {
+					if (mParent.mListener != null) {
+						mParent.mListener.onStoppedRecording();
+					}
+				}
+			}
+
 //================================================================================
 			public void handleSelect(final UsbDevice device) {
 				if (DEBUG) Log.v(TAG_CAMERA, "handleSelect:");
