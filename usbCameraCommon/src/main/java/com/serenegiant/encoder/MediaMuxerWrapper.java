@@ -46,7 +46,7 @@ public class MediaMuxerWrapper {
 
 	private String mOutputPath;
 	private final MediaMuxer mMediaMuxer;	// API >= 18
-	private int mEncoderCount, mStatredCount;
+	private int mEncoderCount, mStartedCount;
 	private boolean mIsStarted;
 	private MediaEncoder mVideoEncoder, mAudioEncoder;
 
@@ -63,7 +63,7 @@ public class MediaMuxerWrapper {
 			throw new RuntimeException("This app has no permission of writing external storage");
 		}
 		mMediaMuxer = new MediaMuxer(mOutputPath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
-		mEncoderCount = mStatredCount = 0;
+		mEncoderCount = mStartedCount = 0;
 		mIsStarted = false;
 	}
 
@@ -101,7 +101,7 @@ public class MediaMuxerWrapper {
 //**********************************************************************
 //**********************************************************************
 	/**
-	 * assign encoder to this calss. this is called from encoder.
+	 * assign encoder to this class. this is called from encoder.
 	 * @param encoder instance of MediaVideoEncoder or MediaAudioEncoder
 	 */
 	/*package*/ void addEncoder(final MediaEncoder encoder) {
@@ -132,8 +132,8 @@ public class MediaMuxerWrapper {
 	 */
 	/*package*/ synchronized boolean start() {
 		if (DEBUG) Log.v(TAG,  "start:");
-		mStatredCount++;
-		if ((mEncoderCount > 0) && (mStatredCount == mEncoderCount)) {
+		mStartedCount++;
+		if ((mEncoderCount > 0) && (mStartedCount == mEncoderCount)) {
 			mMediaMuxer.start();
 			mIsStarted = true;
 			notifyAll();
@@ -146,9 +146,9 @@ public class MediaMuxerWrapper {
 	 * request stop recording from encoder when encoder received EOS
 	*/
 	/*package*/ synchronized void stop() {
-		if (DEBUG) Log.v(TAG,  "stop:mStatredCount=" + mStatredCount);
-		mStatredCount--;
-		if ((mEncoderCount > 0) && (mStatredCount <= 0)) {
+		if (DEBUG) Log.v(TAG,  "stop:mStartedCount=" + mStartedCount);
+		mStartedCount--;
+		if ((mEncoderCount > 0) && (mStartedCount <= 0)) {
 			try {
 				mMediaMuxer.stop();
 				mMediaMuxer.release();
@@ -180,7 +180,7 @@ public class MediaMuxerWrapper {
 	 * @param bufferInfo
 	 */
 	/*package*/ synchronized void writeSampleData(final int trackIndex, final ByteBuffer byteBuf, final MediaCodec.BufferInfo bufferInfo) {
-		if (mStatredCount > 0)
+		if (mStartedCount > 0)
 			mMediaMuxer.writeSampleData(trackIndex, byteBuf, bufferInfo);
 	}
 

@@ -363,6 +363,16 @@ public class UVCService extends BaseService {
 		}
 
 		@Override
+		public void setCompressionQuality(final int serviceId, final int quality) {
+			if (DEBUG) Log.d(TAG, "setCompressionQuality:" + quality);
+			final CameraServer server = getCameraServer(serviceId);
+			if (server == null) {
+				throw new IllegalArgumentException("setCompressionQuality:invalid serviceId");
+			}
+			server.setCompressionQuality(quality);
+		}
+
+		@Override
 		public void connect(final int serviceId) throws RemoteException {
 			if (DEBUG) Log.d(TAG, "mBasicBinder#connect:");
 			final CameraServer server = getCameraServer(serviceId);

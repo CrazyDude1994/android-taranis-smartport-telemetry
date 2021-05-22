@@ -119,7 +119,13 @@ public class CameraClient implements ICameraClient {
 		final CameraHandler handler = mWeakHandler.get();
 		handler.sendMessage(handler.obtainMessage(MSG_RESIZE, width, height));
 	}
-	
+
+	public void setCompressionQuality(int quality) {
+		if (DEBUG) Log.v(TAG, String.format("setCompressionQuality(%d)", quality));
+		final CameraHandler handler = mWeakHandler.get();
+		handler.sendMessage(handler.obtainMessage(MSG_COMPRESSION_QUALITY, quality, 0));
+	}
+
 	@Override
 	public void connect() {
 		if (DEBUG) Log.v(TAG, "connect:");
@@ -269,6 +275,7 @@ public class CameraClient implements ICameraClient {
 	private static final int MSG_STOP_RECORDING = 7;
 	private static final int MSG_CAPTURE_STILL = 8;
 	private static final int MSG_RESIZE = 9;
+	private static final int MSG_COMPRESSION_QUALITY = 10;
 	private static final int MSG_RELEASE = 99;
 
 	private static final class CameraHandler extends Handler {
@@ -338,6 +345,9 @@ public class CameraClient implements ICameraClient {
 				break;
 			case MSG_RESIZE:
 				mCameraTask.handleResize(msg.arg1, msg.arg2);
+				break;
+			case MSG_COMPRESSION_QUALITY:
+				mCameraTask.handleSetCompressionQuality(msg.arg1);
 				break;
 			case MSG_RELEASE:
 				mCameraTask.handleRelease();
@@ -563,6 +573,18 @@ public class CameraClient implements ICameraClient {
 					if (DEBUG) Log.e(TAG_CAMERA, "handleResize:", e);
 				}
 			}
+
+			public void handleSetCompressionQuality(final int quality) {
+				if (DEBUG) Log.v(TAG, String.format("handleSetCompressionQuality(%d)", quality));
+				final IUVCService service = mParent.getService();
+				if (service != null && mServiceId!=0)
+					try {
+						service.setCompressionQuality(mServiceId, quality);
+					} catch (final RemoteException e) {
+						if (DEBUG) Log.e(TAG_CAMERA, "handleSetCompressionQuality:", e);
+					}
+			}
+
 		}
 	}
 

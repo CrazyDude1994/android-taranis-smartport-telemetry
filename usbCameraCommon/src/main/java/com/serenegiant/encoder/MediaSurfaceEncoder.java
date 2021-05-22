@@ -40,15 +40,28 @@ public class MediaSurfaceEncoder extends MediaEncoder implements IVideoEncoder {
 	// parameters for recording
 	private final int mWidth, mHeight;
     private static final int FRAME_RATE = 15;
-    private static final float BPP = 0.50f;
+	//private static final float BPP = 0.5f;   //0.5 1.25 2 for 15fps   0.25, 0.62, 1 for 30 fps		original = 0.50
+	private float mBPP;
 
     private Surface mSurface;
 
-	public MediaSurfaceEncoder(final MediaMuxerWrapper muxer, final int width, final int height, final MediaEncoderListener listener) {
+	public MediaSurfaceEncoder(final MediaMuxerWrapper muxer, final int width, final int height, int quality, final MediaEncoderListener listener) {
 		super(muxer, listener);
 		if (DEBUG) Log.i(TAG, "MediaVideoEncoder: ");
 		mWidth = width;
 		mHeight = height;
+		setCompressionQuality(quality);
+	}
+
+	public void setCompressionQuality(int quality)
+	{
+		if (DEBUG) Log.i(TAG, "MediaVideoEncoder: " + quality);
+		if ( quality == 1 ) {
+			mBPP = 1.25f;
+		}
+		else{
+			mBPP = 0.50f;
+		}
 	}
 
 	/**
@@ -105,7 +118,7 @@ public class MediaSurfaceEncoder extends MediaEncoder implements IVideoEncoder {
 	}
 
 	private int calcBitRate() {
-		final int bitrate = (int)(BPP * FRAME_RATE * mWidth * mHeight);
+		final int bitrate = (int)(mBPP * FRAME_RATE * mWidth * mHeight);
 		Log.i(TAG, String.format("bitrate=%5.2f[Mbps]", bitrate / 1024f / 1024f));
 		return bitrate;
 	}

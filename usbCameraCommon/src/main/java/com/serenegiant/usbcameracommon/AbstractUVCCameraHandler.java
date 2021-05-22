@@ -555,7 +555,7 @@ abstract class AbstractUVCCameraHandler extends Handler {
 					break;
 				// case 0:	// for video capturing using MediaSurfaceEncoder
 				default:
-					new MediaSurfaceEncoder(muxer, getWidth(), getHeight(), mMediaEncoderListener);
+					new MediaSurfaceEncoder(muxer, getWidth(), getHeight(), 0, mMediaEncoderListener);
 					break;
 				}
 				if (true) {

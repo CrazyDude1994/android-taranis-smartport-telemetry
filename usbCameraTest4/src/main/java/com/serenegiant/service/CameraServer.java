@@ -63,6 +63,8 @@ public final class CameraServer extends Handler {
 
 	private static final int DEFAULT_WIDTH = 640;
 	private static final int DEFAULT_HEIGHT = 480;
+
+	private static int compressionQuality = 0;
 	
 	private int mFrameWidth = DEFAULT_WIDTH, mFrameHeight = DEFAULT_HEIGHT;
 	
@@ -182,7 +184,21 @@ public final class CameraServer extends Handler {
 			}
 		}
 	}
-	
+
+	public void setCompressionQuality(final int quality) {
+		if (DEBUG) Log.d(TAG, String.format("setCompressionQuality(%d)", quality));
+		compressionQuality = quality;
+
+		final CameraThread thread = mWeakThread.get();
+		if ((thread != null) && (thread.mVideoEncoder != null)) {
+			try {
+				thread.mVideoEncoder.setCompressionQuality(compressionQuality);
+			} catch (final Exception e) {
+				//
+			}
+		}
+	}
+
 	public void connect() {
 		if (DEBUG) Log.d(TAG, "connect:");
 		final CameraThread thread = mWeakThread.get();
@@ -578,7 +594,7 @@ public final class CameraServer extends Handler {
 				if ((mUVCCamera == null) || (mMuxer != null)) return;
 				mMuxer = new MediaMuxerWrapper(".mp4");	// if you record audio only, ".m4a" is also OK.
 //				new MediaSurfaceEncoder(mFrameWidth, mFrameHeight, mMuxer, mMediaEncoderListener);
-				new MediaSurfaceEncoder(mMuxer, mFrameWidth, mFrameHeight, mMediaEncoderListener);
+				new MediaSurfaceEncoder(mMuxer, mFrameWidth, mFrameHeight, compressionQuality, mMediaEncoderListener );
 				if (true) {
 					// for audio capturing
 					new MediaAudioEncoder(mMuxer, mMediaEncoderListener);

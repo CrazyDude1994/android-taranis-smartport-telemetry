@@ -73,7 +73,7 @@ public class CameraFragment extends BaseFragment {
 
 	private Surface addedSurface = null;
 
-	private boolean  attachWasSkipped = false;
+	private boolean attachWasSkipped = false;
 
 	private boolean cameraPermissiondialogShownOnce = false;
 
@@ -81,6 +81,8 @@ public class CameraFragment extends BaseFragment {
 	private HashSet<String> badDevices = new HashSet<String>();
 
 	private boolean buttonEnabled = false;
+
+	private int mCompressionQuality = 0;
 
 	public CameraFragment() {
 		if (DEBUG) Log.v(TAG, "Constructor:");
@@ -111,14 +113,14 @@ public class CameraFragment extends BaseFragment {
 		final View rootView = inflater.inflate(R.layout.fragment_main, container, false);
 		View view = rootView.findViewById(R.id.start_button);
 		view.setOnClickListener(mOnClickListener);
-		view =rootView.findViewById(R.id.stop_button);
+		view = rootView.findViewById(R.id.stop_button);
 		view.setOnClickListener(mOnClickListener);
-		mRecordButton = (ImageButton)rootView.findViewById(R.id.record_button);
+		mRecordButton = (ImageButton) rootView.findViewById(R.id.record_button);
 		mRecordButton.setOnClickListener(mOnClickListener);
 		mRecordButton.setEnabled(false);
-		mCameraView = (CameraViewInterface)rootView.findViewById(R.id.camera_view);
-		mCameraView.setAspectRatio(DEFAULT_WIDTH / (float)DEFAULT_HEIGHT);
-		mCameraView.setCallback( mCallback );
+		mCameraView = (CameraViewInterface) rootView.findViewById(R.id.camera_view);
+		mCameraView.setAspectRatio(DEFAULT_WIDTH / (float) DEFAULT_HEIGHT);
+		mCameraView.setCallback(mCallback);
 		mRecordingTime = (TextView) rootView.findViewById(R.id.recording_time);
 		mRecordingTime.setText("");
 		return rootView;
@@ -164,7 +166,7 @@ public class CameraFragment extends BaseFragment {
 
 		if (mCameraClient != null) {
 			mCameraClient.disconnectListener();
-			if ( !mCameraClient.isRecording() ) mCameraClient.disconnect();
+			if (!mCameraClient.isRecording()) mCameraClient.disconnect();
 			mCameraClient.release();
 			mCameraClient = null;
 		}
@@ -257,7 +259,7 @@ public class CameraFragment extends BaseFragment {
 		if (PermissionCheck.hasCamera(getActivity())) return false;
 
 		//already asked for permission? allow connection to camera only if permission has been granted then.
-		if ( this.cameraPermissiondialogShownOnce) {
+		if (this.cameraPermissiondialogShownOnce) {
 			return !PermissionCheck.hasCamera(getActivity());
 		}
 		this.cameraPermissiondialogShownOnce = true;
@@ -275,8 +277,7 @@ public class CameraFragment extends BaseFragment {
 		openUVCCamera(0);
 	}
 
-	private String getDeviceKey( UsbDevice d)
-	{
+	private String getDeviceKey(UsbDevice d) {
 		return d.getVendorId() + "/" + d.getProductId();
 	}
 
@@ -289,16 +290,19 @@ public class CameraFragment extends BaseFragment {
 		if (!mUSBMonitor.isRegistered()) return;
 		final List<UsbDevice> list = mUSBMonitor.getDeviceList();
 
-		while ( (index+1) < list.size() && badDevices.contains( getDeviceKey( list.get(index)))) index++;
+		while ((index + 1) < list.size() && badDevices.contains(getDeviceKey(list.get(index))))
+			index++;
 
 		if (list.size() > index) {
-			this.conDevice = getDeviceKey(list.get(index) );
-			if (DEBUG) Log.v(TAG, "openUVCCamera:productId=" + list.get(index).getProductId() + ", vendorId=" + list.get(index).getVendorId() );
+			this.conDevice = getDeviceKey(list.get(index));
+			if (DEBUG)
+				Log.v(TAG, "openUVCCamera:productId=" + list.get(index).getProductId() + ", vendorId=" + list.get(index).getVendorId());
 			enableButtons(false);
 			if (mCameraClient == null)
 				mCameraClient = new CameraClient(getActivity().getApplicationContext(), mCameraListener);
 			mCameraClient.select(list.get(index));
 			mCameraClient.resize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
+			mCameraClient.setCompressionQuality(mCompressionQuality);
 			mCameraClient.connect();
 		}
 	}
@@ -364,7 +368,7 @@ public class CameraFragment extends BaseFragment {
 			} else if (id == R.id.stop_button) {
 				if (DEBUG) Log.v(TAG, "onClick:stop");
 				// stop service
-				doReleaseCameraClient( false );
+				doReleaseCameraClient(false);
 				enableButtons(false);
 				updateButtonColor();
 				updateRecordingTime();
@@ -421,44 +425,43 @@ public class CameraFragment extends BaseFragment {
 	}
 
 	private final void updateRecordingTime() {
-		if ( mCameraClient == null ) return;
+		if (mCameraClient == null) return;
 		Activity activity = getActivity();
-		if ( (activity == null )) return;
+		if ((activity == null)) return;
 		getActivity().runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
-				if ( mCameraClient == null ) {
-					mRecordingTime.setText( "" );
+				if (mCameraClient == null) {
+					mRecordingTime.setText("");
 					return;
 				}
 				if (mCameraClient.isRecording()) {
 					int s = mCameraClient.getRecordingLengthSeconds();
-					mRecordingTime.setText( String.format("%02d", s / 60 ) +":" + String.format("%02d", s % 60 ));
-				}
-				else {
-					mRecordingTime.setText( "" );
+					mRecordingTime.setText(String.format("%02d", s / 60) + ":" + String.format("%02d", s % 60));
+				} else {
+					mRecordingTime.setText("");
 				}
 			}
 		});
 	}
 
-	public final void doReleaseCameraClient( boolean disconnectListener ) {
+	public final void doReleaseCameraClient(boolean disconnectListener) {
 		if (mCameraClient != null) {
-			if ( disconnectListener ) mCameraClient.disconnectListener();
+			if (disconnectListener) mCameraClient.disconnectListener();
 			mCameraClient.disconnect();
 			mCameraClient.release();
 			mCameraClient = null;
 		}
 	}
 
-	private final CameraViewInterface.Callback	mCallback = new CameraViewInterface.Callback() {
+	private final CameraViewInterface.Callback mCallback = new CameraViewInterface.Callback() {
 		@Override
 		public void onSurfaceCreated(final CameraViewInterface view, final Surface surface) {
 		}
 
 		@Override
 		public void onSurfaceChanged(final CameraViewInterface view, final Surface surface, final int width, final int height) {
-			if ( mCameraClient != null ) {
+			if (mCameraClient != null) {
 				if (addedSurface != null)
 					mCameraClient.removeSurface(addedSurface);
 				addedSurface = surface;
@@ -471,11 +474,10 @@ public class CameraFragment extends BaseFragment {
 		}
 	};
 
-	public void onContainerVisibilityChange( Boolean visible )
-	{
+	public void onContainerVisibilityChange(Boolean visible) {
 		//fragment was created is collapsed state?
 		//then try to connect after uncollapsing
-		if ( visible && attachWasSkipped ) {
+		if (visible && attachWasSkipped) {
 			new android.os.Handler().postDelayed(
 					new Runnable() {
 						public void run() {
@@ -489,39 +491,46 @@ public class CameraFragment extends BaseFragment {
 	}
 
 	private void showDeviceAttachedToast() {
-		this.runOnUiThread( new Runnable() {
+		this.runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
 				Toast.makeText(getActivity().getApplicationContext(), "USB device attached", Toast.LENGTH_SHORT).show();
 			}
-		},0);
+		}, 0);
 	}
 
 	private void showCameraConnectedToast() {
-		this.runOnUiThread( new Runnable() {
+		this.runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
 				Toast.makeText(getActivity().getApplicationContext(), "Camera connected", Toast.LENGTH_SHORT).show();
 			}
-		},0);
+		}, 0);
 	}
 
 	private void showDeviceDetachedToast() {
-		this.runOnUiThread( new Runnable() {
+		this.runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
 				Toast.makeText(getActivity().getApplicationContext(), "USB device removed", Toast.LENGTH_SHORT).show();
 			}
-		},0);
+		}, 0);
 	}
 
 	private void showConnectionErrorToast() {
-		this.runOnUiThread( new Runnable() {
+		this.runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
 				Toast.makeText(getActivity().getApplicationContext(), "Error connecting to USB camera", Toast.LENGTH_SHORT).show();
 			}
-		},0);
+		}, 0);
+	}
+
+	public void setCompressionQuality(int quality) {
+		this.mCompressionQuality = quality;
+		if ( !(mCameraClient == null )){
+			mCameraClient.setCompressionQuality(this.mCompressionQuality);
+		}
 	}
 
 

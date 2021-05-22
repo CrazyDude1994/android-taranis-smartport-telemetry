@@ -261,6 +261,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         updateWindowFullscreenDecoration()
 
         updateScreenOrientation()
+        updateCompressionQuality()
 
         this.registerReceiver(this.batInfoReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED));
     }
@@ -762,6 +763,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         map?.onResume()
         updateWindowFullscreenDecoration()
         updateScreenOrientation()
+        updateCompressionQuality()
     }
 
     override fun onPause() {
@@ -1371,6 +1373,11 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             "Landscape" -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
             else -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         }
+    }
+
+    protected fun updateCompressionQuality() {
+        val compressionQuality : String = preferenceManager.getCompressionQuality()
+        this.mCameraFragment.setCompressionQuality( if (compressionQuality == "High" ) 1  else 0 );
     }
 
 }

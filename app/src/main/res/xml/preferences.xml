@@ -23,8 +23,16 @@
             android:summary="%s"
             android:entries="@array/ScreenOrientationLock"
             android:entryValues="@array/ScreenOrientationLock"
-            android:defaultValue="No"
+            android:defaultValue="No lock"
             android:key="screen_orientation_lock"/>
+
+    <ListPreference
+            android:title="Video compression quality"
+            android:summary="%s"
+            android:entries="@array/CompressionQuality"
+            android:entryValues="@array/CompressionQuality"
+            android:defaultValue="Normal"
+            android:key="compression_quality"/>
 
     <PreferenceCategory android:title="Heading line">
 

@@ -49,4 +49,5 @@ interface IUVCService {
 	void startRecording(int serviceId);
 	void stopRecording(int serviceId);
 	void captureStillImage(int serviceId, String path);
+	void setCompressionQuality(int serviceId, int quality);
 }

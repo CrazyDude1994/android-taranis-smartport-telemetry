@@ -41,4 +41,5 @@ public interface ICameraClient {
 	public boolean isRecording();
 	public void captureStill(String path);
 	public int getRecordingLengthSeconds(); //-1 if not recording, otherwise lenth orr current recording
+	public void setCompressionQuality( int quality);
 }

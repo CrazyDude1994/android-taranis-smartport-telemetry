@@ -150,7 +150,11 @@ class PreferenceManager(context: Context) {
     }
 
     fun getScreenOrientationLock() : String {
-        return sharedPreferences.getString("screen_orientation_lock", "No") ?: "No"
+        return sharedPreferences.getString("screen_orientation_lock", "No lock") ?: "No lock"
+    }
+
+    fun getCompressionQuality() : String {
+        return sharedPreferences.getString("compression_quality", "Normal") ?: "Normal"
     }
 
 }
