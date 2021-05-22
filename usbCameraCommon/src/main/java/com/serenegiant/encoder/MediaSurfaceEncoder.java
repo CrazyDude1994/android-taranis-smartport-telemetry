@@ -50,6 +50,7 @@ public class MediaSurfaceEncoder extends MediaEncoder implements IVideoEncoder {
 		if (DEBUG) Log.i(TAG, "MediaVideoEncoder: ");
 		mWidth = width;
 		mHeight = height;
+		mIsSurfaceEncoder = true;
 		setCompressionQuality(quality);
 	}
 
