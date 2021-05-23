@@ -435,11 +435,11 @@ public class CameraClient implements ICameraClient {
 			}
 
 			@Override
-			public void onStoppedRecording() throws RemoteException {
+			public void onStoppedRecording( int reason) throws RemoteException {
 				if (DEBUG) Log.v(TAG_CAMERA, "onStoppedRecording:");
 				if (mParent != null) {
 					if (mParent.mListener != null) {
-						mParent.mListener.onStoppedRecording();
+						mParent.mListener.onStoppedRecording( reason );
 					}
 				}
 			}

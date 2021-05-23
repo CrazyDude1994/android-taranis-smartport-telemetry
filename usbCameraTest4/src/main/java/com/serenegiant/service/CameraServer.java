@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.util.Date;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import android.content.Context;
 import android.content.Intent;
@@ -81,14 +83,15 @@ public final class CameraServer extends Handler {
 
 	private Date mRecordingStartTime = new Date();
 
+	private Timer mTimer = new Timer();
+
 	private final BroadcastReceiver mShutdownReceiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(final Context context, final Intent intent) {
 			if (DEBUG) Log.d(TAG, "SHUTDOWN");
 			if ( isRecording())
 			{
-				stopRecording();
-				//can still be corrupted because mediaMuxer is encoding some time after shutdown:(
+				stopRecording(2);
 			}
 		}
 	};
@@ -101,7 +104,7 @@ public final class CameraServer extends Handler {
 				if (DEBUG) Log.d(TAG, "BATTERY LOW");
 				if ( isRecording())
 				{
-					stopRecording();
+					stopRecording(3);
 				}
 			}
 		}
@@ -125,6 +128,19 @@ public final class CameraServer extends Handler {
 
 		final IntentFilter filter2 = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
 		mWeakThread.get().mWeakContext.get().getApplicationContext().registerReceiver(mBatteryInfoReceiver, filter2);
+
+		mTimer.scheduleAtFixedRate(new TimerTask(){
+			@Override
+			public void run(){
+				if ( isRecording() ) {
+					if ( MediaMuxerWrapper.isLowStorageSpace())
+					{
+						stopRecording(4);
+					}
+				}
+			}
+		},0,5000);
+
 	}
 
 	@Override
@@ -150,6 +166,8 @@ public final class CameraServer extends Handler {
 
 	public void release() {
 		if (DEBUG) Log.d(TAG, "release:");
+		mTimer.cancel();
+		mTimer.purge();
 		disconnect();
 		mCallbacks.kill();
 		if (mRendererHolder != null) {
@@ -221,7 +239,7 @@ public final class CameraServer extends Handler {
 
 	public void disconnect() {
 		if (DEBUG) Log.d(TAG, "disconnect:");
-		stopRecording();
+		stopRecording(1);
 		final CameraThread thread = mWeakThread.get();
 		if (thread == null) return;
 		synchronized (thread.mSync) {
@@ -271,9 +289,9 @@ public final class CameraServer extends Handler {
 		}
 	}
 
-	public void stopRecording() {
+	public void stopRecording( int reason ) {
 		if (isRecording())
-			sendEmptyMessage(MSG_CAPTURE_STOP);
+			sendMessage(obtainMessage(MSG_CAPTURE_STOP, reason, 0));
 	}
 
 	public void captureStill(final String path) {
@@ -332,13 +350,13 @@ public final class CameraServer extends Handler {
 		mCallbacks.finishBroadcast();
 	}
 
-	private void processOnStoppedRecording() {
+	private void processOnStoppedRecording( int reason ) {
 		if (DEBUG) Log.d(TAG, "processOnStoppedRecording:");
 		final int n = mCallbacks.beginBroadcast();
 		for (int i = 0; i < n; i++) {
 			if (((CallbackCookie)mCallbacks.getBroadcastCookie(i)).isConnected)
 				try {
-					mCallbacks.getBroadcastItem(i).onStoppedRecording();
+					mCallbacks.getBroadcastItem(i).onStoppedRecording( reason );
 				} catch (final Exception e) {
 					Log.e(TAG, "failed to call IOverlayCallback#onStoppedRecording");
 				}
@@ -381,7 +399,7 @@ public final class CameraServer extends Handler {
 			thread.handleStartRecording();
 			break;
 		case MSG_CAPTURE_STOP:
-			thread.handleStopRecording();
+			thread.handleStopRecording( msg.arg1);
 			break;
 		case MSG_MEDIA_UPDATE:
 			thread.handleUpdateMedia((String)msg.obj);
@@ -506,7 +524,7 @@ public final class CameraServer extends Handler {
 
 		public void handleClose() {
 			if (DEBUG) Log.d(TAG_THREAD, "handleClose:");
-			handleStopRecording();
+			handleStopRecording( 1 );
 			boolean closed = false;
 			synchronized (mSync) {
 				if (mUVCCamera != null) {
@@ -606,7 +624,7 @@ public final class CameraServer extends Handler {
 			}
 		}
 
-		public void handleStopRecording() {
+		public void handleStopRecording( int reason ) {
 			if (DEBUG) Log.d(TAG_THREAD, "handleStopRecording:mMuxer=" + mMuxer);
 			if (mMuxer != null) {
 				synchronized (mSync) {
@@ -618,7 +636,7 @@ public final class CameraServer extends Handler {
 				mMuxer = null;
 				// you should not wait here
 
-				mHandler.processOnStoppedRecording();
+				mHandler.processOnStoppedRecording( reason );
 			}
 		}
 

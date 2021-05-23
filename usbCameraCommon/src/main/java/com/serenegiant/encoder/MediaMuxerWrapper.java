@@ -211,4 +211,17 @@ public class MediaMuxerWrapper {
     	return mDateTimeFormat.format(now.getTime());
     }
 
+	public static boolean isLowStorageSpace() {
+		try {
+			File externalStorageDir = Environment.getExternalStorageDirectory();
+			long free = externalStorageDir.getFreeSpace() / 1024 / 1024;
+			Log.d(TAG, "FreeSpace=" + free);
+			return free < 200;
+		} catch (final NullPointerException e) {
+			//ignore
+		}
+
+		return false;
+	}
+
 }

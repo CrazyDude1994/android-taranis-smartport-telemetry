@@ -29,5 +29,5 @@ public interface ICameraClientCallback {
 	public void onDisconnect();
 	public void onRecordingTimeChanged(boolean isRecording, int recordingTimeSeconds);
 	public void onConnectionError();
-	public void onStoppedRecording();  //recording stopped due to shutdown or low battery, todo: low space on explicit stop
+	public void onStoppedRecording(int reason);
 }

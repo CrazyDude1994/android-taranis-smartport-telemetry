@@ -444,7 +444,7 @@ public class UVCService extends BaseService {
 			if (DEBUG) Log.d(TAG, "mBasicBinder#stopRecording:");
 			final CameraServer server = getCameraServer(serviceId);
 			if ((server != null) && server.isRecording()) {
-				server.stopRecording();
+				server.stopRecording(0);
 			}
 		}
 

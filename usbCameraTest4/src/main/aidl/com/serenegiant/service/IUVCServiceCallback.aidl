@@ -27,5 +27,5 @@ interface IUVCServiceCallback {
 	oneway void onConnected();
 	oneway void onDisConnected();
     oneway void onConnectionError();
-    oneway void onStoppedRecording();
+    oneway void onStoppedRecording( int reason); // 0 - explicit, 1 - release, 2 - shutdown, 3 -low battery, 4 - low space
 }

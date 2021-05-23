@@ -342,9 +342,18 @@ public class CameraFragment extends BaseFragment {
 			showConnectionErrorToast();
 		}
 
-		public void onStoppedRecording() {
+		public void onStoppedRecording( int reason ) {
 			updateButtonColor();
 			updateRecordingTime();
+
+			if ( reason == 3 )
+			{
+				showRecordingStoppedLowBatteryToast();
+			}
+			if ( reason == 4 )
+			{
+				showRecordingStoppedLowStorageSpaceToast();
+			}
 		}
 
 
@@ -522,6 +531,24 @@ public class CameraFragment extends BaseFragment {
 			@Override
 			public void run() {
 				Toast.makeText(getActivity().getApplicationContext(), "Error connecting to USB camera", Toast.LENGTH_SHORT).show();
+			}
+		}, 0);
+	}
+
+	private void showRecordingStoppedLowBatteryToast() {
+		this.runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				Toast.makeText(getActivity().getApplicationContext(), "Low battery - recording stopped", Toast.LENGTH_SHORT).show();
+			}
+		}, 0);
+	}
+
+	private void showRecordingStoppedLowStorageSpaceToast() {
+		this.runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				Toast.makeText(getActivity().getApplicationContext(), "Low free storage space - recording stopped", Toast.LENGTH_SHORT).show();
 			}
 		}, 0);
 	}
