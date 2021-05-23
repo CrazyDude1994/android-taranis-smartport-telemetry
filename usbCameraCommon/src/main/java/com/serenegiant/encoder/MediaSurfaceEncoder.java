@@ -58,7 +58,8 @@ public class MediaSurfaceEncoder extends MediaEncoder implements IVideoEncoder {
 	{
 		if (DEBUG) Log.i(TAG, "MediaVideoEncoder: " + quality);
 		if ( quality == 1 ) {
-			mBPP = 1.25f;
+			//mBPP = 1.25f;
+			mBPP = 2f;
 		}
 		else{
 			mBPP = 0.50f;
