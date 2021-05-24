@@ -27,6 +27,21 @@
                 android:layout_toEndOf="@id/connect_button">
 
             <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/rssi"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="6dp"
+                    android:drawableStart="@drawable/ic_rssi"
+                    android:drawablePadding="4dp"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_horizontal"
+                    android:text="-"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="00"
+                    app:iconWidthDp="24"/>
+
+            <crazydude.com.telemetry.ui.TextViewStableSize
                     android:id="@+id/satellites"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"

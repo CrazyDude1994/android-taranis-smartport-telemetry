@@ -48,6 +48,7 @@ import crazydude.com.telemetry.protocol.pollers.LogPlayer
 import crazydude.com.telemetry.service.DataService
 import uk.co.deanwild.materialshowcaseview.MaterialShowcaseView
 import java.io.File
+import java.lang.Exception
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.math.roundToInt
@@ -74,6 +75,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     private lateinit var replayButton: ImageView
     private lateinit var seekBar: SeekBar
     private lateinit var fuel: TextView
+    private lateinit var rssi: TextView
     private lateinit var satellites: TextView
     private lateinit var current: TextView
     private lateinit var voltage: TextView
@@ -151,6 +153,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
 
         rootLayout = findViewById(R.id.rootLayout)
         fuel = findViewById(R.id.fuel)
+        rssi = findViewById(R.id.rssi)
         satellites = findViewById(R.id.satellites)
         topLayout = findViewById(R.id.top_layout)
         bottomLayout = findViewById(R.id.bottom_layout)
@@ -189,7 +192,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             Pair(PreferenceManager.sensors.elementAt(5).name, distance),
             Pair(PreferenceManager.sensors.elementAt(6).name, altitude),
             Pair(PreferenceManager.sensors.elementAt(7).name, phoneBattery),
-            Pair(PreferenceManager.sensors.elementAt(8).name, rc_widget)
+            Pair(PreferenceManager.sensors.elementAt(8).name, rc_widget),
+            Pair(PreferenceManager.sensors.elementAt(9).name, rssi)
         )
 
         firebaseAnalytics = FirebaseAnalytics.getInstance(this)
@@ -846,6 +850,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
 
     private fun resetUI() {
         satellites.text = "0"
+        rssi.text = "-"
         voltage.text = "-"
         phoneBattery.text = "-"
         current.text = "-"
@@ -1040,7 +1045,9 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     }
 
     override fun onRSSIData(rssi: Int) {
-
+        runOnUiThread {
+            this.rssi.text = if (rssi == -1) "-" else rssi.toString()
+        }
     }
 
     private fun checkSendDataDialogShown() {
@@ -1368,10 +1375,14 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
 
     protected fun updateScreenOrientation() {
         val screenRotation : String = preferenceManager.getScreenOrientationLock()
-        requestedOrientation = when (screenRotation) {
-            "Portrait" -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-            "Landscape" -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-            else -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        try {
+            requestedOrientation = when (screenRotation) {
+                "Portrait" -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                "Landscape" -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                else -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            }
+        }
+        catch( e : Exception){
         }
     }
 

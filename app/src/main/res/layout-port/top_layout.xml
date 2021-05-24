@@ -80,6 +80,23 @@
                 android:layout_height="wrap_content">
 
             <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/rssi"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="6dp"
+                    android:layout_marginRight="4dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="2dp"
+                    android:drawableTop="@drawable/ic_rssi"
+                    android:drawablePadding="0dp"
+                    android:gravity="center_horizontal"
+                    android:text="-"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="00"/>
+
+            <crazydude.com.telemetry.ui.TextViewStableSize
                     android:id="@+id/satellites"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
