@@ -102,7 +102,7 @@ abstract class DataDecoder(protected val listener: Listener) {
         fun onCellVoltageData(voltage: Float)
         fun onCurrentData(current: Float)
         fun onHeadingData(heading: Float)
-        fun onRSSIData(rssi: Int)
+        fun onRSSIData(rssi: Int) //-1 - unknown/invalid, or device-dependent value
         fun onDisconnected()
         fun onGPSState(satellites: Int, gpsFix: Boolean)
         fun onVSpeedData(vspeed: Float)
