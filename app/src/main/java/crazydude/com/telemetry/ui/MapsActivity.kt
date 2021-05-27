@@ -851,6 +851,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     private fun resetUI() {
         satellites.text = "0"
         rssi.text = "-"
+        this.setRSSIIcon( 100 )
         voltage.text = "-"
         phoneBattery.text = "-"
         current.text = "-"
@@ -1044,9 +1045,37 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         return map?.addPolyline(3f, preferenceManager.getHeadLineColor(), lastGPS, lastGPS)
     }
 
+    private fun setRSSIIcon( rssi : Int )  {
+        when (rssi) {
+            in 81..100 -> R.drawable.ic_rssi_5
+            in 61..80 -> R.drawable.ic_rssi_4
+            in 41..69 -> R.drawable.ic_rssi_3
+            in 21..40 -> R.drawable.ic_rssi_2
+            in 0..20 -> R.drawable.ic_rssi_1
+            else -> R.drawable.ic_rssi_5
+        }.let {
+            if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                this.rssi.setCompoundDrawablesWithIntrinsicBounds(
+                    ContextCompat.getDrawable(
+                        this,
+                        it
+                    ), null, null, null
+                )
+            } else {
+                this.rssi.setCompoundDrawablesWithIntrinsicBounds(
+                    null,
+                    ContextCompat.getDrawable(this, it),
+                    null,
+                    null
+                )
+            }
+        }
+    }
+
     override fun onRSSIData(rssi: Int) {
         runOnUiThread {
             this.rssi.text = if (rssi == -1) "-" else rssi.toString()
+            this.setRSSIIcon(rssi);
         }
     }
 
