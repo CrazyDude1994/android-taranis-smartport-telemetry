@@ -92,7 +92,7 @@
 
         <SwitchPreference
                 android:title="Show artificial horizon view"
-                android:summary="Shows attitude. Works only on Inav 2.0.+ You need to set frsky_pitch_roll = ON CLI in order it to work"
+                android:summary="Shows attitude. Please set frsky_pitch_roll = ON in CLI for Inav 2.0.+."
                 android:defaultValue="true"
                 android:key="show_artificial_horizon"/>
 
