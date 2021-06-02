@@ -46,6 +46,7 @@ class MAVLink2Protocol : Protocol {
         private const val MAV_PACKET_GPS_RAW_ID = 24
         private const val MAV_PACKET_RADIO_STATUS_ID = 109
         private const val MAV_PACKET_GPS_ORIGIN_ID = 49
+        private const val MAV_PACKET_HOME_POSITION_ID = 242
 
         private const val MAV_PACKET_STATUS_LENGTH = 31
         private const val MAV_PACKET_HEARTBEAT_LENGTH = 9
@@ -54,6 +55,7 @@ class MAVLink2Protocol : Protocol {
         private const val MAV_PACKET_VFR_HUD_LENGTH = 20
         private const val MAV_PACKET_GPS_RAW_LENGTH = 30
         private const val MAV_PACKET_RADIO_STATUS_LENGTH = 9
+        private const val  MAV_PACKET_HOME_POSITION_LENGTH = 52
     }
 
     override fun process(data: Int) {
@@ -248,6 +250,12 @@ class MAVLink2Protocol : Protocol {
 
             dataDecoder.decodeData(Protocol.Companion.TelemetryData(GPS_ORIGIN_LATITUDE, lat))
             dataDecoder.decodeData(Protocol.Companion.TelemetryData(GPS_ORIGIN_LONGITUDE, lon))
+        } else if (messageId == MAV_PACKET_HOME_POSITION_ID && packetLength == MAV_PACKET_HOME_POSITION_LENGTH) {
+            val lat = byteBuffer.int
+            val lon = byteBuffer.int
+
+            dataDecoder.decodeData(Protocol.Companion.TelemetryData(GPS_HOME_LATITUDE, lat))
+            dataDecoder.decodeData(Protocol.Companion.TelemetryData(GPS_HOME_LONGITUDE, lon))
         } else {
             unique.add(messageId)
         }
