@@ -73,6 +73,9 @@ class FrSkySportProtocol : Protocol {
         const val DATA_ID_BARO_ALT_AP_SENSOR = 0x0021 //gps altitude decimal part
         const val DATA_ID_GPS_LONG_EW_SENSOR = 0x0022 //gps East / West information
         const val DATA_ID_GPS_LAT_NS_SENSOR = 0x0023 //gps North / South information
+        const val DATA_ID_ACC_X = 0x24 //accelerometer value x
+        const val DATA_ID_ACC_Y = 0x25 //accelerometer value y
+        const val DATA_ID_ACC_Z = 0x26 //accelerometer value z
         const val DATA_ID_CURRENT_SENSOR = 0x0028 //current consumption
         const val DATA_ID_VARIO_SENSOR = 0x0030 //vspeed m/s
         const val DATA_ID_VFAS_SENSOR = 0x0039 //battery voltage
@@ -345,6 +348,21 @@ class FrSkySportProtocol : Protocol {
                     DATA_ID_GPS_LAT_NS_SENSOR -> {
                         dataDecoder.decodeData(
                             Protocol.Companion.TelemetryData(DATA_ID_GPS_LAT_NS, rawData)
+                        )
+                    }
+                    DATA_ID_ACC_X -> {
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(DATA_ID_ACC_X, rawData)
+                        )
+                    }
+                    DATA_ID_ACC_Y -> {
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(DATA_ID_ACC_Y, rawData)
+                        )
+                    }
+                    DATA_ID_ACC_Z -> {
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(DATA_ID_ACC_Z, rawData)
                         )
                     }
                     DATA_ID_CURRENT_SENSOR -> {

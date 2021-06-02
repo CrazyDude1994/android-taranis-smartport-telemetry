@@ -42,18 +42,21 @@ abstract class Protocol(val dataDecoder: DataDecoder) {
         const val DATA_ID_BARO_ALT_AP = 33
         const val DATA_ID_GPS_LONG_EW = 34
         const val DATA_ID_GPS_LAT_NS = 35
-        const val GPS_STATE_ARDU = 36
+        const val DATA_ID_ACC_X = 36
+        const val DATA_ID_ACC_Y = 37
+        const val DATA_ID_ACC_Z = 38
+        const val GPS_STATE_ARDU = 39
         //ardupilot S.PORT passthrough  Data ID's
-        const val RxBt = 35
-        const val ARDU_TEXT = 36
-        const val ARDU_ATTITUDE = 37
-        const val ARDU_VEL_YAW = 38
-        const val ARDU_AP_STATUS = 39
-        const val ARDU_GPS_STATUS = 40
-        const val ARDU_HOME =41
-        const val ARDU_BATT_2 =42
-        const val ARDU_BATT_1=43
-        const val ARDU_PARAM=44
+        const val RxBt = 40
+        const val ARDU_TEXT = 41
+        const val ARDU_ATTITUDE = 42
+        const val ARDU_VEL_YAW = 43
+        const val ARDU_AP_STATUS = 44
+        const val ARDU_GPS_STATUS = 45
+        const val ARDU_HOME = 46
+        const val ARDU_BATT_2 = 47
+        const val ARDU_BATT_1 = 48
+        const val ARDU_PARAM = 49
 
         class TelemetryData(val telemetryType: Int, val data: Int, val rawData: ByteArray? = null) {
             override fun equals(other: Any?): Boolean {
