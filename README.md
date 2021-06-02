@@ -1,3 +1,26 @@
+# Android Taranis SmartPort Telemetry / Roman Lut
+
+This is fork of CrazyDude's excellent application https://github.com/CrazyDude1994/android-taranis-smartport-telemetry
+
+This version contains support of ROTG01/ROTG02 video receivers with recording:
+
+![alt text](https://raw.githubusercontent.com/RomanLut/android-taranis-smartport-telemetry/master/doc/uvc_video_tx16s.jpg "ROTG support")
+
+While CrazyDude is still deciding whether he want to merge this into his application, I will maintain my development version here.
+Latest build can always be downloaded here:
+https://github.com/RomanLut/android-taranis-smartport-telemetry/blob/master/app-debug.apk
+
+I am contributing most bugsfixes and enchancements to Crasydude's repository. But due to significant differences in UI structure, some features are not merged:
+- UVC video support, video recording, recording quality selection
+- persistent fullscreen state
+- stable ( no jittering ) sensors display
+- better Altitude and Distance to home icons
+
+
+
+Below is original Readme.md
+
+
 # Android Taranis SmartPort Telemetry Viewer
 
 [![Donate](https://img.shields.io/badge/Donate-Patreon-green.svg)](https://www.patreon.com/android_rc_telemetry)
