@@ -77,7 +77,7 @@ class FrSkySportProtocol : Protocol {
         const val SPORT_DATA_ID_GPS_LAT_NS_SENSOR = 0x0023 //gps North / South information
         const val SPORT_DATA_ID_ACC_X = 0x0024 //accelerometer value x
         const val SPORT_DATA_ID_ACC_Y = 0x0025 //accelerometer value y
-        const val SPORT_DATA_ID_ACC_Z = 0x0025 //accelerometer value z
+        const val SPORT_DATA_ID_ACC_Z = 0x0026 //accelerometer value z
         const val SPORT_DATA_ID_ACC_X_BETAFLIGHT = 0x0700 //accelerometer value x betaflight custom
         const val SPORT_DATA_ID_ACC_Y_BETAFLIGHT = 0x0710 //accelerometer value y betaflight custom
         const val SPORT_DATA_ID_ACC_Z_BETAFLIGHT = 0x0720 //accelerometer value z betaflight custom
@@ -283,7 +283,7 @@ class FrSkySportProtocol : Protocol {
                         dataDecoder.decodeData(
                             Protocol.Companion.TelemetryData(
                                 ROLL,
-                                -rawData
+                                rawData
                             )
                         )
                     }
