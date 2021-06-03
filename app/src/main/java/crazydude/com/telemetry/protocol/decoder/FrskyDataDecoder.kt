@@ -25,6 +25,7 @@ class FrskyDataDecoder(listener: Listener) : DataDecoder(listener) {
 
     //https://github.com/resourcepool/open-tm/blob/master/RESOURCEPOOL/widgets/horizon.lua
     //Round Acc data when close to bounds
+    //In stationary state, acceleration should not be higher 1g
     private fun roundAccData(acc: Float):Float {
         if (Math.abs(acc) <= 0.02f )
                 return 0f
@@ -35,6 +36,9 @@ class FrskyDataDecoder(listener: Listener) : DataDecoder(listener) {
         else return acc
     }
 
+    //compute roll/pitch from acc data
+    //it will be innacurate due to vehicle acceleration
+    //but at least something
     private fun computeRollPitchFromAcc() {
         if ( this.gotRollPitch ) return;//preffer ROLL/PITCH sensor data
 
@@ -179,7 +183,7 @@ class FrskyDataDecoder(listener: Listener) : DataDecoder(listener) {
             Protocol.ROLL -> {
                 val value = data.data / 10f
                 listener.onRollData(value)
-                this.gotRollPitch = false;
+                this.gotRollPitch = true;
                 //Log.d(TAG, "Decoded roll $value")
             }
             Protocol.GALT -> {
@@ -190,7 +194,7 @@ class FrskyDataDecoder(listener: Listener) : DataDecoder(listener) {
             Protocol.PITCH -> {
                 val value = data.data / 10f
                 listener.onPitchData(value)
-                this.gotRollPitch = false;
+                this.gotRollPitch = true;
                 //Log.d(TAG, "Decoded pitch $value")
             }
             Protocol.ASPEED -> {
@@ -317,22 +321,43 @@ class FrskyDataDecoder(listener: Listener) : DataDecoder(listener) {
 //                Log.d(TAG, "Decoded roll $Roll, pitch $Pitch")
             }
 
-            Protocol.DATA_ID_ACC_X -> {
+            Protocol.DATA_ID_ACC_X_1000 -> {
                 val value = data.data / 1000f
                 //Log.d(TAG, "Decoded acc_x $value")
                 this.acc_x = value
                 this.computeRollPitchFromAcc()
             }
 
-            Protocol.DATA_ID_ACC_Y -> {
+            Protocol.DATA_ID_ACC_Y_1000 -> {
                 val value = data.data / 1000f
                 //Log.d(TAG, "Decoded acc_y $value")
                 this.acc_y = value
                 this.computeRollPitchFromAcc()
             }
 
-            Protocol.DATA_ID_ACC_Z -> {
-                val value = data.data / 1000f
+            Protocol.DATA_ID_ACC_Z_1000 -> {
+                val value = data.data / 100f
+                //Log.d(TAG, "Decoded acc_z $value")
+                this.acc_z = value
+                this.computeRollPitchFromAcc()
+            }
+
+            Protocol.DATA_ID_ACC_X_100 -> {
+                val value = data.data / 100f
+                //Log.d(TAG, "Decoded acc_x $value")
+                this.acc_x = value
+                this.computeRollPitchFromAcc()
+            }
+
+            Protocol.DATA_ID_ACC_Y_100 -> {
+                val value = data.data / 100f
+                //Log.d(TAG, "Decoded acc_y $value")
+                this.acc_y = value
+                this.computeRollPitchFromAcc()
+            }
+
+            Protocol.DATA_ID_ACC_Z_100 -> {
+                val value = data.data / 100f
                 //Log.d(TAG, "Decoded acc_z $value")
                 this.acc_z = value
                 this.computeRollPitchFromAcc()
