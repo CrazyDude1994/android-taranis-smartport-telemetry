@@ -15,7 +15,7 @@ class RCWidget @JvmOverloads constructor(
     private val paint: Paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private var height: Float = 0f
 
-    private var rcChannels : IntArray = IntArray(0);
+    private var rcChannels : IntArray = IntArray(0) {1500}
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val widthMode = MeasureSpec.getMode(widthMeasureSpec)
@@ -25,8 +25,10 @@ class RCWidget @JvmOverloads constructor(
         val width: Int
         val height: Int
 
+        var rcCount = if ( rcChannels.size > 8 ) rcChannels.size else 8;
+
         val desiredWidth =
-            Math.ceil(0.1 * heightSize + 0.3 * heightSize * 15 + 0.2 * heightSize).toInt();
+            Math.ceil(0.1 * heightSize + 0.3 * heightSize * (rcCount-1) + 0.2 * heightSize).toInt();
         val desiredHeight = heightSize
 
         //Measure Width
@@ -76,15 +78,9 @@ class RCWidget @JvmOverloads constructor(
 
         canvas?.let {
 
-/*
-            val paint2 = Paint()
-            paint2.color = Color.parseColor("#909090")
-            paint2.style = Paint.Style.FILL
-            canvas.drawPaint(paint2)
+            var rcCount = if ( rcChannels.size > 8 ) rcChannels.size else 8;
 
- */
-
-            for (ch in 0..15) {
+            for (ch in 0..rcCount-1) {
                 var x = height * 0.1f + ch * height * 0.3f;
                 var x2 = x + height * 0.15f
                 var top = height * 0.1f;

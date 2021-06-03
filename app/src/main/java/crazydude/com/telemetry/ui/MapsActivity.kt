@@ -1023,6 +1023,12 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         }
     }
 
+    override fun onRCChannels(rcChannels:IntArray) {
+        runOnUiThread {
+            this.rc_widget.setChannels(rcChannels)
+        }
+    }
+
     private fun updateSpeed(speed: Float) {
         this.speed.text = "${speed.roundToInt()} km/h"
     }

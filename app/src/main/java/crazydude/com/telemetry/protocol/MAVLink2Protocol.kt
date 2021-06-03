@@ -166,13 +166,21 @@ class MAVLink2Protocol : Protocol {
             //https://github.com/iNavFlight/inav/blob/master/lib/main/MAVLink/common/mavlink_msg_rc_channels_raw.h
             val time = byteBuffer.int
             val channel0 = byteBuffer.short
+            dataDecoder.decodeData( Protocol.Companion.TelemetryData(RC_CHANNEL_0,channel0.toInt()))
             val channel1 = byteBuffer.short
+            dataDecoder.decodeData( Protocol.Companion.TelemetryData(RC_CHANNEL_1,channel1.toInt()))
             val channel2 = byteBuffer.short
+            dataDecoder.decodeData( Protocol.Companion.TelemetryData(RC_CHANNEL_2,channel2.toInt()))
             val channel3 = byteBuffer.short
+            dataDecoder.decodeData( Protocol.Companion.TelemetryData(RC_CHANNEL_3,channel3.toInt()))
             val channel4 = byteBuffer.short
+            dataDecoder.decodeData( Protocol.Companion.TelemetryData(RC_CHANNEL_4,channel4.toInt()))
             val channel5 = byteBuffer.short
+            dataDecoder.decodeData( Protocol.Companion.TelemetryData(RC_CHANNEL_5,channel5.toInt()))
             val channel6 = byteBuffer.short
+            dataDecoder.decodeData( Protocol.Companion.TelemetryData(RC_CHANNEL_6,channel6.toInt()))
             val channel7 = byteBuffer.short
+            dataDecoder.decodeData( Protocol.Companion.TelemetryData(RC_CHANNEL_7,channel7.toInt()))
             val port = byteBuffer.get()
             val rssi = byteBuffer.get().toInt() and 0xff
             if ( !gotRadioStatus)

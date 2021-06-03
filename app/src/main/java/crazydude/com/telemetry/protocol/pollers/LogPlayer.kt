@@ -257,6 +257,10 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
         originalListener.onGSpeedData(speed)
     }
 
+    override fun onRCChannels(rcChannels:IntArray) {
+        originalListener.onRCChannels(rcChannels)
+    }
+
     override fun onSuccessDecode() {
         originalListener.onSuccessDecode()
     }

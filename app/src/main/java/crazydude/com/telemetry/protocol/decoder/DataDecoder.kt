@@ -81,6 +81,11 @@ abstract class DataDecoder(protected val listener: Listener) {
             ) {
             }
 
+            override fun onRCChannels(rcChannels:IntArray){
+
+            }
+
+
             override fun onAirSpeed(speed: Float) {
             }
 
@@ -120,6 +125,7 @@ abstract class DataDecoder(protected val listener: Listener) {
         )
 
         fun onAirSpeed(speed: Float)
+        fun onRCChannels(rcChannels:IntArray)
         fun onSuccessDecode()
     }
 

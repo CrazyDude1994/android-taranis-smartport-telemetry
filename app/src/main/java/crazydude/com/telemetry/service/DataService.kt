@@ -349,6 +349,10 @@ class DataService : Service(), DataDecoder.Listener {
         dataListener?.onFlyModeData(armed, heading, firstFlightMode, secondFlightMode)
     }
 
+    override fun onRCChannels(rcChannels: IntArray) {
+        dataListener?.onRCChannels(rcChannels)
+    }
+
     fun disconnect() {
         points.clear()
         dataPoller?.disconnect()

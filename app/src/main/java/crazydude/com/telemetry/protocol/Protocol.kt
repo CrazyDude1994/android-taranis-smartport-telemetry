@@ -60,6 +60,23 @@ abstract class Protocol(val dataDecoder: DataDecoder) {
         const val ARDU_BATT_1 = 50
         const val ARDU_PARAM = 51
 
+        const val RC_CHANNEL_0 = 100
+        const val RC_CHANNEL_1 = 101
+        const val RC_CHANNEL_2 = 102
+        const val RC_CHANNEL_3 = 103
+        const val RC_CHANNEL_4 = 104
+        const val RC_CHANNEL_5 = 105
+        const val RC_CHANNEL_6 = 106
+        const val RC_CHANNEL_7 = 107
+        const val RC_CHANNEL_8 = 108
+        const val RC_CHANNEL_9 = 109
+        const val RC_CHANNEL_10 = 110
+        const val RC_CHANNEL_11 = 111
+        const val RC_CHANNEL_12 = 112
+        const val RC_CHANNEL_13 = 113
+        const val RC_CHANNEL_14 = 114
+        const val RC_CHANNEL_15 = 115
+
         class TelemetryData(val telemetryType: Int, val data: Int, val rawData: ByteArray? = null) {
             override fun equals(other: Any?): Boolean {
                 if (this === other) return true

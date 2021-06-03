@@ -22,6 +22,7 @@ class MAVLinkDataDecoder(listener: Listener) : DataDecoder(listener) {
     private var satellites = 0
     private var armed = false;
     private var armedOnce = false;
+    private var rcChannels = IntArray(8) {1500};
 
     companion object {
         private const val MAV_MODE_FLAG_STABILIZE_ENABLED = 16
@@ -223,6 +224,12 @@ class MAVLinkDataDecoder(listener: Listener) : DataDecoder(listener) {
                 //https://github.com/mavlink/mavlink/issues/1027
 				//send 0..100% 
                 listener.onRSSIData( if ( data.data == 255) -1 else data.data * 100 / 254);
+            }
+            in Protocol.RC_CHANNEL_0..Protocol.RC_CHANNEL_15 -> {
+                val index = data.telemetryType - Protocol.RC_CHANNEL_0;
+                if ( index >= rcChannels.size) rcChannels = IntArray(index+1) { i -> if (i < rcChannels.size) rcChannels[i] else 1500 }
+                rcChannels[index] = data.data
+                listener.onRCChannels(rcChannels)
             }
             else -> {
                 decoded = false
