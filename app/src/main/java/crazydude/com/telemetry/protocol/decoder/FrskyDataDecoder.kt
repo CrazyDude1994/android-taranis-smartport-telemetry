@@ -60,8 +60,8 @@ class FrskyDataDecoder(listener: Listener) : DataDecoder(listener) {
             rollDeg = Math.toDegrees(rollRad).toFloat()
         }
 
-        listener.onPitchData(pitchDeg)
-        listener.onRollData(rollDeg)
+        listener.onPitchData(-pitchDeg)
+        listener.onRollData(-rollDeg)
     }
 
     override fun decodeData(data: Protocol.Companion.TelemetryData) {

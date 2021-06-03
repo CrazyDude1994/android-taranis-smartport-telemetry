@@ -251,21 +251,39 @@ class FrSkySportProtocol : Protocol {
                             )
                         )
                     }
-                    SPORT_PITCH_SENSOR, SPORT_PITCH_SENSOR_BETAFLIGHT -> {
+                    SPORT_PITCH_SENSOR -> {
                         //Log.d(TAG, "Pitch: $rawData")
                         dataDecoder.decodeData(
                             Protocol.Companion.TelemetryData(
                                 PITCH,
-                                -rawData
+                                rawData
                             )
                         )
                     }
-                    SPORT_ROLL_SENSOR, SPORT_ROLL_SENSOR_BETAFLIGHT -> {
+                    SPORT_ROLL_SENSOR -> {
                         //Log.d(TAG, "Roll: $rawData")
                         dataDecoder.decodeData(
                             Protocol.Companion.TelemetryData(
                                 ROLL,
                                 rawData
+                            )
+                        )
+                    }
+                    SPORT_PITCH_SENSOR_BETAFLIGHT -> {
+                        //Log.d(TAG, "Pitch: $rawData")
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(
+                                PITCH,
+                                rawData
+                            )
+                        )
+                    }
+                    SPORT_ROLL_SENSOR_BETAFLIGHT -> {
+                        //Log.d(TAG, "Roll: $rawData")
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(
+                                ROLL,
+                                -rawData
                             )
                         )
                     }
