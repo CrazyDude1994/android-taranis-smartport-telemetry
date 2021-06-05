@@ -1082,6 +1082,7 @@ class MapsActivity : AppCompatActivity() {
             }
             text = getString(R.string.connect)
             isEnabled = true
+            visibility = View.VISIBLE
         }
 
         binding.topLayout.replayButton.apply {
