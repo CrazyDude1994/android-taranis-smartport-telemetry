@@ -114,7 +114,6 @@ class DataService : Service(), DataDecoder.Listener {
             this.logFile = logFile
 
             if (isBLE) {
-
                 dataPoller = BluetoothLeDataPoller(
                     this,
                     device,
@@ -147,15 +146,6 @@ class DataService : Service(), DataDecoder.Listener {
         )
     }
 
-/*
-    fun setPollerListener(pollerListener: PollerListener?) {
-//        this.pollerListener = pollerListener
-        if (dataPoller == null && !isConnected()) {
-            stopSelf()
-        }
-    }
-*/
-
     fun isConnected(): Boolean {
         return dataPoller != null
     }
@@ -181,7 +171,7 @@ class DataService : Service(), DataDecoder.Listener {
     }
 
     override fun onConnected() {
-
+        mutableConnectionStateLiveData.postValue(ConnectionState.CONNECTED)
         if (preferenceManager.isSendDataEnabled()) {
             createSession()
         }
@@ -298,8 +288,11 @@ class DataService : Service(), DataDecoder.Listener {
     }
 
     override fun onDisconnected() {
-//        dataListener?.onDisconnected()
         dataPoller = null
+        telemetryModel = TelemetryModel()
+        mutableTelemetryLiveData.postValue(telemetryModel)
+        mutableConnectionStateLiveData.postValue(ConnectionState.DISCONNECTED)
+        Toast.makeText(this, "Disconnected", Toast.LENGTH_LONG).show()
     }
 
     override fun onGPSState(satellites: Int, gpsFix: Boolean) {

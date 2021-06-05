@@ -58,6 +58,7 @@
                     android:ellipsize="end"
                     android:gravity="center"
                     android:lines="1"
+                    android:visibility="@{connectionState == ConnectionState.DISCONNECTED ? View.GONE : View.VISIBLE}"
                     android:text="@{telemetry.decodeCurrentModes()}"
                     tools:text="Disarmed"
                     android:textColor="@android:color/white"

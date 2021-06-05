@@ -26,7 +26,6 @@
                     android:layout_height="wrap_content"
                     android:layout_centerVertical="true"
                     android:text="@string/connect"
-                    android:visibility="@{connectionState == ConnectionState.DISCONNECTED ? View.VISIBLE : View.GONE}"
                     android:textColor="@android:color/white" />
 
             <com.nex3z.flowlayout.FlowLayout

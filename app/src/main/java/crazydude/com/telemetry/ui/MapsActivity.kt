@@ -25,13 +25,13 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.documentfile.provider.DocumentFile
+import androidx.lifecycle.Observer
 import com.google.android.gms.maps.*
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.maps.android.SphericalUtil
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
 import crazydude.com.telemetry.R
-import crazydude.com.telemetry.converter.Converter
 import crazydude.com.telemetry.databinding.ActivityMapsBinding
 import crazydude.com.telemetry.manager.PreferenceManager
 import crazydude.com.telemetry.maps.MapLine
@@ -40,7 +40,7 @@ import crazydude.com.telemetry.maps.MapWrapper
 import crazydude.com.telemetry.maps.Position
 import crazydude.com.telemetry.maps.google.GoogleMapWrapper
 import crazydude.com.telemetry.maps.osm.OsmMapWrapper
-import crazydude.com.telemetry.protocol.decoder.DataDecoder
+import crazydude.com.telemetry.protocol.TelemetryModel
 import crazydude.com.telemetry.protocol.pollers.LogPlayer
 import crazydude.com.telemetry.service.DataService
 import crazydude.com.telemetry.ui.viewmodels.MapsViewModel
@@ -93,11 +93,37 @@ class MapsActivity : AppCompatActivity() {
 
     private var fullscreenWindow = false
     private lateinit var binding: ActivityMapsBinding
-    private val viewModel : MapsViewModel by viewModels()
+    private val viewModel: MapsViewModel by viewModels()
+    private val telemetryObserver = Observer<TelemetryModel?> { telemetryModel ->
+        telemetryModel?.let {
+            val lastGPS = it.position.lastOrNull() ?: Position(0.0, 0.0)
+            if (it.gpsFix) {
+                polyLine?.setPoints(it.position)
+                if (marker == null) {
+                    marker =
+                        map?.addMarker(
+                            R.drawable.ic_plane,
+                            preferenceManager.getPlaneColor(),
+                            lastGPS
+                        )
+                    if (headingPolyline == null && preferenceManager.isHeadingLineEnabled()) {
+                        headingPolyline = createHeadingPolyline()
+                    }
+                    map?.moveCamera(lastGPS, 15f)
+                }
+            }
+            marker?.position = lastGPS
+            if (viewModel.followMode) {
+                map?.moveCamera(lastGPS)
+            }
+            updateHeading()
+            updateFuel()
+            updateHorizon()
+        }
+    }
 
     private val serviceConnection: ServiceConnection = object : ServiceConnection {
         override fun onServiceDisconnected(p0: ComponentName?) {
-            onDisconnected()
         }
 
         override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
@@ -105,34 +131,14 @@ class MapsActivity : AppCompatActivity() {
             binding.telemetry = dataService?.telemetryLiveData
             binding.connectionState = dataService?.connectionStateLiveData
             dataService?.connectionStateLiveData?.observe(this@MapsActivity, {
-                when(it) {
+                when (it) {
                     DataService.ConnectionState.DISCONNECTED -> switchToIdleState()
                     DataService.ConnectionState.CONNECTED -> switchToConnectedState()
                     DataService.ConnectionState.CONNECTING -> switchToConnectingState()
                     DataService.ConnectionState.REPLAY -> switchToReplayMode()
                 }
             })
-            dataService?.telemetryLiveData?.observe(this@MapsActivity, {
-                val lastGPS = it.position.lastOrNull() ?: Position(0.0, 0.0)
-                if (it.gpsFix) {
-                    polyLine?.setPoints(it.position)
-                    if (marker == null) {
-                        marker =
-                            map?.addMarker(R.drawable.ic_plane, preferenceManager.getPlaneColor(), lastGPS)
-                        if (headingPolyline == null && preferenceManager.isHeadingLineEnabled()) {
-                            headingPolyline = createHeadingPolyline()
-                        }
-                        map?.moveCamera(lastGPS, 15f)
-                    }
-                }
-                marker?.position = lastGPS
-                if (viewModel.followMode) {
-                    map?.moveCamera(lastGPS)
-                }
-                updateHeading()
-                updateFuel()
-                updateHorizon()
-            })
+            dataService?.telemetryLiveData?.observe(this@MapsActivity, telemetryObserver)
         }
     }
 
@@ -177,7 +183,10 @@ class MapsActivity : AppCompatActivity() {
     }
 
     private fun switchToConnectingState() {
-
+        binding.topLayout.connectButton.apply {
+            text = getString(R.string.connecting)
+            isEnabled = false
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -331,7 +340,7 @@ class MapsActivity : AppCompatActivity() {
             map?.setOnCameraMoveStartedListener {
                 viewModel.followMode = false
             }
-            map?.setPadding(0,  binding.topLayout.root.measuredHeight, 0, 0)
+            map?.setPadding(0, binding.topLayout.root.measuredHeight, 0, 0)
             startDataService()
         }
         if (simulateLifecycle) {
@@ -444,7 +453,8 @@ class MapsActivity : AppCompatActivity() {
             val dir = Environment.getExternalStoragePublicDirectory("TelemetryLogs")
             if (dir.exists()) {
                 val files =
-                    dir.listFiles { file -> file.extension == "log" && file.length() > 0 }?.reversed()
+                    dir.listFiles { file -> file.extension == "log" && file.length() > 0 }
+                        ?.reversed()
                 if (files == null) {
                     Toast.makeText(this, "No log files available", Toast.LENGTH_SHORT).show()
                     return
@@ -810,7 +820,11 @@ class MapsActivity : AppCompatActivity() {
 
     private fun connectBluetoothLE() {
         if (!bleCheck()) {
-            Toast.makeText(this, "Bluetooth LE is not supported or application does not have needed permissions", Toast.LENGTH_LONG).show()
+            Toast.makeText(
+                this,
+                "Bluetooth LE is not supported or application does not have needed permissions",
+                Toast.LENGTH_LONG
+            ).show()
             return
         }
 
@@ -1008,6 +1022,7 @@ class MapsActivity : AppCompatActivity() {
             MAP_TYPE_ITEMS,
             checkItem
         ) { dialog, item ->
+            dataService?.telemetryLiveData?.removeObserver(telemetryObserver)
             binding.mapHolder.removeAllViews()
             map = null
             mapType = item + 1
@@ -1035,28 +1050,34 @@ class MapsActivity : AppCompatActivity() {
         }
     }
 
-    fun onDisconnected() {
-        Toast.makeText(this, "Disconnected", Toast.LENGTH_SHORT).show()
-        switchToIdleState()
-    }
-
     private fun switchToReplayMode() {
         removeSeekbarListener()
         binding.seekbar.max = dataService?.getReplaySize() ?: 0
         binding.seekbar.progress = dataService?.getSeekPosition() ?: 0
         setSeekbarListener()
         binding.directionsButton.show()
-        binding.topLayout.replayButton.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_close))
+        binding.topLayout.replayButton.setImageDrawable(
+            ContextCompat.getDrawable(
+                this,
+                R.drawable.ic_close
+            )
+        )
         binding.topLayout.replayButton.setOnClickListener {
             dataService?.stopReplay()
         }
+        binding.topLayout.connectButton.visibility = View.GONE
         initHeadingLine()
     }
 
     private fun switchToIdleState() {
-        binding.topLayout.connectButton.setOnClickListener {
-            connect()
+        binding.topLayout.connectButton.apply {
+            setOnClickListener {
+                connect()
+            }
+            text = getString(R.string.connect)
+            isEnabled = true
         }
+
         binding.topLayout.replayButton.apply {
             setImageDrawable(ContextCompat.getDrawable(this@MapsActivity, R.drawable.ic_replay))
             setOnClickListener { replay() }
@@ -1070,27 +1091,16 @@ class MapsActivity : AppCompatActivity() {
 
     private fun switchToConnectedState() {
         initHeadingLine()
-    /*
-        connectButton.text = getString(R.string.disconnect)
-        connectButton.isEnabled = true
-        connectButton.setOnClickListener {
-            connectButton.isEnabled = false
-            connectButton.text = getString(R.string.disconnecting)
-            dataService?.disconnect()
-        }*/
-    }
-
-    /*override fun onConnectionFailed() {
-        runOnUiThread {
-            Toast.makeText(this, "Connection failed", Toast.LENGTH_SHORT).show()
-            connectButton.text = getString(R.string.connect)
-            connectButton.isEnabled = true
-            connectButton.setOnClickListener {
-                connect()
+        binding.topLayout.connectButton.apply {
+            text = getString(R.string.disconnect)
+            isEnabled = true
+            setOnClickListener {
+                isEnabled = false
+                text = getString(R.string.disconnecting)
+                dataService?.disconnect()
             }
         }
     }
-    }*/
 
     private fun createLogFile(): OutputStream? {
         var fileOutputStream: OutputStream? = null
