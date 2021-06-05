@@ -25,6 +25,7 @@ class MAVLinkProtocol : Protocol {
     private var crcLow: Int? = null
     private var crcHigh: Int? = null
     private var unique = HashSet<Int>()
+    private var gotRadioStatus = false; //preffer RADIO_STATUS messages over RC_CHANNELS_RAW
 
     companion object {
         enum class State {
@@ -36,7 +37,7 @@ class MAVLinkProtocol : Protocol {
         private const val MAV_PACKET_HEARTBEAT_ID = 0
         private const val MAV_PACKET_STATUS_ID = 1
         private const val MAV_PACKET_ATTITUDE_ID = 30
-        private const val MAV_PACKET_RC_CHANNEL_ID = 35
+        private const val MAV_PACKET_RC_CHANNEL_ID = 35  //RC_CHANNELS_RAW
         private const val MAV_PACKET_VFR_HUD_ID = 74
         private const val MAV_PACKET_GPS_RAW_ID = 24
         private const val MAV_PACKET_RADIO_STATUS_ID = 109
@@ -143,6 +144,21 @@ class MAVLinkProtocol : Protocol {
             dataDecoder.decodeData(Protocol.Companion.TelemetryData(FLYMODE, mode.toInt(), byteBuffer.array()))
         } else if (messageId == MAV_PACKET_RC_CHANNEL_ID && packetLength == MAV_PACKET_RC_CHANNEL_LENGTH) {
             //Channels RC
+            //mavlink_rc_channels_raw_t
+            //https://github.com/iNavFlight/inav/blob/master/lib/main/MAVLink/common/mavlink_msg_rc_channels_raw.h
+            val time = byteBuffer.int
+            val channel0 = byteBuffer.short
+            val channel1 = byteBuffer.short
+            val channel2 = byteBuffer.short
+            val channel3 = byteBuffer.short
+            val channel4 = byteBuffer.short
+            val channel5 = byteBuffer.short
+            val channel6 = byteBuffer.short
+            val channel7 = byteBuffer.short
+            val port = byteBuffer.get()
+            val rssi = byteBuffer.get().toInt() and 0xff
+            if ( !gotRadioStatus)
+                dataDecoder.decodeData( Protocol.Companion.TelemetryData(RSSI,rssi.toInt()))
         } else if (messageId == MAV_PACKET_ATTITUDE_ID && packetLength == MAV_PACKET_ATTITUDE_LENGTH) {
             dataDecoder.decodeData(
                 Protocol.Companion.TelemetryData(
@@ -170,11 +186,13 @@ class MAVLinkProtocol : Protocol {
         } else if (messageId == MAV_PACKET_RADIO_STATUS_ID && packetLength == MAV_PACKET_RADIO_STATUS_LENGTH) {
             val rxErrors = byteBuffer.short
             val fixed = byteBuffer.short
-            val rssi = byteBuffer.get()
+            val rssi = byteBuffer.get().toInt() and 0xff
             val remRssi = byteBuffer.get()
             val txbuf = byteBuffer.get()
             val noise = byteBuffer.get()
             val remnoise = byteBuffer.get()
+            gotRadioStatus = true;
+            dataDecoder.decodeData( Protocol.Companion.TelemetryData(RSSI,rssi.toInt()))
         } else if (messageId == MAV_PACKET_GPS_RAW_ID && packetLength == MAV_PACKET_GPS_RAW_LENGTH) {
             val time = byteBuffer.long
             val lat = byteBuffer.int
