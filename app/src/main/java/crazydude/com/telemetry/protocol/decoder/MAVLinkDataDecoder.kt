@@ -204,6 +204,11 @@ class MAVLinkDataDecoder(listener: Listener) : DataDecoder(listener) {
                 originLatitude = data.data / 10000000.toDouble()
             }
 
+            Protocol.RSSI -> {
+                //https://github.com/mavlink/mavlink/issues/1027
+				//send 0..100% 
+                listener.onRSSIData( if ( data.data == 255) -1 else data.data * 100 / 254);
+            }
             else -> {
                 decoded = false
             }
@@ -212,7 +217,7 @@ class MAVLinkDataDecoder(listener: Listener) : DataDecoder(listener) {
         if (newLatitude && newLongitude) {
             listener.onGPSData(latitude, longitude)
 
-            if (originLatitude > 0 && originLatitude > 0 && latitude > 0 && longitude > 0) {
+            if (originLatitude > 0 && originLongitude > 0 && latitude > 0 && longitude > 0) {
 
                 val distance = SphericalUtil.computeDistanceBetween(
                     LatLng(
