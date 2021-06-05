@@ -30,8 +30,8 @@ data class TelemetryModel(
         if (isHeadingMode) {
             mode += " | Heading"
         }
-        flightMode1?.let { mode += " | $it"  }
-        flightMode2?.let { mode += " | $it"  }
+        flightMode1?.let { mode += " | ${it.modeName}"  }
+        flightMode2?.let { mode += " | ${it.modeName}"  }
         return mode
     }
 
