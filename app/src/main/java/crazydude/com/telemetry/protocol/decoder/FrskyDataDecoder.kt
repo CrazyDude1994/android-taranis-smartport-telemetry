@@ -69,7 +69,7 @@ class FrskyDataDecoder(listener: Listener) : DataDecoder(listener) {
 //                Log.d(TAG, "Decoded heading $value")
             }
             Protocol.RSSI -> {
-                listener.onRSSIData(data.data)
+                listener.onRSSIData(data.data.shr(24).and(0xff))
             }
 
             Protocol.FLYMODE -> {

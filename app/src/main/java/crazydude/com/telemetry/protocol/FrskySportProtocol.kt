@@ -115,7 +115,7 @@ class FrSkySportProtocol : Protocol {
             val sensorType = byteBuffer.get()
             val packetType = byteBuffer.get()
             if (packetType.toInt() == DATA_START) {
-                val dataType = byteBuffer.short
+                val dataType = byteBuffer.short.toInt() and 0xffff
                 val rawData = byteBuffer.int
                 when (dataType.toInt()) {
                     FUEL_SENSOR -> {
