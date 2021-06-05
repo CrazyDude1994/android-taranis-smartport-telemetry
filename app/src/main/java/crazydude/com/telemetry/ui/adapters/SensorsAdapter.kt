@@ -56,10 +56,14 @@ class SensorsAdapter(
         if (getItemViewType(position) == 0) {
             val sensor = data[position] as SensorsActivity.Sensor
             holder.switch!!.text = sensor.name
-            holder.switch.isChecked = sensor.isShown
+
+            //sensor views can be recycled
+            //it is important to set listener first, set value second
+            //otherwise old listener will be called
             holder.switch.setOnCheckedChangeListener { compoundButton, value ->
                 sensor.isShown = value
             }
+            holder.switch.isChecked = sensor.isShown
             holder.settingsButton?.setOnClickListener {
                 sensorsAdapterListener.onSettingsClick(position)
             }
