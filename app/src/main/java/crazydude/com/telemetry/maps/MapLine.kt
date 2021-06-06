@@ -6,6 +6,7 @@ interface MapLine {
     fun setPoint(index: Int, position: Position)
     fun clear()
     fun removeAt(index: Int)
+    fun setPoints(points: List<Position>)
 
     val size: Int
     var color: Int

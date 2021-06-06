@@ -1,110 +1,145 @@
 <?xml version="1.0" encoding="utf-8"?>
-<merge xmlns:android="http://schemas.android.com/apk/res/android">
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+    <data>
+        <import type="android.view.View"/>
+        <import type="crazydude.com.telemetry.service.DataService.ConnectionState"/>
+        <variable
+                name="telemetry"
+                type="crazydude.com.telemetry.protocol.TelemetryModel" />
+        <variable
+                name="connectionState"
+                type="ConnectionState" />
+    </data>
 
-    <RelativeLayout
-            android:id="@+id/top_layout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="#AA000000">
+    <merge>
 
-        <Button
-                android:id="@+id/connect_button"
-                style="@style/Base.Widget.AppCompat.Button.Borderless"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:layout_centerVertical="true"
-                android:text="@string/connect"
-                android:textColor="@android:color/white" />
-
-        <com.nex3z.flowlayout.FlowLayout
-                android:id="@+id/top_list"
+        <RelativeLayout
+                android:id="@+id/top_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_toStartOf="@+id/replay_button"
-                android:layout_toEndOf="@id/connect_button">
+                android:background="#AA000000">
 
-            <TextView
-                    android:id="@+id/satellites"
+            <Button
+                    android:id="@+id/connect_button"
+                    style="@style/Base.Widget.AppCompat.Button.Borderless"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_margin="6dp"
-                    android:drawableStart="@drawable/ic_satellite"
-                    android:drawablePadding="4dp"
-                    android:text="-"
-                    android:textColor="@android:color/white"
-                    android:textSize="16sp" />
+                    android:layout_centerVertical="true"
+                    android:text="@string/connect"
+                    android:textColor="@android:color/white" />
 
-
-            <TextView
-                    android:id="@+id/fuel"
-                    android:layout_width="wrap_content"
+            <com.nex3z.flowlayout.FlowLayout
+                    android:id="@+id/top_list"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_margin="6dp"
-                    android:drawableStart="@drawable/ic_battery_unknown"
-                    android:drawablePadding="0dp"
-                    android:text="-"
-                    android:textColor="@android:color/white"
-                    android:textSize="16sp" />
+                    android:layout_toStartOf="@+id/replay_button"
+                    android:layout_toEndOf="@id/connect_button">
 
-            <TextView
-                    android:id="@+id/current"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="6dp"
-                    android:drawableStart="@drawable/ic_current"
-                    android:drawablePadding="4dp"
-                    android:text="-"
-                    android:textColor="@android:color/white"
-                    android:textSize="16sp" />
+                <TextView
+                        android:id="@+id/satellites"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="6dp"
+                        android:layout_marginRight="6dp"
+                        android:layout_marginTop="6dp"
+                        android:layout_marginBottom="2dp"
+                        android:drawableTop="@drawable/ic_satellite"
+                        android:drawablePadding="0dp"
+                        android:text="@{String.valueOf(telemetry.satelliteCount)}"
+                        android:textAlignment="center"
+                        android:textColor="@android:color/white"
+                        android:textSize="16sp" />
 
-            <TextView
-                    android:id="@+id/voltage"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="6dp"
-                    android:drawableStart="@drawable/ic_voltage"
-                    android:drawablePadding="4dp"
-                    android:text="-"
-                    android:textColor="@android:color/white"
-                    android:textSize="16sp" />
 
-            <TextView
-                    android:id="@+id/phone_battery"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="6dp"
-                    android:drawableStart="@drawable/ic_phone_battery"
-                    android:drawablePadding="0dp"
-                    android:text="-"
-                    android:textColor="@android:color/white"
-                    android:textSize="16sp" />
+                <TextView
+                        android:id="@+id/fuel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="6dp"
+                        android:layout_marginRight="6dp"
+                        android:layout_marginTop="6dp"
+                        android:layout_marginBottom="2dp"
+                        android:drawableTop="@drawable/ic_battery_unknown"
+                        android:drawablePadding="0dp"
+                        android:text="-"
+                        android:textAlignment="center"
+                        android:textColor="@android:color/white"
+                        android:textSize="16sp" />
 
-        </com.nex3z.flowlayout.FlowLayout>
+                <TextView
+                        android:id="@+id/current"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="6dp"
+                        android:layout_marginRight="6dp"
+                        android:layout_marginTop="6dp"
+                        android:layout_marginBottom="2dp"
+                        android:drawableTop="@drawable/ic_current"
+                        android:drawablePadding="0dp"
+                        android:text="@{String.valueOf(telemetry.current) + ` A`}"
+                        android:textAlignment="center"
+                        android:textColor="@android:color/white"
+                        android:textSize="16sp" />
 
-        <ImageView
-                android:id="@id/replay_button"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:layout_centerVertical="true"
-                android:layout_marginEnd="8dp"
-                android:layout_marginRight="8dp"
-                android:layout_toStartOf="@+id/settings_button"
-                android:layout_toLeftOf="@+id/settings_button"
-                android:background="?selectableItemBackground"
-                android:src="@drawable/ic_replay" />
+                <TextView
+                        android:id="@+id/voltage"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="6dp"
+                        android:layout_marginRight="6dp"
+                        android:layout_marginTop="6dp"
+                        android:layout_marginBottom="2dp"
+                        android:drawableTop="@drawable/ic_voltage"
+                        android:drawablePadding="0dp"
+                        android:text="@{telemetry.formatVoltage()}"
+                        android:textAlignment="center"
+                        android:textColor="@android:color/white"
+                        android:textSize="16sp" />
 
-        <ImageView
-                android:id="@id/settings_button"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:layout_alignParentEnd="true"
-                android:layout_alignParentRight="true"
-                android:layout_centerVertical="true"
-                android:layout_marginEnd="8dp"
-                android:layout_marginRight="8dp"
-                android:background="?selectableItemBackground"
-                android:src="@drawable/ic_settings" />
+                <TextView
+                        android:id="@+id/phone_battery"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="6dp"
+                        android:layout_marginRight="6dp"
+                        android:layout_marginTop="6dp"
+                        android:layout_marginBottom="2dp"
+                        android:drawableTop="@drawable/ic_phone_battery"
+                        android:drawablePadding="0dp"
+                        android:text="-"
+                        android:textAlignment="center"
+                        android:textColor="@android:color/white"
+                        android:textSize="16sp" />
 
-    </RelativeLayout>
+            </com.nex3z.flowlayout.FlowLayout>
 
-</merge>
+
+            <ImageView
+                    android:id="@id/replay_button"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_centerVertical="true"
+                    android:layout_marginEnd="8dp"
+                    android:visibility="@{connectionState == ConnectionState.DISCONNECTED || connectionState == ConnectionState.REPLAY ? View.VISIBLE : View.GONE}"
+                    android:layout_marginRight="8dp"
+                    android:layout_toStartOf="@+id/settings_button"
+                    android:layout_toLeftOf="@+id/settings_button"
+                    android:background="?selectableItemBackground"
+                    android:src="@drawable/ic_replay" />
+
+            <ImageView
+                    android:id="@id/settings_button"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_alignParentRight="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginEnd="8dp"
+                    android:layout_marginRight="8dp"
+                    android:background="?selectableItemBackground"
+                    android:src="@drawable/ic_settings" />
+
+        </RelativeLayout>
+
+    </merge>
+</layout>
