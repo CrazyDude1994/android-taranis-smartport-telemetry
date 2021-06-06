@@ -121,6 +121,7 @@ class MapsActivity : AppCompatActivity() {
             updateHeading()
             updateFuel()
             updateHorizon()
+            updateRSSI();
         }
     }
 
@@ -209,7 +210,8 @@ class MapsActivity : AppCompatActivity() {
             Pair(PreferenceManager.sensors.elementAt(4).name, binding.bottomLayout.speed),
             Pair(PreferenceManager.sensors.elementAt(5).name, binding.bottomLayout.distance),
             Pair(PreferenceManager.sensors.elementAt(6).name, binding.bottomLayout.altitude),
-            Pair(PreferenceManager.sensors.elementAt(7).name, binding.topLayout.phoneBattery)
+            Pair(PreferenceManager.sensors.elementAt(7).name, binding.topLayout.phoneBattery),
+            Pair(PreferenceManager.sensors.elementAt(8).name, binding.topLayout.rssi)
         )
 
         firebaseAnalytics = FirebaseAnalytics.getInstance(this)
@@ -986,6 +988,29 @@ class MapsActivity : AppCompatActivity() {
     private fun createHeadingPolyline(): MapLine? {
         val lastGPS = binding.telemetry?.value?.position?.lastOrNull() ?: Position(0.0, 0.0)
         return map?.addPolyline(3f, preferenceManager.getHeadLineColor(), lastGPS, lastGPS)
+    }
+
+    private fun setRSSIIcon( rssi : Int )  {
+        when (rssi) {
+            in 81..100 -> R.drawable.ic_rssi_5
+            in 61..80 -> R.drawable.ic_rssi_4
+            in 41..69 -> R.drawable.ic_rssi_3
+            in 21..40 -> R.drawable.ic_rssi_2
+            in 0..20 -> R.drawable.ic_rssi_1
+            else -> R.drawable.ic_rssi_5
+        }.let {
+            binding.topLayout.rssi.setCompoundDrawablesWithIntrinsicBounds(
+                    null,
+                    ContextCompat.getDrawable( this, it ),
+                    null, null
+                )
+        }
+    }
+
+    private fun updateRSSI() {
+        var rssi = binding.telemetry?.value?.rssi
+        this.binding.topLayout.rssi.text = if (rssi == -1) "-" else rssi.toString()
+        this.setRSSIIcon(rssi?:-1);
     }
 
     private fun checkSendDataDialogShown() {
