@@ -1,6 +1,5 @@
 package crazydude.com.telemetry.protocol.decoder
 
-import com.google.android.gms.maps.model.LatLng
 import crazydude.com.telemetry.maps.Position
 import crazydude.com.telemetry.protocol.Protocol
 
@@ -8,13 +7,38 @@ abstract class DataDecoder(protected val listener: Listener) {
 
     companion object {
 
-        enum class FlyMode {
-            ACRO, HORIZON, ANGLE, FAILSAFE, RTH, WAYPOINT, MANUAL, CRUISE, HOLD, HOME_RESET, CRUISE3D, ALTHOLD, ERROR,
-            WAIT, AUTONOMOUS, CIRCLE, STABILIZE, TRAINING, FBWA, FBWB, AUTOTUNE, LOITER, TAKEOFF, AVOID_ADSB, GUIDED,
-            INITIALISING, LANDING, MISSION, QSTABILIZE, QHOVER, QLOITER, QLAND, QRTL, QAUTOTUNE, QACRO
+        enum class FlyMode(var modeName: String) {
+            ACRO("Acro"), HORIZON("Horizon"), ANGLE("Angle"), FAILSAFE("Failsafe"), RTH("RTH"), WAYPOINT(
+                "WP"
+            ),
+            MANUAL(
+                "Manual"
+            ),
+            CRUISE("Cruise"), HOLD("Hold"), HOME_RESET("Home reset"), CRUISE3D("Cruise 3D"), ALTHOLD(
+                "ALT Hold"
+            ),
+            ERROR(
+                "!ERROR!"
+            ),
+            WAIT("GPS wait"), AUTONOMOUS("Autonomous"), CIRCLE("Circle"), STABILIZE("Stabilize"), TRAINING(
+                "Training"
+            ),
+            FBWA(
+                "FBWA"
+            ),
+            FBWB("FBWB"), AUTOTUNE("Autotune"), LOITER("Loiter"), TAKEOFF("Takeoff"), AVOID_ADSB("AVOID_ADSB"), GUIDED(
+                "Guided"
+            ),
+            INITIALISING("Initializing"), LANDING("Landing"), MISSION("Mission"), QSTABILIZE("QSTABILIZE"), QHOVER(
+                "QHOVER"
+            ),
+            QLOITER(
+                "QLOITER"
+            ),
+            QLAND("QLAND"), QRTL("QRTL"), QAUTOTUNE("QAUTOTUNE"), QACRO("QACRO");
         }
 
-        open class DefaultDecodeListener: Listener {
+        open class DefaultDecodeListener : Listener {
             override fun onConnectionFailed() {
 
             }
@@ -102,7 +126,7 @@ abstract class DataDecoder(protected val listener: Listener) {
         fun onCellVoltageData(voltage: Float)
         fun onCurrentData(current: Float)
         fun onHeadingData(heading: Float)
-        fun onRSSIData(rssi: Int)
+        fun onRSSIData(rssi: Int) //-1 - unknown/invalid, or device-dependent value
         fun onDisconnected()
         fun onGPSState(satellites: Int, gpsFix: Boolean)
         fun onVSpeedData(vspeed: Float)

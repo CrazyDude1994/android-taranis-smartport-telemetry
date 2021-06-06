@@ -15,6 +15,7 @@
             android:required="false"/>
 
     <application
+            android:name="androidx.multidex.MultiDexApplication"
             android:requestLegacyExternalStorage="true"
             android:usesCleartextTraffic="true"
             android:allowBackup="true"

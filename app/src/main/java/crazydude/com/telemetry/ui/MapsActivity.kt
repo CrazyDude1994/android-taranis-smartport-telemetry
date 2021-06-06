@@ -1,12 +1,12 @@
 package crazydude.com.telemetry.ui
 
+import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.app.ProgressDialog
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.content.*
 import android.content.pm.PackageManager
-import android.content.res.Configuration
 import android.graphics.Color
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbDeviceConnection
@@ -17,25 +17,24 @@ import android.provider.DocumentsContract
 import android.text.Html
 import android.text.method.LinkMovementMethod
 import android.view.View
-import android.view.WindowManager
 import android.widget.*
+import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.databinding.DataBindingUtil
 import androidx.documentfile.provider.DocumentFile
+import androidx.lifecycle.Observer
 import com.google.android.gms.maps.*
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.maps.android.SphericalUtil
 import com.hoho.android.usbserial.driver.CdcAcmSerialDriver
 import com.hoho.android.usbserial.driver.ProbeTable
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
-import com.nex3z.flowlayout.FlowLayout
 import crazydude.com.telemetry.R
-import crazydude.com.telemetry.converter.Converter
+import crazydude.com.telemetry.databinding.ActivityMapsBinding
 import crazydude.com.telemetry.manager.PreferenceManager
 import crazydude.com.telemetry.maps.MapLine
 import crazydude.com.telemetry.maps.MapMarker
@@ -43,9 +42,10 @@ import crazydude.com.telemetry.maps.MapWrapper
 import crazydude.com.telemetry.maps.Position
 import crazydude.com.telemetry.maps.google.GoogleMapWrapper
 import crazydude.com.telemetry.maps.osm.OsmMapWrapper
-import crazydude.com.telemetry.protocol.decoder.DataDecoder
+import crazydude.com.telemetry.protocol.TelemetryModel
 import crazydude.com.telemetry.protocol.pollers.LogPlayer
 import crazydude.com.telemetry.service.DataService
+import crazydude.com.telemetry.ui.viewmodels.MapsViewModel
 import crazydude.com.telemetry.utils.DocumentLogFile
 import crazydude.com.telemetry.utils.LogFile
 import crazydude.com.telemetry.utils.StandardLogFile
@@ -56,10 +56,9 @@ import java.io.OutputStream
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
-import kotlin.math.roundToInt
 
 
-class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
+class MapsActivity : AppCompatActivity() {
 
     companion object {
         private const val REQUEST_ENABLE_BT: Int = 0
@@ -84,168 +83,169 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     private var polyLine: MapLine? = null
     private var headingPolyline: MapLine? = null
 
-    private lateinit var connectButton: Button
-    private lateinit var replayButton: ImageView
-    private lateinit var seekBar: SeekBar
-    private lateinit var fuel: TextView
-    private lateinit var satellites: TextView
-    private lateinit var current: TextView
-    private lateinit var voltage: TextView
-    private lateinit var phoneBattery: TextView
-    private lateinit var speed: TextView
-    private lateinit var distance: TextView
-    private lateinit var altitude: TextView
-    private lateinit var mode: TextView
-    private lateinit var followButton: FloatingActionButton
-    private lateinit var mapTypeButton: FloatingActionButton
-    private lateinit var fullscreenButton: FloatingActionButton
-    private lateinit var directionsButton: FloatingActionButton
-    private lateinit var settingsButton: ImageView
-    private lateinit var topLayout: RelativeLayout
-    private lateinit var horizonView: HorizonView
-    private lateinit var topList: FlowLayout
-    private lateinit var bottomList: FlowLayout
-    private lateinit var rootLayout: CoordinatorLayout
-    private lateinit var mapHolder: FrameLayout
-
     private lateinit var sensorViewMap: HashMap<String, TextView>
-    private lateinit var sensorsConverters: HashMap<String, Converter>
 
     private lateinit var preferenceManager: PreferenceManager
     private lateinit var firebaseAnalytics: FirebaseAnalytics
 
     private var mapType = GoogleMap.MAP_TYPE_NORMAL
 
-    private var lastGPS = Position(0.0, 0.0)
-    private var lastHeading = 0f
-    private var followMode = true
-    private var hasGPSFix = false
-    private var replayFileString: String? = null
     private var dataService: DataService? = null
-    private var lastVBAT = 0f
-    private var lastCellVoltage = 0f
     private var lastPhoneBattery = 0
 
     private var fullscreenWindow = false
+    private lateinit var binding: ActivityMapsBinding
+    private val viewModel: MapsViewModel by viewModels()
+    private val telemetryObserver = Observer<TelemetryModel?> { telemetryModel ->
+        telemetryModel?.let {
+            val lastGPS = it.position.lastOrNull() ?: Position(0.0, 0.0)
+            if (it.gpsFix) {
+                polyLine?.setPoints(it.position)
+                if (marker == null) {
+                    marker =
+                        map?.addMarker(
+                            R.drawable.ic_plane,
+                            preferenceManager.getPlaneColor(),
+                            lastGPS
+                        )
+                    if (headingPolyline == null && preferenceManager.isHeadingLineEnabled()) {
+                        headingPolyline = createHeadingPolyline()
+                    }
+                    map?.moveCamera(lastGPS, 15f)
+                }
+            }
+            marker?.position = lastGPS
+            if (viewModel.followMode) {
+                map?.moveCamera(lastGPS)
+            }
+            updateHeading()
+            updateFuel()
+            updateHorizon()
+        }
+    }
 
     private val serviceConnection: ServiceConnection = object : ServiceConnection {
         override fun onServiceDisconnected(p0: ComponentName?) {
-            onDisconnected()
         }
 
         override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
             dataService = (p1 as DataService.DataBinder).getService()
-            dataService?.setDataListener(this@MapsActivity)
-            dataService?.let {
-                if (it.isConnected()) {
-                    switchToConnectedState()
-                    polyLine?.addPoints(it.points)
+            binding.telemetry = dataService?.telemetryLiveData
+            binding.connectionState = dataService?.connectionStateLiveData
+            dataService?.connectionStateLiveData?.observe(this@MapsActivity, {
+                when (it) {
+                    DataService.ConnectionState.DISCONNECTED -> switchToIdleState()
+                    DataService.ConnectionState.CONNECTED -> switchToConnectedState()
+                    DataService.ConnectionState.CONNECTING -> switchToConnectingState()
+                    DataService.ConnectionState.REPLAY -> switchToReplayMode()
                 }
+            })
+            dataService?.telemetryLiveData?.observe(this@MapsActivity, telemetryObserver)
+        }
+    }
+
+    private fun updateHorizon() {
+        binding.telemetry?.value?.pitch?.let { binding.horizonView.setPitch(it) }
+        binding.telemetry?.value?.roll?.let { binding.horizonView.setRoll(it) }
+    }
+
+    private fun updateFuel() {
+        val batteryUnits = preferenceManager.getBatteryUnits()
+        var realFuel = binding.telemetry?.value?.fuel
+        val lastCellVoltage = binding.telemetry?.value?.cellVoltage ?: 0f
+
+        when (batteryUnits) {
+            "mAh", "mWh" -> {
+                binding.topLayout.fuel.text = "$realFuel $batteryUnits"
+                if (lastCellVoltage > 0)
+                    realFuel = ((1 - (4.2f - lastCellVoltage)).coerceIn(0f, 1f) * 100).toInt()
             }
+            "Percentage" -> {
+                binding.topLayout.fuel.text = "$realFuel%"
+            }
+        }
+
+        when (realFuel) {
+            in 91..100 -> R.drawable.ic_battery_full
+            in 81..90 -> R.drawable.ic_battery_90
+            in 61..80 -> R.drawable.ic_battery_80
+            in 51..60 -> R.drawable.ic_battery_60
+            in 31..50 -> R.drawable.ic_battery_50
+            in 21..30 -> R.drawable.ic_battery_30
+            in 0..20 -> R.drawable.ic_battery_alert
+            else -> R.drawable.ic_battery_unknown
+        }.let {
+            binding.topLayout.fuel.setCompoundDrawablesWithIntrinsicBounds(
+                null,
+                ContextCompat.getDrawable(this, it),
+                null,
+                null
+            )
+        }
+    }
+
+    private fun switchToConnectingState() {
+        binding.topLayout.connectButton.apply {
+            text = getString(R.string.connecting)
+            isEnabled = false
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_maps)
+        binding = DataBindingUtil.setContentView(this, R.layout.activity_maps)
+        binding.lifecycleOwner = this
 
         preferenceManager = PreferenceManager(this)
 
         mapType = preferenceManager.getMapType()
-        followMode = savedInstanceState?.getBoolean("follow_mode", true) ?: true
-        replayFileString = savedInstanceState?.getString("replay_file_name")
         fullscreenWindow = preferenceManager.isFullscreenWindow()
 
-        rootLayout = findViewById(R.id.rootLayout)
-        fuel = findViewById(R.id.fuel)
-        satellites = findViewById(R.id.satellites)
-        topLayout = findViewById(R.id.top_layout)
-        connectButton = findViewById(R.id.connect_button)
-        current = findViewById(R.id.current)
-        voltage = findViewById(R.id.voltage)
-        phoneBattery = findViewById(R.id.phone_battery)
-        speed = findViewById(R.id.speed)
-        distance = findViewById(R.id.distance)
-        altitude = findViewById(R.id.altitude)
-        mode = findViewById(R.id.mode)
-        followButton = findViewById(R.id.follow_button)
-        mapTypeButton = findViewById(R.id.map_type_button)
-        settingsButton = findViewById(R.id.settings_button)
-        replayButton = findViewById(R.id.replay_button)
-        seekBar = findViewById(R.id.seekbar)
-        horizonView = findViewById(R.id.horizon_view)
-        fullscreenButton = findViewById(R.id.fullscreen_button)
-        directionsButton = findViewById(R.id.directions_button)
-        topList = findViewById(R.id.top_list)
-        bottomList = findViewById(R.id.bottom_list)
-        mapHolder = findViewById(R.id.map_holder)
-
         sensorViewMap = hashMapOf(
-            Pair(PreferenceManager.sensors.elementAt(0).name, satellites),
-            Pair(PreferenceManager.sensors.elementAt(1).name, fuel),
-            Pair(PreferenceManager.sensors.elementAt(2).name, voltage),
-            Pair(PreferenceManager.sensors.elementAt(3).name, current),
-            Pair(PreferenceManager.sensors.elementAt(4).name, speed),
-            Pair(PreferenceManager.sensors.elementAt(5).name, distance),
-            Pair(PreferenceManager.sensors.elementAt(6).name, altitude),
-            Pair(PreferenceManager.sensors.elementAt(7).name, phoneBattery)
+            Pair(PreferenceManager.sensors.elementAt(0).name, binding.topLayout.satellites),
+            Pair(PreferenceManager.sensors.elementAt(1).name, binding.topLayout.fuel),
+            Pair(PreferenceManager.sensors.elementAt(2).name, binding.topLayout.voltage),
+            Pair(PreferenceManager.sensors.elementAt(3).name, binding.topLayout.current),
+            Pair(PreferenceManager.sensors.elementAt(4).name, binding.bottomLayout.speed),
+            Pair(PreferenceManager.sensors.elementAt(5).name, binding.bottomLayout.distance),
+            Pair(PreferenceManager.sensors.elementAt(6).name, binding.bottomLayout.altitude),
+            Pair(PreferenceManager.sensors.elementAt(7).name, binding.topLayout.phoneBattery)
         )
 
         firebaseAnalytics = FirebaseAnalytics.getInstance(this)
 
-        settingsButton.setOnClickListener {
+        binding.topLayout.settingsButton.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
 
-        fullscreenButton.setOnClickListener {
+        binding.fullscreenButton.setOnClickListener {
             updateFullscreenState()
             this.fullscreenWindow = !this.fullscreenWindow
             preferenceManager.setFullscreenWindow(fullscreenWindow)
             updateWindowFullscreenDecoration()
         }
 
-        followButton.setOnClickListener {
-            followMode = true
+        binding.followButton.setOnClickListener {
+            viewModel.followMode = true
             marker?.let {
                 map?.moveCamera(it.position)
             }
         }
 
-        mapTypeButton.setOnClickListener {
+        binding.mapTypeButton.setOnClickListener {
             showMapTypeSelectorDialog()
         }
 
-        directionsButton.setOnClickListener {
+        binding.directionsButton.setOnClickListener {
             showDirectionsToCurrentLocation()
         }
 
-        directionsButton.setOnLongClickListener {
+        binding.directionsButton.setOnLongClickListener {
             showAndCopyCurrentGPSLocation()
             true
         }
 
-        if (isInReplayMode()) {
-            val logFile: LogFile
-            if (shouldUseStorageAPI()) {
-                logFile = DocumentLogFile(
-                    DocumentFile.fromSingleUri(this, Uri.parse(replayFileString))!!,
-                    contentResolver
-                )
-            } else {
-                logFile = StandardLogFile(
-                    File(
-                        Environment.getExternalStoragePublicDirectory("TelemetryLogs"),
-                        replayFileString
-                    )
-                )
-            }
-            startReplay(logFile)
-        } else {
-            switchToIdleState()
-        }
-
-        startDataService()
-
+        binding.topLayout.replayButton.setOnClickListener { replay() }
         checkAppInstallDate()
         initMap(false)
         map?.onCreate(savedInstanceState)
@@ -268,6 +268,28 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
                 (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
     }
 
+    fun setSeekbarListener() {
+        binding.seekbar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(
+                seekbar: SeekBar,
+                position: Int,
+                p2: Boolean
+            ) {
+                dataService?.seekReplay(position)
+            }
+
+            override fun onStartTrackingTouch(p0: SeekBar?) {
+            }
+
+            override fun onStopTrackingTouch(p0: SeekBar?) {
+
+            }
+        })
+    }
+
+    fun removeSeekbarListener() {
+        binding.seekbar.setOnSeekBarChangeListener(null)
+    }
 
     private fun initMap(simulateLifecycle: Boolean) {
         if (mapType in GoogleMap.MAP_TYPE_NORMAL..GoogleMap.MAP_TYPE_HYBRID) {
@@ -279,15 +301,15 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
 
     private fun initOSMMap() {
         val mapView = org.osmdroid.views.MapView(this)
-        mapHolder.addView(mapView)
+        binding.mapHolder.addView(mapView)
         map = OsmMapWrapper(applicationContext, mapView) {
-            initHeadingLine()
         }
         map?.setOnCameraMoveStartedListener {
-            followMode = false
+            viewModel.followMode = false
         }
         polyLine = map?.addPolyline(preferenceManager.getRouteColor())
         showMyLocation()
+        startDataService()
     }
 
     private fun showMyLocation() {
@@ -308,20 +330,20 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
 
     private fun initGoogleMap(simulateLifecycle: Boolean) {
         val mapView = MapView(this)
-        mapHolder.addView(mapView)
+        binding.mapHolder.addView(mapView)
         map = GoogleMapWrapper(this, mapView) {
             showMyLocation()
             map?.mapType = mapType
-            topLayout.measure(
+            binding.topLayout.root.measure(
                 RelativeLayout.LayoutParams.MATCH_PARENT,
                 RelativeLayout.LayoutParams.WRAP_CONTENT
             )
             polyLine = map?.addPolyline(preferenceManager.getRouteColor())
             map?.setOnCameraMoveStartedListener {
-                followMode = false
+                viewModel.followMode = false
             }
-            map?.setPadding(0, topLayout.measuredHeight, 0, 0)
-            initHeadingLine()
+            map?.setPadding(0, binding.topLayout.root.measuredHeight, 0, 0)
+            startDataService()
         }
         if (simulateLifecycle) {
             map?.onCreate(null)
@@ -399,7 +421,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     }
 
     private fun isInReplayMode(): Boolean {
-        return replayFileString != null
+        return binding.connectionState?.value == DataService.ConnectionState.REPLAY
     }
 
     private fun isIdle(): Boolean {
@@ -433,7 +455,8 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             val dir = Environment.getExternalStoragePublicDirectory("TelemetryLogs")
             if (dir.exists()) {
                 val files =
-                    dir.listFiles { file -> file.extension == "log" && file.length() > 0 }?.reversed()
+                    dir.listFiles { file -> file.extension == "log" && file.length() > 0 }
+                        ?.reversed()
                 if (files == null) {
                     Toast.makeText(this, "No log files available", Toast.LENGTH_SHORT).show()
                     return
@@ -466,14 +489,13 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
                 Uri.parse(preferenceManager.getLogsStorageFolder())
             )
             if (tree?.canRead() == true) {
-                val files = tree.listFiles().reversed()
+                val files = tree.listFiles().reversed().filter { it.length() > 0 }
                 AlertDialog.Builder(this)
                     .setAdapter(
-                        ArrayAdapter<String>(
+                        ArrayAdapter(
                             this,
                             android.R.layout.simple_list_item_1,
                             files.map { i -> "${i.name} (${i.length() / 1024} Kb)" }
-                                .toMutableList()
                         )
                     ) { _, i ->
                         startReplay(DocumentLogFile(files[i], contentResolver))
@@ -487,195 +509,24 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
 
     private fun startReplay(file: LogFile) {
         file.also {
-            updateWindowFullscreenDecoration()
             val progressDialog = ProgressDialog(this)
             progressDialog.setCancelable(false)
             progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL)
             progressDialog.max = 100
-
-            progressDialog.window?.setFlags(
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-            )
             progressDialog.show()
-            if (!this.fullscreenWindow) {
-                progressDialog.window?.decorView?.systemUiVisibility = 0
-            } else {
-                progressDialog.window?.decorView?.systemUiVisibility =
-                    (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
-            }
-            progressDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
 
-            switchToReplayMode()
-
-            if (shouldUseStorageAPI()) {
-                replayFileString = it.uri.toString()
-            } else {
-                replayFileString = it.name
-            }
-
-            val logPlayer =
-                LogPlayer(this, contentResolver)
-            logPlayer.load(file, object : LogPlayer.DataReadyListener {
+            dataService?.startReplay(file, object : LogPlayer.DataReadyListener {
                 override fun onUpdate(percent: Int) {
                     progressDialog.progress = percent
                 }
 
                 override fun onDataReady(size: Int) {
+                    binding.seekbar.max = size
                     progressDialog.dismiss()
-                    seekBar.max = size
-                    seekBar.visibility = View.VISIBLE
-                    seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-                        override fun onProgressChanged(
-                            seekbar: SeekBar,
-                            position: Int,
-                            p2: Boolean
-                        ) {
-                            logPlayer.seek(position)
-                        }
-
-                        override fun onStartTrackingTouch(p0: SeekBar?) {
-                        }
-
-                        override fun onStopTrackingTouch(p0: SeekBar?) {
-
-                        }
-                    })
                 }
             })
         }
 
-    }
-
-    override fun onFlyModeData(
-        armed: Boolean,
-        heading: Boolean,
-        firstFlightMode: DataDecoder.Companion.FlyMode?,
-        secondFlightMode: DataDecoder.Companion.FlyMode?
-    ) {
-        runOnUiThread {
-            if (armed) {
-                mode.text = "Armed"
-            } else {
-                mode.text = "Disarmed"
-            }
-
-            if (heading) {
-                mode.text = mode.text.toString() + " | Heading"
-            }
-
-            decodeMode(firstFlightMode)
-            decodeMode(secondFlightMode)
-        }
-    }
-
-    private fun decodeMode(flyMode: DataDecoder.Companion.FlyMode?) {
-        when (flyMode) {
-            DataDecoder.Companion.FlyMode.ACRO -> {
-                mode.text = mode.text.toString() + " | Acro"
-            }
-            DataDecoder.Companion.FlyMode.HORIZON -> {
-                mode.text = mode.text.toString() + " | Horizon"
-            }
-            DataDecoder.Companion.FlyMode.ANGLE -> {
-                mode.text = mode.text.toString() + " | Angle"
-            }
-            DataDecoder.Companion.FlyMode.FAILSAFE -> {
-                mode.text = mode.text.toString() + " | Failsafe"
-            }
-            DataDecoder.Companion.FlyMode.RTH -> {
-                mode.text = mode.text.toString() + " | RTH"
-            }
-            DataDecoder.Companion.FlyMode.WAYPOINT -> {
-                mode.text = mode.text.toString() + " | Waypoint"
-            }
-            DataDecoder.Companion.FlyMode.MANUAL -> {
-                mode.text = mode.text.toString() + " | Manual"
-            }
-            DataDecoder.Companion.FlyMode.CRUISE -> {
-                mode.text = mode.text.toString() + " | Cruise"
-            }
-            DataDecoder.Companion.FlyMode.HOLD -> {
-                mode.text = mode.text.toString() + " | Hold"
-            }
-            DataDecoder.Companion.FlyMode.HOME_RESET -> {
-                mode.text = mode.text.toString() + " | Home reset"
-            }
-            DataDecoder.Companion.FlyMode.CRUISE3D -> {
-                mode.text = mode.text.toString() + " | 3D Cruise"
-            }
-            DataDecoder.Companion.FlyMode.ALTHOLD -> {
-                mode.text = mode.text.toString() + " | Alt hold"
-            }
-            DataDecoder.Companion.FlyMode.ERROR -> {
-                mode.text = mode.text.toString() + " | !ERROR!"
-            }
-            DataDecoder.Companion.FlyMode.WAIT -> {
-                mode.text = mode.text.toString() + " | GPS wait"
-            }
-            DataDecoder.Companion.FlyMode.CIRCLE -> {
-                mode.text = mode.text.toString() + " | Circle"
-            }
-            DataDecoder.Companion.FlyMode.STABILIZE -> {
-                mode.text = mode.text.toString() + " | Stabilize"
-            }
-            DataDecoder.Companion.FlyMode.TRAINING -> {
-                mode.text = mode.text.toString() + " | Training"
-            }
-            DataDecoder.Companion.FlyMode.FBWA -> {
-                mode.text = mode.text.toString() + " | FBWA"
-            }
-            DataDecoder.Companion.FlyMode.FBWB -> {
-                mode.text = mode.text.toString() + " | FBWB"
-            }
-            DataDecoder.Companion.FlyMode.AUTOTUNE -> {
-                mode.text = mode.text.toString() + " | Autotune"
-            }
-            DataDecoder.Companion.FlyMode.LOITER -> {
-                mode.text = mode.text.toString() + " | Loiter"
-            }
-            DataDecoder.Companion.FlyMode.TAKEOFF -> {
-                mode.text = mode.text.toString() + " | Takeoff"
-            }
-            DataDecoder.Companion.FlyMode.AVOID_ADSB -> {
-                mode.text = mode.text.toString() + " | AVOID_ADSB"
-            }
-            DataDecoder.Companion.FlyMode.GUIDED -> {
-                mode.text = mode.text.toString() + " | Guided"
-            }
-            DataDecoder.Companion.FlyMode.INITIALISING -> {
-                mode.text = mode.text.toString() + " | Initializing"
-            }
-            DataDecoder.Companion.FlyMode.LANDING -> {
-                mode.text = mode.text.toString() + " | Landing"
-            }
-            DataDecoder.Companion.FlyMode.MISSION -> {
-                mode.text = mode.text.toString() + " | Mission"
-            }
-            DataDecoder.Companion.FlyMode.QSTABILIZE -> {
-                mode.text = mode.text.toString() + " | QSTABILIZE"
-            }
-            DataDecoder.Companion.FlyMode.QHOVER -> {
-                mode.text = mode.text.toString() + " | QHOVER"
-            }
-            DataDecoder.Companion.FlyMode.QLOITER -> {
-                mode.text = mode.text.toString() + " | QLOITER"
-            }
-            DataDecoder.Companion.FlyMode.QLAND -> {
-                mode.text = mode.text.toString() + " | QLAND"
-            }
-            DataDecoder.Companion.FlyMode.QRTL -> {
-                mode.text = mode.text.toString() + " | QRTL"
-            }
-            DataDecoder.Companion.FlyMode.QAUTOTUNE -> {
-                mode.text = mode.text.toString() + " | QAUTOTUNE"
-            }
-            DataDecoder.Companion.FlyMode.QACRO -> {
-                mode.text = mode.text.toString() + " | QACRO"
-            }
-            null -> {
-            }
-        }
     }
 
     override fun onLowMemory() {
@@ -686,8 +537,6 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         map?.onSaveInstanceState(outState)
-        outState.putBoolean("follow_mode", followMode)
-        outState.putString("replay_file_name", replayFileString)
         preferenceManager.setFullscreenWindow(fullscreenWindow)
     }
 
@@ -695,24 +544,24 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         super.onStart()
         map?.onStart()
         if (preferenceManager.showArtificialHorizonView()) {
-            horizonView.visibility = View.VISIBLE
+            binding.horizonView.visibility = View.VISIBLE
         } else {
-            horizonView.visibility = View.GONE
+            binding.horizonView.visibility = View.GONE
         }
         updateSensorsPlacement()
     }
 
     private fun updateSensorsPlacement() {
         val sensorsSettings = preferenceManager.getSensorsSettings()
-        topList.removeAllViews()
-        bottomList.removeAllViews()
+        binding.topLayout.topList.removeAllViews()
+        binding.bottomLayout.bottomList.removeAllViews()
         sensorsSettings.forEach {
             val sensorView = sensorViewMap[it.name]
             sensorView?.visibility = if (it.shown) View.VISIBLE else View.GONE
             if (it.position == "top") {
-                topList.addView(sensorView)
+                binding.topLayout.topList.addView(sensorView)
             } else {
-                bottomList.addView(sensorView)
+                binding.bottomLayout.bottomList.addView(sensorView)
             }
         }
     }
@@ -748,7 +597,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
 
         }
         val showcaseView = MaterialShowcaseView.Builder(this)
-            .setTarget(replayButton)
+            .setTarget(binding.topLayout.replayButton)
             .setDismissTextColor(Color.GREEN)
             .setMaskColour(Color.argb(230, 0, 0, 0))
             .setDismissText("GOT IT")
@@ -860,9 +709,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             return
         }
 
-        if (!adapter.isEnabled) {
-            val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
+        if (!bluetoothEnabled()) {
             return
         }
 
@@ -886,6 +733,16 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
                     connectToBluetoothDevice(devices[i], false)
                 }
             }.show()
+    }
+
+    private fun bluetoothEnabled(): Boolean {
+        val enabled = BluetoothAdapter.getDefaultAdapter().isEnabled
+        if (!enabled) {
+            val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
+        }
+
+        return enabled
     }
 
     private fun showPairDeviceDialog() {
@@ -969,9 +826,18 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
 
     private fun connectBluetoothLE() {
         if (!bleCheck()) {
-            Toast.makeText(this, "Bluetooth LE is not supported or application does not have needed permissions", Toast.LENGTH_LONG).show()
+            Toast.makeText(
+                this,
+                "Bluetooth LE is not supported or application does not have needed permissions",
+                Toast.LENGTH_LONG
+            ).show()
             return
         }
+
+        if (!bluetoothEnabled()) {
+            return
+        }
+
         val adapter = BluetoothAdapter.getDefaultAdapter()
         val devices = ArrayList<BluetoothDevice>()
         val deviceNames = ArrayList<String>()
@@ -996,35 +862,6 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         }.show()
     }
 
-    private fun resetUI() {
-        satellites.text = "0"
-        voltage.text = "-"
-        phoneBattery.text = "-"
-        current.text = "-"
-        fuel.text = "-"
-        altitude.text = "-"
-        speed.text = "-"
-        distance.text = "-"
-        mode.text = "Disconnected"
-        horizonView.setPitch(0f)
-        horizonView.setRoll(0f)
-        if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            this.fuel.setCompoundDrawablesWithIntrinsicBounds(
-                ContextCompat.getDrawable(this, R.drawable.ic_battery_unknown),
-                null,
-                null,
-                null
-            )
-        } else {
-            this.fuel.setCompoundDrawablesWithIntrinsicBounds(
-                null,
-                ContextCompat.getDrawable(this, R.drawable.ic_battery_unknown),
-                null,
-                null
-            )
-        }
-    }
-
     private fun bleCheck() =
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2 && ContextCompat.checkSelfPermission(
             this,
@@ -1038,10 +875,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
 
 
     private fun connectToBluetoothDevice(device: BluetoothDevice, isBLE: Boolean) {
-        startDataService()
         dataService?.let {
-            connectButton.text = getString(R.string.connecting)
-            connectButton.isEnabled = false
             createLogFile()?.let { file ->
                 it.connect(device, file, isBLE)
             }
@@ -1052,10 +886,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         port: UsbSerialPort,
         connection: UsbDeviceConnection
     ) {
-        startDataService()
         dataService?.let {
-            connectButton.text = getString(R.string.connecting)
-            connectButton.isEnabled = false
             createLogFile()?.let { file ->
                 it.connect(port, connection, file)
             }
@@ -1065,11 +896,13 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     override fun onDestroy() {
         super.onDestroy()
         map?.onDestroy()
-        if (!isChangingConfigurations) {
-            dataService?.setDataListener(null)
-        }
         this.unregisterReceiver(this.batInfoReceiver)
         unbindService(serviceConnection)
+        dataService?.let {
+            if (!isChangingConfigurations && !it.isConnected()) {
+                stopDataService()
+            }
+        }
     }
 
     private fun startDataService() {
@@ -1081,6 +914,11 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         }
         startService(intent)
         bindService(intent, serviceConnection, 0)
+    }
+
+    private fun stopDataService() {
+        val intent = Intent(this, DataService::class.java)
+        stopService(intent)
     }
 
     override fun onRequestPermissionsResult(
@@ -1123,10 +961,11 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         }
     }
 
+    @SuppressLint("NewApi")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_ENABLE_BT && resultCode == RESULT_OK) {
-            connectBluetooth()
+            connect()
         } else if (requestCode == REQUEST_FILE_TREE_REPLAY && resultCode == RESULT_OK) {
             preferenceManager.setLogsStorageFolder(data?.dataString)
             contentResolver.takePersistableUriPermission(
@@ -1144,79 +983,9 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         }
     }
 
-    override fun onVSpeedData(vspeed: Float) {
-
-    }
-
-    override fun onAltitudeData(altitude: Float) {
-        runOnUiThread {
-            this.altitude.text = "${"%.2f".format(altitude)} m"
-        }
-    }
-
-    override fun onGPSAltitudeData(altitude: Float) {
-
-    }
-
-    override fun onDistanceData(distance: Int) {
-        runOnUiThread {
-            this.distance.text = "$distance m"
-        }
-    }
-
-    override fun onRollData(rollAngle: Float) {
-        runOnUiThread {
-            horizonView.setRoll(rollAngle)
-        }
-    }
-
-    override fun onPitchData(pitchAngle: Float) {
-        runOnUiThread {
-            horizonView.setPitch(pitchAngle)
-        }
-    }
-
-    override fun onGSpeedData(speed: Float) {
-        runOnUiThread {
-            if (!preferenceManager.usePitotTube()) {
-                updateSpeed(speed)
-            }
-        }
-    }
-
-    override fun onAirSpeed(speed: Float) {
-        runOnUiThread {
-            if (preferenceManager.usePitotTube()) {
-                updateSpeed(speed)
-            }
-        }
-    }
-
-    private fun updateSpeed(speed: Float) {
-        this.speed.text = "${speed.roundToInt()} km/h"
-    }
-
-    override fun onGPSState(satellites: Int, gpsFix: Boolean) {
-        runOnUiThread {
-            this.hasGPSFix = gpsFix
-            if (gpsFix && marker == null) {
-                marker =
-                    map?.addMarker(R.drawable.ic_plane, preferenceManager.getPlaneColor(), lastGPS)
-                if (headingPolyline == null && preferenceManager.isHeadingLineEnabled()) {
-                    headingPolyline = createHeadingPolyline()
-                }
-                map?.moveCamera(lastGPS, 15f)
-            }
-            this.satellites.text = satellites.toString()
-        }
-    }
-
     private fun createHeadingPolyline(): MapLine? {
+        val lastGPS = binding.telemetry?.value?.position?.lastOrNull() ?: Position(0.0, 0.0)
         return map?.addPolyline(3f, preferenceManager.getHeadLineColor(), lastGPS, lastGPS)
-    }
-
-    override fun onRSSIData(rssi: Int) {
-
     }
 
     private fun checkSendDataDialogShown() {
@@ -1259,7 +1028,8 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
             MAP_TYPE_ITEMS,
             checkItem
         ) { dialog, item ->
-            mapHolder.removeAllViews()
+            dataService?.telemetryLiveData?.removeObserver(telemetryObserver)
+            binding.mapHolder.removeAllViews()
             map = null
             mapType = item + 1
             preferenceManager.setMapType(mapType)
@@ -1272,194 +1042,70 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
         fMapTypeDialog.show()
     }
 
-    override fun onVBATData(voltage: Float) {
-        lastVBAT = voltage
-        runOnUiThread {
-            updateVoltage()
-        }
-    }
-
-    override fun onCurrentData(current: Float) {
-        runOnUiThread {
-            this.current.text = "${"%.2f".format(current)} A"
-        }
-    }
-
-    override fun onHeadingData(heading: Float) {
-        lastHeading = heading
-        runOnUiThread {
-            marker?.let {
-                it.rotation = heading
-                updateHeading()
+    private fun updateHeading() {
+        headingPolyline?.let { headingLine ->
+            val lastGPS = binding.telemetry?.value?.position?.lastOrNull() ?: Position(0.0, 0.0)
+            val lastHeading = binding.telemetry?.value?.heading
+            lastHeading?.let {
+                marker?.rotation = lastHeading
+                headingLine.setPoint(0, lastGPS)
+                val computeOffset =
+                    SphericalUtil.computeOffset(lastGPS.toLatLng(), 1000.0, lastHeading.toDouble())
+                headingLine.setPoint(1, Position(computeOffset.latitude, computeOffset.longitude))
             }
         }
     }
 
-    private fun updateHeading() {
-        headingPolyline?.let { headingLine ->
-            headingLine.setPoint(0, lastGPS)
-            val computeOffset =
-                SphericalUtil.computeOffset(lastGPS.toLatLng(), 1000.0, lastHeading.toDouble())
-            headingLine.setPoint(1, Position(computeOffset.latitude, computeOffset.longitude))
-        }
-    }
-
-    override fun onCellVoltageData(voltage: Float) {
-        lastCellVoltage = voltage
-        runOnUiThread {
-            updateVoltage()
-        }
-    }
-
-    private fun updateVoltage() {
-        if (lastCellVoltage > 0)
-            this.voltage.text = "${"%.2f".format(lastVBAT)} (${"%.2f".format(lastCellVoltage)}) V"
-        else
-            this.voltage.text = "${"%.2f".format(lastVBAT)} V"
-    }
-
-    override fun onDisconnected() {
-        Toast.makeText(this, "Disconnected", Toast.LENGTH_SHORT).show()
-        switchToIdleState()
-    }
-
     private fun switchToReplayMode() {
-        seekBar.setOnSeekBarChangeListener(null)
-        seekBar.progress = 0
-        directionsButton.show()
-        connectButton.visibility = View.GONE
-        replayButton.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_close))
-        replayButton.setOnClickListener {
-            switchToIdleState()
-            replayFileString = null
+        removeSeekbarListener()
+        binding.seekbar.max = dataService?.getReplaySize() ?: 0
+        binding.seekbar.progress = dataService?.getSeekPosition() ?: 0
+        setSeekbarListener()
+        binding.directionsButton.show()
+        binding.topLayout.replayButton.setImageDrawable(
+            ContextCompat.getDrawable(
+                this,
+                R.drawable.ic_close
+            )
+        )
+        binding.topLayout.replayButton.setOnClickListener {
+            dataService?.stopReplay()
         }
+        binding.topLayout.connectButton.visibility = View.GONE
+        initHeadingLine()
     }
 
     private fun switchToIdleState() {
-        resetUI()
-        directionsButton.hide()
-        seekBar.visibility = View.GONE
-        connectButton.visibility = View.VISIBLE
-        connectButton.text = getString(R.string.connect)
-        replayButton.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_replay))
-        replayButton.visibility = View.VISIBLE
-        replayButton.setOnClickListener {
-            replay()
+        binding.topLayout.connectButton.apply {
+            setOnClickListener {
+                connect()
+            }
+            text = getString(R.string.connect)
+            isEnabled = true
+            visibility = View.VISIBLE
         }
-        connectButton.isEnabled = true
-        connectButton.setOnClickListener {
-            connect()
+
+        binding.topLayout.replayButton.apply {
+            setImageDrawable(ContextCompat.getDrawable(this@MapsActivity, R.drawable.ic_replay))
+            setOnClickListener { replay() }
         }
         marker?.remove()
         marker = null
         polyLine?.clear()
         headingPolyline?.remove()
+        headingPolyline = null
     }
 
     private fun switchToConnectedState() {
-        replayButton.visibility = View.GONE
-        connectButton.text = getString(R.string.disconnect)
-        connectButton.isEnabled = true
-        connectButton.setOnClickListener {
-            connectButton.isEnabled = false
-            connectButton.text = getString(R.string.disconnecting)
-            dataService?.disconnect()
-        }
-    }
-
-    override fun onConnectionFailed() {
-        runOnUiThread {
-            Toast.makeText(this, "Connection failed", Toast.LENGTH_SHORT).show()
-            connectButton.text = getString(R.string.connect)
-            connectButton.isEnabled = true
-            connectButton.setOnClickListener {
-                connect()
+        initHeadingLine()
+        binding.topLayout.connectButton.apply {
+            text = getString(R.string.disconnect)
+            isEnabled = true
+            setOnClickListener {
+                isEnabled = false
+                text = getString(R.string.disconnecting)
+                dataService?.disconnect()
             }
-        }
-    }
-
-    override fun onFuelData(fuel: Int) {
-        runOnUiThread {
-            val batteryUnits = preferenceManager.getBatteryUnits()
-            var realFuel = fuel
-
-            when (batteryUnits) {
-                "mAh", "mWh" -> {
-                    this.fuel.text = "$fuel $batteryUnits"
-                    if (lastCellVoltage > 0)
-                        realFuel = ((1 - (4.2f - lastCellVoltage)).coerceIn(0f, 1f) * 100).toInt()
-                }
-                "Percentage" -> {
-                    this.fuel.text = "$fuel%"
-                }
-            }
-
-            when (realFuel) {
-                in 91..100 -> R.drawable.ic_battery_full
-                in 81..90 -> R.drawable.ic_battery_90
-                in 61..80 -> R.drawable.ic_battery_80
-                in 51..60 -> R.drawable.ic_battery_60
-                in 31..50 -> R.drawable.ic_battery_50
-                in 21..30 -> R.drawable.ic_battery_30
-                in 0..20 -> R.drawable.ic_battery_alert
-                else -> R.drawable.ic_battery_unknown
-            }.let {
-                if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                    this.fuel.setCompoundDrawablesWithIntrinsicBounds(
-                        ContextCompat.getDrawable(this, it),
-                        null,
-                        null,
-                        null
-                    )
-                } else {
-                    this.fuel.setCompoundDrawablesWithIntrinsicBounds(
-                        null,
-                        ContextCompat.getDrawable(this, it),
-                        null,
-                        null
-                    )
-                }
-            }
-        }
-    }
-
-    override fun onSuccessDecode() {
-
-    }
-
-    override fun onGPSData(list: List<Position>, addToEnd: Boolean) {
-        runOnUiThread {
-            if (hasGPSFix && list.isNotEmpty()) {
-                if (!addToEnd) {
-                    polyLine?.clear()
-                }
-                polyLine?.addPoints(list)
-                polyLine?.removeAt(polyLine?.size!! - 1)
-                onGPSData(list[list.size - 1].lat, list[list.size - 1].lon)
-            }
-        }
-    }
-
-    override fun onGPSData(latitude: Double, longitude: Double) {
-        runOnUiThread {
-            if (Position(latitude, longitude) != lastGPS) {
-                lastGPS = Position(latitude, longitude)
-                marker?.let { it.position = lastGPS }
-                updateHeading()
-                if (followMode) {
-                    map?.moveCamera(lastGPS)
-                }
-                if (hasGPSFix) {
-                    polyLine?.addPoints(listOf(lastGPS))
-                }
-            }
-        }
-    }
-
-    override fun onConnected() {
-        runOnUiThread {
-            Toast.makeText(this, "Connected!", Toast.LENGTH_SHORT).show()
-            switchToConnectedState()
         }
     }
 
@@ -1500,7 +1146,7 @@ class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
     }
 
     private fun updatePhoneBattery() {
-        this.phoneBattery.text = "$lastPhoneBattery%"
+        binding.topLayout.phoneBattery.text = "$lastPhoneBattery%"
     }
 }
 
