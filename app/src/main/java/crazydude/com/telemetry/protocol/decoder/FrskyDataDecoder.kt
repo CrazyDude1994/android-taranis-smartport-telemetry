@@ -317,6 +317,7 @@ class FrskyDataDecoder(listener: Listener) : DataDecoder(listener) {
                 val Roll = bitExtracted(data.data,11,1)
                 val Pitch = bitExtracted(data.data,10,12)
                 listener.onRollData((Roll-900)*0.2f)
+                this.gotRollPitch = true;
                 listener.onPitchData((Pitch-450)*0.2f)
 //                Log.d(TAG, "Decoded roll $Roll, pitch $Pitch")
             }
