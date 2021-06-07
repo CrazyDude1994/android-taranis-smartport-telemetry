@@ -285,6 +285,7 @@ class DataService : Service(), DataDecoder.Listener {
     }
 
     override fun onRSSIData(rssi: Int) {
+        telemetryModel.rssi = rssi
     }
 
     override fun onDisconnected() {

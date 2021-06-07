@@ -36,6 +36,21 @@
                     android:layout_toEndOf="@id/connect_button">
 
                 <TextView
+                        android:id="@+id/rssi"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="6dp"
+                        android:layout_marginRight="6dp"
+                        android:layout_marginTop="6dp"
+                        android:layout_marginBottom="2dp"
+                        android:drawableTop="@drawable/ic_rssi_5"
+                        android:drawablePadding="0dp"
+                        android:textAlignment="center"
+                        android:text="-"
+                        android:textColor="@android:color/white"
+                        android:textSize="16sp"/>
+
+                <TextView
                         android:id="@+id/satellites"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
