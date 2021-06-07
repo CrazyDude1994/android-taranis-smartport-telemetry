@@ -18,3 +18,4 @@ before_install:
   -in exception-catcher.jks.enc -out exception-catcher.jks -d
 - printf "storeFile=exception-catcher.jks\nstorePassword=$storePassword\nkeyAlias=$keyAlias\nkeyPassword=$keyPassword"
   > keystore.properties
+- yes | sdkmanager "platforms;android-30"
