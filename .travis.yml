@@ -11,3 +11,4 @@ android:
 before_install:
 - openssl aes-256-cbc -K $encrypted_0d6d62930b50_key -iv $encrypted_0d6d62930b50_iv
   -in exception-catcher.jks.enc -out exception-catcher.jks -d
+- printf "storeFile=exception-catcher.jks\nstorePassword=$storePassword\nkeyAlias=$keyAlias\nkeyPassword=$keyPassword" > keystore.properties
