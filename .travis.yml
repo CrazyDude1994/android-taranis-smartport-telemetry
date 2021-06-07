@@ -1,4 +1,5 @@
 language: android
+dist: trusty
 android:
   components:
   - tools
@@ -8,6 +9,10 @@ android:
   - extra-google-google_play_services
   - extra-google-m2repository
   - extra-android-m2repository
+licenses:
+  - 'android-sdk-preview-license-52d11cd2'
+  - 'android-sdk-license-.+'
+  - 'google-gdk-license-.+'
 before_install:
 - openssl aes-256-cbc -K $encrypted_0d6d62930b50_key -iv $encrypted_0d6d62930b50_iv
   -in exception-catcher.jks.enc -out exception-catcher.jks -d
