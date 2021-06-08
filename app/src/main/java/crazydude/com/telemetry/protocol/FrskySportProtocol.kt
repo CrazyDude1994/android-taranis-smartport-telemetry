@@ -92,7 +92,6 @@ class FrSkySportProtocol : Protocol {
             Companion.State.IDLE -> {
                 if (data == SPORT_START_BYTE) {
                     state = Companion.State.DATA
-                    bufferIndex = 0
                 }
             }
             Companion.State.DATA -> {
@@ -112,6 +111,7 @@ class FrSkySportProtocol : Protocol {
 
         if (bufferIndex == SPORT_PACKET_SIZE) {
             state = Companion.State.IDLE
+            bufferIndex = 0
             val byteBuffer = ByteBuffer.wrap(buffer.foldIndexed(ByteArray(buffer.size)) { i, a, v ->
                 a.apply {
                     set(
