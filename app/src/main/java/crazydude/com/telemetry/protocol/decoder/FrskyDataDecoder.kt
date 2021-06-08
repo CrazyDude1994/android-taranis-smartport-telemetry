@@ -1,6 +1,5 @@
 package crazydude.com.telemetry.protocol.decoder
 
-import android.util.Log
 import crazydude.com.telemetry.protocol.Protocol
 import java.io.IOException
 import kotlin.math.pow
@@ -188,10 +187,10 @@ class FrskyDataDecoder(listener: Listener) : DataDecoder(listener) {
             }
 
             Protocol.ARDU_AP_STATUS ->{ //0x5001
-                val arduFlightMode=bitExtracted(data.data,5,1)
-                val arduArmed:Boolean
+                val arduFlightMode = bitExtracted(data.data, 5, 1)
+                val arduArmed: Boolean
                 val firstFlightMode: Companion.FlyMode
-                arduArmed = bitExtracted(data.data,1,9)==1
+                arduArmed = bitExtracted(data.data, 1, 9) == 1
                 if (arduFlightMode == 1) {
                     firstFlightMode = Companion.FlyMode.MANUAL
                 } else if (arduFlightMode == 2) {
@@ -219,7 +218,7 @@ class FrskyDataDecoder(listener: Listener) : DataDecoder(listener) {
                 } else if (arduFlightMode == 14) {
                     firstFlightMode = Companion.FlyMode.TAKEOFF
                 } else if (arduFlightMode == 15) {
-                     firstFlightMode = Companion.FlyMode.AVOID_ADSB
+                    firstFlightMode = Companion.FlyMode.AVOID_ADSB
                 } else if (arduFlightMode == 16) {
                     firstFlightMode = Companion.FlyMode.GUIDED
                 } else if (arduFlightMode == 17) {
