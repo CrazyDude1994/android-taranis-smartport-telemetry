@@ -2,6 +2,7 @@ package crazydude.com.telemetry.protocol
 
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import crazydude.com.telemetry.protocol.decoder.LTMDataDecoder
+import kotlin.experimental.xor
 
 
 class LTMProtocol : Protocol {
@@ -14,6 +15,7 @@ class LTMProtocol : Protocol {
     private var buffer: ByteArray = ByteArray(MAX_PACKET_SIZE)
     private lateinit var packetType: PacketType
     private var packetSize = 0
+    private var checksum: Byte = 0
 
     companion object {
         enum class State {
@@ -80,55 +82,67 @@ class LTMProtocol : Protocol {
                 }
             }
             Companion.State.DATA -> {
-                if (bufferIndex < packetSize) {
-                    buffer[bufferIndex] = data.toByte()
-                    bufferIndex++
+                if (bufferIndex == 0) {
+                    checksum = data.toByte()
                 } else {
-                    when (packetType) {
-                        Companion.PacketType.GPS -> {
-                            dataDecoder.decodeData(Protocol.Companion.TelemetryData(GPS, 0, buffer))
-                        }
-                        Companion.PacketType.ATTITUDE -> {
-                            dataDecoder.decodeData(
-                                Protocol.Companion.TelemetryData(
-                                    ATTITUDE,
-                                    0,
-                                    buffer
+                    checksum = checksum.xor(data.toByte())
+                }
+                if (bufferIndex == packetSize) {
+                    if (checksum.toInt() == 0) {
+                        when (packetType) {
+                            Companion.PacketType.GPS -> {
+                                dataDecoder.decodeData(
+                                    Protocol.Companion.TelemetryData(
+                                        GPS,
+                                        0,
+                                        buffer
+                                    )
                                 )
-                            )
-                        }
-                        Companion.PacketType.STATUS -> {
-                            dataDecoder.decodeData(
-                                Protocol.Companion.TelemetryData(
-                                    VBAT,
-                                    0,
-                                    buffer.copyOfRange(0, 2)
+                            }
+                            Companion.PacketType.ATTITUDE -> {
+                                dataDecoder.decodeData(
+                                    Protocol.Companion.TelemetryData(
+                                        ATTITUDE,
+                                        0,
+                                        buffer
+                                    )
                                 )
-                            )
-                            dataDecoder.decodeData(
-                                Protocol.Companion.TelemetryData(
-                                    FUEL,
-                                    0,
-                                    buffer.copyOfRange(2, 4)
+                            }
+                            Companion.PacketType.STATUS -> {
+                                dataDecoder.decodeData(
+                                    Protocol.Companion.TelemetryData(
+                                        VBAT,
+                                        0,
+                                        buffer.copyOfRange(0, 2)
+                                    )
                                 )
-                            )
-                            dataDecoder.decodeData(
-                                Protocol.Companion.TelemetryData(
-                                    FLYMODE,
-                                    0,
-                                    buffer.copyOfRange(6, 7)
+                                dataDecoder.decodeData(
+                                    Protocol.Companion.TelemetryData(
+                                        FUEL,
+                                        0,
+                                        buffer.copyOfRange(2, 4)
+                                    )
                                 )
-                            )
-                        }
-                        Companion.PacketType.ORIGIN -> {
-                        }
-                        Companion.PacketType.NAVIGATION -> {
-                        }
-                        Companion.PacketType.EXTRA -> {
+                                dataDecoder.decodeData(
+                                    Protocol.Companion.TelemetryData(
+                                        FLYMODE,
+                                        0,
+                                        buffer.copyOfRange(6, 7)
+                                    )
+                                )
+                            }
+                            Companion.PacketType.ORIGIN -> {
+                            }
+                            Companion.PacketType.NAVIGATION -> {
+                            }
+                            Companion.PacketType.EXTRA -> {
+                            }
                         }
                     }
                     state = Companion.State.HEADER
+                    return
                 }
+                buffer[bufferIndex++] = data.toByte()
             }
         }
     }
