@@ -1423,7 +1423,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
 
     protected fun updateCompressionQuality() {
         val compressionQuality : String = preferenceManager.getCompressionQuality()
-        this.mCameraFragment.setCompressionQuality( if (compressionQuality == "High" ) 1  else 0 );
+        this.mCameraFragment.setCompressionQuality( if (compressionQuality == "High" ) 2  else if (compressionQuality == "Normal" ) 1 else 0 );
     }
 
 }
