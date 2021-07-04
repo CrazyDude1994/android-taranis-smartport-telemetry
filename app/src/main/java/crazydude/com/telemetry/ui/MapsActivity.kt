@@ -504,7 +504,7 @@ class MapsActivity : AppCompatActivity() {
                     }
                     .show()
             } else {
-                startActivityForResult(intent, REQUEST_FILE_TREE_REPLAY)
+                startActivityForResult(storageIntent(), REQUEST_FILE_TREE_REPLAY)
             }
         }
     }
@@ -569,34 +569,40 @@ class MapsActivity : AppCompatActivity() {
     }
 
     private fun connect() {
-        if (!shouldUseStorageAPI()) {
-            if (!storageWriteCheck()) {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE),
-                    REQUEST_WRITE_PERMISSION
-                )
-                return
-            }
-        } else {
-            if (preferenceManager.getLogsStorageFolder() == null) {
-                Toast.makeText(this, "Please select log files save folder", Toast.LENGTH_LONG)
-                    .show()
-                startActivityForResult(storageIntent(), REQUEST_FILE_TREE_CREATE_LOG)
-                return
+        if (preferenceManager.isLoggingEnabled()) {
+            if (!shouldUseStorageAPI()) {
+                if (!storageWriteCheck()) {
+                    ActivityCompat.requestPermissions(
+                        this,
+                        arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                        REQUEST_WRITE_PERMISSION
+                    )
+                    return
+                }
             } else {
-                val tree = DocumentFile.fromTreeUri(
-                    this,
-                    Uri.parse(preferenceManager.getLogsStorageFolder())
-                )
-                if (tree?.canWrite() == false) {
+                if (preferenceManager.getLogsStorageFolder() == null) {
                     Toast.makeText(this, "Please select log files save folder", Toast.LENGTH_LONG)
                         .show()
                     startActivityForResult(storageIntent(), REQUEST_FILE_TREE_CREATE_LOG)
                     return
+                } else {
+                    val tree = DocumentFile.fromTreeUri(
+                        this,
+                        Uri.parse(preferenceManager.getLogsStorageFolder())
+                    )
+                    if (tree?.canWrite() == false) {
+                        Toast.makeText(
+                            this,
+                            "Please select log files save folder",
+                            Toast.LENGTH_LONG
+                        )
+                            .show()
+                        startActivityForResult(storageIntent(), REQUEST_FILE_TREE_CREATE_LOG)
+                        return
+                    }
                 }
-            }
 
+            }
         }
         val showcaseView = MaterialShowcaseView.Builder(this)
             .setTarget(binding.topLayout.replayButton)
