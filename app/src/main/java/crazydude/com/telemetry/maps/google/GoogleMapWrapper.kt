@@ -117,6 +117,7 @@ class GoogleMapWrapper(val context: Context, val mapView: MapView, private val c
 
     override fun onMapReady(googleMap: GoogleMap?) {
         this.googleMap = googleMap!!
+        googleMap.uiSettings.isCompassEnabled = true
         callback()
     }
 

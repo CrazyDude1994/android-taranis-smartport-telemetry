@@ -16,6 +16,7 @@ import android.os.*
 import android.provider.DocumentsContract
 import android.text.Html
 import android.text.method.LinkMovementMethod
+import android.util.Log
 import android.view.View
 import android.widget.*
 import androidx.activity.viewModels
@@ -344,7 +345,10 @@ class MapsActivity : AppCompatActivity() {
             map?.setOnCameraMoveStartedListener {
                 viewModel.followMode = false
             }
-            map?.setPadding(0, binding.topLayout.root.measuredHeight, 0, 0)
+            map?.setPadding(0, binding.topLayout.root.bottom, 0, 0)
+            binding.topLayout.root.addOnLayoutChangeListener { v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
+                map?.setPadding(0, bottom, 0, 0)
+            }
             startDataService()
         }
         if (simulateLifecycle) {
