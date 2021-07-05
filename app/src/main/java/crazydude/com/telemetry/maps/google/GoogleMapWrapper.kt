@@ -54,7 +54,7 @@ class GoogleMapWrapper(val context: Context, val mapView: MapView, private val c
                     context,
                     R.drawable.ic_plane, color
                 )
-            ).position(position.toLatLng())
+            ).position(position.toLatLng()).flat(true)
         )
         val marker = GoogleMarker(googleMarker, context)
         markers.add(marker)
