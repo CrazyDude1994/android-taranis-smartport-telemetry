@@ -2,10 +2,11 @@ package crazydude.com.telemetry.protocol
 
 import crazydude.com.telemetry.maps.Position
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
+import java.util.concurrent.CopyOnWriteArrayList
 
 data class TelemetryModel(
     var fuel: Int = 0,
-    var position: ArrayList<Position> = ArrayList(),
+    var position: MutableList<Position> = CopyOnWriteArrayList(),
     var vbat: Float = 0f,
     var cellVoltage: Float = 0f,
     var current: Float = 0f,
