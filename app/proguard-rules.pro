@@ -2,3 +2,4 @@
 -keepattributes SourceFile,LineNumberTable
 -keep public class * extends java.lang.Exception
 -keep class com.hoho.android.** { *; }
+-keep class crazydude.com.telemetry.api.** { <fields>; }
