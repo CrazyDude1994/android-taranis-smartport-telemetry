@@ -49,6 +49,7 @@ import crazydude.com.telemetry.service.DataService
 import crazydude.com.telemetry.ui.viewmodels.MapsViewModel
 import crazydude.com.telemetry.utils.DocumentLogFile
 import crazydude.com.telemetry.utils.LogFile
+import crazydude.com.telemetry.utils.NullOutputStream
 import crazydude.com.telemetry.utils.StandardLogFile
 import uk.co.deanwild.materialshowcaseview.MaterialShowcaseView
 import java.io.File
@@ -888,7 +889,7 @@ class MapsActivity : AppCompatActivity() {
 
     private fun connectToBluetoothDevice(device: BluetoothDevice, isBLE: Boolean) {
         dataService?.let {
-            createLogFile()?.let { file ->
+            createLogFile().let { file ->
                 it.connect(device, file, isBLE)
             }
         }
@@ -899,7 +900,7 @@ class MapsActivity : AppCompatActivity() {
         connection: UsbDeviceConnection
     ) {
         dataService?.let {
-            createLogFile()?.let { file ->
+            createLogFile().let { file ->
                 it.connect(port, connection, file)
             }
         }
@@ -1144,9 +1145,9 @@ class MapsActivity : AppCompatActivity() {
         }
     }
 
-    private fun createLogFile(): OutputStream? {
-        var fileOutputStream: OutputStream? = null
+    private fun createLogFile(): OutputStream {
         if (preferenceManager.isLoggingEnabled()) {
+            var fileOutputStream: OutputStream
             val name = SimpleDateFormat("yyyy-MM-dd HH-mm-ss").format(Date())
             if (!shouldUseStorageAPI()) {
                 val dir = Environment.getExternalStoragePublicDirectory("TelemetryLogs")
@@ -1167,7 +1168,7 @@ class MapsActivity : AppCompatActivity() {
             return fileOutputStream
         }
 
-        return null
+        return NullOutputStream()
     }
 
     private val batInfoReceiver: BroadcastReceiver = object : BroadcastReceiver() {
