@@ -87,15 +87,9 @@ class DataService : Service(), DataDecoder.Listener {
     }
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
-    fun connect(device: BluetoothDevice) {
+    fun connect(device: BluetoothDevice, isBle : Boolean) {
         try {
             dataPoller?.disconnect()
-
-            var isBle = false
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-                isBle = (device.type == BluetoothDevice.DEVICE_TYPE_LE)// or (device.type == BluetoothDevice.DEVICE_TYPE_DUAL) DUAL is reported for HC-06!
-            }
 
             val logFile = createLogFile()
 

@@ -167,7 +167,7 @@ class BluetoothLeDataPoller(
                         })
                     }
                 }
-            })
+            }, BluetoothDevice.TRANSPORT_LE)
     }
 
     fun closeConnection() {

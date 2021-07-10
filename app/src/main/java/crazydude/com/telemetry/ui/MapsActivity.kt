@@ -726,10 +726,11 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
 
         if (showcaseView.hasFired()) {
             this.showDialog( AlertDialog.Builder(this)
-                .setItems(arrayOf("Bluetooth", "USB Serial")) { dialogInterface, i ->
+                .setItems(arrayOf("Bluetooth", "Bluetooth LE", "USB Serial")) { dialogInterface, i ->
                     when (i) {
                         0 -> connectBluetooth()
-                        1 -> connectUSB()
+                        1 -> connectBluetoothLE()
+                        2 -> connectUSB()
                     }
                 }
                 .setTitle("Choose connection method")
@@ -862,6 +863,71 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             }
         }
 
+        this.showDialog( AlertDialog.Builder(this).setOnDismissListener {
+        }.setAdapter(deviceAdapter) { _, i ->
+            runOnUiThread {
+                connectToBluetoothDevice(devices[i], false)
+            }
+        }.create())
+    }
+
+    private fun connectBluetoothLE() {
+        if (!bleCheck()) {
+            Toast.makeText(
+                this,
+                "Bluetooth LE is not supported or application does not have needed permissions",
+                Toast.LENGTH_LONG
+            ).show()
+            return
+        }
+        val adapter = BluetoothAdapter.getDefaultAdapter()
+        if (adapter == null) {
+            this.showDialog( AlertDialog.Builder(this)
+                .setMessage("It seems like your phone does not have bluetooth, or it does not supported")
+                .setPositiveButton("OK", null)
+                .create())
+            return
+        }
+
+        if (!adapter.isEnabled) {
+            val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
+            return
+        }
+        if (preferenceManager.isLoggingEnabled()) {
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+                ) == PackageManager.PERMISSION_DENIED
+            ) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                    REQUEST_WRITE_PERMISSION
+                )
+                return
+            }
+        }
+
+        val devices = ArrayList<BluetoothDevice>(adapter.bondedDevices)
+        val deviceNames = ArrayList<String>(devices.map {
+            var result = it.name
+            if (result == null) {
+                result = it.address
+            }
+            result
+        }.filterNotNull())
+        val deviceAdapter =
+            ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, deviceNames)
+
+        val callback = BluetoothAdapter.LeScanCallback { bluetoothDevice, i, bytes ->
+            if (!devices.contains(bluetoothDevice) && bluetoothDevice.name != null) {
+                devices.add(bluetoothDevice)
+                deviceNames.add(bluetoothDevice.name)
+                deviceAdapter.notifyDataSetChanged()
+            }
+        }
+
         if (bleCheck()) {
             adapter.startLeScan(callback)
         }
@@ -875,7 +941,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                 adapter.stopLeScan(callback)
             }
             runOnUiThread {
-                connectToBluetoothDevice(devices[i])
+                connectToBluetoothDevice(devices[i], true)
             }
         }.create())
     }
@@ -921,12 +987,12 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         ) == PackageManager.PERMISSION_GRANTED
 
 
-    private fun connectToBluetoothDevice(device: BluetoothDevice) {
+    private fun connectToBluetoothDevice(device: BluetoothDevice, isBLE: Boolean) {
         startDataService()
         dataService?.let {
             connectButton.text = getString(R.string.connecting)
             connectButton.isEnabled = false
-            it.connect(device)
+            it.connect(device, isBLE)
         }
     }
 
