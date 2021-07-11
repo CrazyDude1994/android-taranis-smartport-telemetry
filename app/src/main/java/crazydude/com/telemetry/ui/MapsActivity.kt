@@ -638,6 +638,9 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             DataDecoder.Companion.FlyMode.QACRO -> {
                 mode.text = mode.text.toString() + " | QACRO"
             }
+            DataDecoder.Companion.FlyMode.AUTONOMOUS -> {
+                mode.text = mode.text.toString() + " | Autonomous"
+            }
             null -> {
             }
         }
