@@ -3,6 +3,9 @@ package crazydude.com.telemetry.protocol.decoder
 import android.util.Log
 import crazydude.com.telemetry.protocol.Protocol
 
+const val MAX_RSSI = 0
+const val MIN_RSSI = -130
+
 class CrsfDataDecoder(listener: Listener) : DataDecoder(listener) {
 
     private var newLatitude = false
@@ -44,6 +47,13 @@ class CrsfDataDecoder(listener: Listener) : DataDecoder(listener) {
             Protocol.GSPEED -> {
                 val speed = data.data / 10f
                 listener.onGSpeedData(speed)
+            }
+            Protocol.VSPEED -> {
+                val speed = data.data / 10f
+                listener.onVSpeedData(speed)
+            }
+            Protocol.RSSI -> {
+                listener.onRSSIData((data.data - MIN_RSSI) * 100 / (MAX_RSSI - MIN_RSSI))
             }
             Protocol.FUEL -> {
                 listener.onFuelData(data.data)
