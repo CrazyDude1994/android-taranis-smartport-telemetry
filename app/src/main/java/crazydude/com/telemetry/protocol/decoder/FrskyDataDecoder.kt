@@ -1,6 +1,5 @@
 package crazydude.com.telemetry.protocol.decoder
 
-import android.util.Log
 import crazydude.com.telemetry.protocol.Protocol
 import java.io.IOException
 import kotlin.math.pow
@@ -11,11 +10,58 @@ class FrskyDataDecoder(listener: Listener) : DataDecoder(listener) {
     private var newLongitude = false
     private var latitude: Double = 0.0
     private var longitude: Double = 0.0
+
+    private var acc_x = 0.0f;
+    private var acc_y = 0.0f;
+    private var acc_z = 0.0f;
+    private var gotRollPitch = false;
+
     private val TAG: String = "FrSky Protocol"
+
     private fun bitExtracted(number: Int, num: Int, pos: Int): Int {
         return (1 shl num) - 1 and (number shr pos - 1)
     }
 
+    //https://github.com/resourcepool/open-tm/blob/master/RESOURCEPOOL/widgets/horizon.lua
+    //Round Acc data when close to bounds
+    //In stationary state, acceleration should not be higher 1g
+    private fun roundAccData(acc: Float):Float {
+        if (Math.abs(acc) <= 0.02f )
+                return 0f
+        else if ( acc > 0.98f)
+                return 1f
+        else if ( acc < -0.98f )
+                return -1f
+        else return acc
+    }
+
+    //compute roll/pitch from acc data
+    //it will be innacurate due to vehicle acceleration
+    //but at least something
+    private fun computeRollPitchFromAcc() {
+        if ( this.gotRollPitch ) return;//preffer ROLL/PITCH sensor data
+
+        var accX = this.roundAccData(this.acc_x)
+        var accY = this.roundAccData(this.acc_y)
+        var accZ = this.roundAccData(this.acc_z)
+
+        var pitchDeg = 0f
+        var rollDeg = 0f
+
+        if ( accY != 0f || accZ != 0f)  {
+            var div = Math.sqrt((accY * accY + accZ * accZ).toDouble())
+            var pitchRad = Math.atan2(accX.toDouble(), div)
+            pitchDeg = Math.toDegrees(pitchRad).toFloat()
+        }
+
+        if ( accZ != 0f)  {
+            var rollRad = Math.atan2(accY.toDouble(), accZ.toDouble())
+            rollDeg = Math.toDegrees(rollRad).toFloat()
+        }
+
+        listener.onPitchData(-pitchDeg)
+        listener.onRollData(rollDeg)
+    }
 
     override fun decodeData(data: Protocol.Companion.TelemetryData) {
         var decoded = true
@@ -136,7 +182,8 @@ class FrskyDataDecoder(listener: Listener) : DataDecoder(listener) {
             Protocol.ROLL -> {
                 val value = data.data / 10f
                 listener.onRollData(value)
-//                Log.d(TAG, "Decoded roll $value")
+                this.gotRollPitch = true;
+                //Log.d(TAG, "Decoded roll $value")
             }
             Protocol.GALT -> {
                 val value = data.data / 100f
@@ -146,7 +193,8 @@ class FrskyDataDecoder(listener: Listener) : DataDecoder(listener) {
             Protocol.PITCH -> {
                 val value = data.data / 10f
                 listener.onPitchData(value)
-//                Log.d(TAG, "Decoded pitch $value")
+                this.gotRollPitch = true;
+                //Log.d(TAG, "Decoded pitch $value")
             }
             Protocol.ASPEED -> {
                 val speed = Float.fromBits(Integer.parseInt(Integer.toBinaryString(data.data)))
@@ -188,10 +236,10 @@ class FrskyDataDecoder(listener: Listener) : DataDecoder(listener) {
             }
 
             Protocol.ARDU_AP_STATUS ->{ //0x5001
-                val arduFlightMode=bitExtracted(data.data,5,1)
-                val arduArmed:Boolean
+                val arduFlightMode = bitExtracted(data.data, 5, 1)
+                val arduArmed: Boolean
                 val firstFlightMode: Companion.FlyMode
-                arduArmed = bitExtracted(data.data,1,9)==1
+                arduArmed = bitExtracted(data.data, 1, 9) == 1
                 if (arduFlightMode == 1) {
                     firstFlightMode = Companion.FlyMode.MANUAL
                 } else if (arduFlightMode == 2) {
@@ -219,7 +267,7 @@ class FrskyDataDecoder(listener: Listener) : DataDecoder(listener) {
                 } else if (arduFlightMode == 14) {
                     firstFlightMode = Companion.FlyMode.TAKEOFF
                 } else if (arduFlightMode == 15) {
-                     firstFlightMode = Companion.FlyMode.AVOID_ADSB
+                    firstFlightMode = Companion.FlyMode.AVOID_ADSB
                 } else if (arduFlightMode == 16) {
                     firstFlightMode = Companion.FlyMode.GUIDED
                 } else if (arduFlightMode == 17) {
@@ -268,9 +316,53 @@ class FrskyDataDecoder(listener: Listener) : DataDecoder(listener) {
                 val Roll = bitExtracted(data.data,11,1)
                 val Pitch = bitExtracted(data.data,10,12)
                 listener.onRollData((Roll-900)*0.2f)
+                this.gotRollPitch = true;
                 listener.onPitchData((Pitch-450)*0.2f)
 //                Log.d(TAG, "Decoded roll $Roll, pitch $Pitch")
             }
+
+            Protocol.DATA_ID_ACC_X_1000 -> {
+                val value = data.data / 1000f
+                //Log.d(TAG, "Decoded acc_x $value")
+                this.acc_x = value
+                this.computeRollPitchFromAcc()
+            }
+
+            Protocol.DATA_ID_ACC_Y_1000 -> {
+                val value = data.data / 1000f
+                //Log.d(TAG, "Decoded acc_y $value")
+                this.acc_y = value
+                this.computeRollPitchFromAcc()
+            }
+
+            Protocol.DATA_ID_ACC_Z_1000 -> {
+                val value = data.data / 100f
+                //Log.d(TAG, "Decoded acc_z $value")
+                this.acc_z = value
+                this.computeRollPitchFromAcc()
+            }
+
+            Protocol.DATA_ID_ACC_X_100 -> {
+                val value = data.data / 100f
+                //Log.d(TAG, "Decoded acc_x $value")
+                this.acc_x = value
+                this.computeRollPitchFromAcc()
+            }
+
+            Protocol.DATA_ID_ACC_Y_100 -> {
+                val value = data.data / 100f
+                //Log.d(TAG, "Decoded acc_y $value")
+                this.acc_y = value
+                this.computeRollPitchFromAcc()
+            }
+
+            Protocol.DATA_ID_ACC_Z_100 -> {
+                val value = data.data / 100f
+                //Log.d(TAG, "Decoded acc_z $value")
+                this.acc_z = value
+                this.computeRollPitchFromAcc()
+            }
+
             else -> {
                 decoded = false
             }

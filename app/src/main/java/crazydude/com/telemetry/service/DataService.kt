@@ -31,8 +31,6 @@ import retrofit2.Response
 import java.io.IOException
 import java.io.OutputStream
 import java.util.*
-import kotlin.collections.ArrayList
-import kotlin.math.log
 
 class DataService : Service(), DataDecoder.Listener {
 
@@ -285,6 +283,7 @@ class DataService : Service(), DataDecoder.Listener {
     }
 
     override fun onRSSIData(rssi: Int) {
+        telemetryModel.rssi = rssi
     }
 
     override fun onDisconnected() {

@@ -19,7 +19,7 @@ class LTMDataDecoder(listener: Listener) : DataDecoder(listener) {
                 val speed = byteBuffer.get()
                 val altitude = byteBuffer.int
                 val gpsState = byteBuffer.get()
-                listener.onGPSState(((gpsState.toUInt() shr 1) and 0xFF.toUInt()).toInt(), ((gpsState.toUInt() shr 0) and 1.toUInt()) == 1.toUInt())
+                listener.onGPSState(((gpsState.toUInt() shr 2) and 0xFF.toUInt()).toInt(), ((gpsState.toUInt() shr 0) and 1.toUInt()) == 1.toUInt())
                 listener.onGPSData(latitude, longitude)
                 listener.onGSpeedData(speed.toUByte().toByte() * (18 / 5f))
                 listener.onAltitudeData(altitude / 100f)

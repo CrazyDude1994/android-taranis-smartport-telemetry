@@ -20,8 +20,10 @@ class CrsfProtocol : Protocol {
         private const val RADIO_ADDRESS = 0xEA
         private const val SYNC_BYTE = 0xC8
 
-        private const val BATTERY_TYPE = 0x08
         private const val GPS_TYPE = 0x02
+        private const val VARIO_TYPE = 0x07
+        private const val BATTERY_TYPE = 0x08
+        private const val LINK_STATS = 0x14
         private const val ATTITUDE_TYPE = 0x1E
         private const val FLIGHT_MODE = 0x21
 
@@ -33,6 +35,8 @@ class CrsfProtocol : Protocol {
         private const val GPS_PACKET_LEN = 16
         private const val ATTITUDE_PACKET_LEN = 7
         private const val BATTERY_PACKET_LEN = 9
+        private const val VARIO_PACKET_LEN = 3
+        private const val LINK_STATS_PACKET_LEN = 11
     }
 
     override fun process(data: Int) {
@@ -158,6 +162,39 @@ class CrsfProtocol : Protocol {
                             Protocol.Companion.TelemetryData(
                                 ALTITUDE,
                                 altitude.toInt()
+                            )
+                        )
+                    }
+                }
+                VARIO_TYPE.toByte() -> {
+                    if (inputData.size == VARIO_PACKET_LEN) {
+                        val vspeed = data.short
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(
+                                VSPEED,
+                                vspeed.toInt()
+                            )
+                        )
+                    }
+                }
+                LINK_STATS.toByte() -> {
+                    if (inputData.size == LINK_STATS_PACKET_LEN) {
+                        val uplinkRSSIAnt1 = -1 * data.get().toUByte().toInt() // dBm
+                        val uplinkRSSIAnt2 = -1 * data.get().toUByte().toInt() // dBm
+                        val uplinkLQ = data.get().toUByte().toInt()
+                        val uplinkSNR = data.get().toInt()
+                        val activeAntenna = data.get().toUByte().toInt()
+                        val rfMode = data.get().toUByte().toInt()
+                        val uplinkTxPwr = data.get().toUByte().toInt()
+                        val downlinkRSSI = -1 * data.get().toUByte().toInt() // dBm
+                        val downlinkLQ = data.get().toUByte().toInt()
+                        val downlinkSNR = data.get().toInt()
+                        val rssi = (if (activeAntenna == 1) uplinkRSSIAnt2 else uplinkRSSIAnt1)
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(
+                                RSSI,
+                                rssi,
+                                inputData
                             )
                         )
                     }

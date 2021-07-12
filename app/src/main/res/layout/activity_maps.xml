@@ -77,7 +77,8 @@
                     android:layout_width="128dp"
                     android:layout_height="128dp"
                     android:layout_below="@id/top_layout"
-                    android:layout_margin="8dp" />
+                    android:layout_marginTop="48dp"
+                    android:layout_marginLeft="8dp" />
 
             <com.google.android.material.floatingactionbutton.FloatingActionButton
                     android:id="@id/map_type_button"

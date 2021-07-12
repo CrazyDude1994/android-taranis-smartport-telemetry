@@ -2,10 +2,11 @@ package crazydude.com.telemetry.protocol
 
 import crazydude.com.telemetry.maps.Position
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
+import java.util.concurrent.CopyOnWriteArrayList
 
 data class TelemetryModel(
     var fuel: Int = 0,
-    var position: ArrayList<Position> = ArrayList(),
+    var position: MutableList<Position> = CopyOnWriteArrayList(),
     var vbat: Float = 0f,
     var cellVoltage: Float = 0f,
     var current: Float = 0f,
@@ -23,7 +24,8 @@ data class TelemetryModel(
     var isHeadingMode: Boolean = false,
     var flightMode1: DataDecoder.Companion.FlyMode? = null,
     var flightMode2: DataDecoder.Companion.FlyMode? = null,
-    var airSpeed: Float = 0f) {
+    var airSpeed: Float = 0f,
+    var rssi: Int = -1) {
 
     fun decodeCurrentModes() : String {
         var mode = if (armed) "Armed" else "Disarmed"

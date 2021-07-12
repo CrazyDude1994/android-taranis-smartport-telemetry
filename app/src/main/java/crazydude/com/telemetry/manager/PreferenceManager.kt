@@ -13,14 +13,15 @@ class PreferenceManager(context: Context) {
 
     companion object {
         val sensors = setOf(
-            SensorSetting("Satellites", 0),
-            SensorSetting("Battery", 1),
-            SensorSetting("Voltage", 2),
-            SensorSetting("Amperage", 3),
+            SensorSetting("Satellites", 1, "bottom"),
+            SensorSetting("Battery", 2),
+            SensorSetting("Voltage", 3),
+            SensorSetting("Amperage", 4),
             SensorSetting("Speed", 0, "bottom"),
             SensorSetting("Distance", 1, "bottom"),
             SensorSetting("Altitude", 2, "bottom"),
-            SensorSetting("Phone Battery", 4)
+            SensorSetting("Phone Battery", 4, "bottom"),
+			SensorSetting("Rssi", 0, "bottom")
         )
     }
 

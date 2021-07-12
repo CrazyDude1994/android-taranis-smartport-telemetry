@@ -16,6 +16,7 @@ import android.os.*
 import android.provider.DocumentsContract
 import android.text.Html
 import android.text.method.LinkMovementMethod
+import android.util.Log
 import android.view.View
 import android.widget.*
 import androidx.activity.viewModels
@@ -121,6 +122,7 @@ class MapsActivity : AppCompatActivity() {
             updateHeading()
             updateFuel()
             updateHorizon()
+            updateRSSI();
         }
     }
 
@@ -209,7 +211,8 @@ class MapsActivity : AppCompatActivity() {
             Pair(PreferenceManager.sensors.elementAt(4).name, binding.bottomLayout.speed),
             Pair(PreferenceManager.sensors.elementAt(5).name, binding.bottomLayout.distance),
             Pair(PreferenceManager.sensors.elementAt(6).name, binding.bottomLayout.altitude),
-            Pair(PreferenceManager.sensors.elementAt(7).name, binding.topLayout.phoneBattery)
+            Pair(PreferenceManager.sensors.elementAt(7).name, binding.topLayout.phoneBattery),
+            Pair(PreferenceManager.sensors.elementAt(8).name, binding.topLayout.rssi)
         )
 
         firebaseAnalytics = FirebaseAnalytics.getInstance(this)
@@ -342,7 +345,10 @@ class MapsActivity : AppCompatActivity() {
             map?.setOnCameraMoveStartedListener {
                 viewModel.followMode = false
             }
-            map?.setPadding(0, binding.topLayout.root.measuredHeight, 0, 0)
+            map?.setPadding(0, binding.topLayout.root.bottom, 0, 0)
+            binding.topLayout.root.addOnLayoutChangeListener { v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
+                map?.setPadding(0, bottom, 0, 0)
+            }
             startDataService()
         }
         if (simulateLifecycle) {
@@ -502,7 +508,7 @@ class MapsActivity : AppCompatActivity() {
                     }
                     .show()
             } else {
-                startActivityForResult(intent, REQUEST_FILE_TREE_REPLAY)
+                startActivityForResult(storageIntent(), REQUEST_FILE_TREE_REPLAY)
             }
         }
     }
@@ -567,34 +573,40 @@ class MapsActivity : AppCompatActivity() {
     }
 
     private fun connect() {
-        if (!shouldUseStorageAPI()) {
-            if (!storageWriteCheck()) {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE),
-                    REQUEST_WRITE_PERMISSION
-                )
-                return
-            }
-        } else {
-            if (preferenceManager.getLogsStorageFolder() == null) {
-                Toast.makeText(this, "Please select log files save folder", Toast.LENGTH_LONG)
-                    .show()
-                startActivityForResult(storageIntent(), REQUEST_FILE_TREE_CREATE_LOG)
-                return
+        if (preferenceManager.isLoggingEnabled()) {
+            if (!shouldUseStorageAPI()) {
+                if (!storageWriteCheck()) {
+                    ActivityCompat.requestPermissions(
+                        this,
+                        arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                        REQUEST_WRITE_PERMISSION
+                    )
+                    return
+                }
             } else {
-                val tree = DocumentFile.fromTreeUri(
-                    this,
-                    Uri.parse(preferenceManager.getLogsStorageFolder())
-                )
-                if (tree?.canWrite() == false) {
+                if (preferenceManager.getLogsStorageFolder() == null) {
                     Toast.makeText(this, "Please select log files save folder", Toast.LENGTH_LONG)
                         .show()
                     startActivityForResult(storageIntent(), REQUEST_FILE_TREE_CREATE_LOG)
                     return
+                } else {
+                    val tree = DocumentFile.fromTreeUri(
+                        this,
+                        Uri.parse(preferenceManager.getLogsStorageFolder())
+                    )
+                    if (tree?.canWrite() == false) {
+                        Toast.makeText(
+                            this,
+                            "Please select log files save folder",
+                            Toast.LENGTH_LONG
+                        )
+                            .show()
+                        startActivityForResult(storageIntent(), REQUEST_FILE_TREE_CREATE_LOG)
+                        return
+                    }
                 }
-            }
 
+            }
         }
         val showcaseView = MaterialShowcaseView.Builder(this)
             .setTarget(binding.topLayout.replayButton)
@@ -986,6 +998,29 @@ class MapsActivity : AppCompatActivity() {
     private fun createHeadingPolyline(): MapLine? {
         val lastGPS = binding.telemetry?.value?.position?.lastOrNull() ?: Position(0.0, 0.0)
         return map?.addPolyline(3f, preferenceManager.getHeadLineColor(), lastGPS, lastGPS)
+    }
+
+    private fun setRSSIIcon( rssi : Int )  {
+        when (rssi) {
+            in 81..100 -> R.drawable.ic_rssi_5
+            in 61..80 -> R.drawable.ic_rssi_4
+            in 41..69 -> R.drawable.ic_rssi_3
+            in 21..40 -> R.drawable.ic_rssi_2
+            in 0..20 -> R.drawable.ic_rssi_1
+            else -> R.drawable.ic_rssi_5
+        }.let {
+            binding.topLayout.rssi.setCompoundDrawablesWithIntrinsicBounds(
+                    null,
+                    ContextCompat.getDrawable( this, it ),
+                    null, null
+                )
+        }
+    }
+
+    private fun updateRSSI() {
+        var rssi = binding.telemetry?.value?.rssi
+        this.binding.topLayout.rssi.text = if (rssi == -1) "-" else rssi.toString()
+        this.setRSSIIcon(rssi?:-1);
     }
 
     private fun checkSendDataDialogShown() {
