@@ -140,7 +140,7 @@ class MAVLinkDataDecoder(listener: Listener) : DataDecoder(listener) {
                 this.armed = armed;
                 val isFailsafe = state == MAV_STATE_CRITICAL;
 
-                var flyMode: DataDecoder.Companion.FlyMode
+                var flyMode: DataDecoder.Companion.FlyMode? = null
                 if (isGuided) {
                     flyMode = DataDecoder.Companion.FlyMode.AUTONOMOUS
                 } else {
@@ -154,7 +154,7 @@ class MAVLinkDataDecoder(listener: Listener) : DataDecoder(listener) {
                 if ((rawMode and MAV_MODE_FLAG_CUSTOM_MODE_ENABLED) == MAV_MODE_FLAG_CUSTOM_MODE_ENABLED) {
                     //try to decode specific flight mode for INAV
                     //https://github.com/iNavFlight/inav/blob/2.6.0/src/main/telemetry/mavlink.c
-                    flyMode = DataDecoder.Companion.FlyMode.OTHER
+                    flyMode = null
                     if ( ( aircraftType == MAV_TYPE_FIXED_WING ) ||
                         ( aircraftType == MAV_TYPE_GROUND_ROVER) ||
                         ( aircraftType == MAV_TYPE_SURFACE_BOAT)){
@@ -166,7 +166,7 @@ class MAVLinkDataDecoder(listener: Listener) : DataDecoder(listener) {
                             PLANE_MODE_FLY_BY_WIRE_B -> flyMode = DataDecoder.Companion.FlyMode.ALTHOLD
                             PLANE_MODE_LOITER -> flyMode = DataDecoder.Companion.FlyMode.LOITER
                             PLANE_MODE_RTL -> flyMode = DataDecoder.Companion.FlyMode.RTH
-                            PLANE_MODE_AUTO -> if ( isFailsafe ) flyMode = DataDecoder.Companion.FlyMode.OTHER else flyMode = DataDecoder.Companion.FlyMode.MISSION //Can not decode Waypoint or RTH after mission - use Mission. Can not decode Landing or Mission on failsafe - show nothing.
+                            PLANE_MODE_AUTO -> if ( isFailsafe ) flyMode = null else flyMode = DataDecoder.Companion.FlyMode.MISSION //Can not decode Waypoint or RTH after mission - use Mission. Can not decode Landing or Mission on failsafe - show nothing.
                             PLANE_MODE_CRUISE -> flyMode = DataDecoder.Companion.FlyMode.CRUISE  //can not decode Cruise or Cruise3D, not enough data
                             PLANE_MODE_TAKEOFF -> flyMode = DataDecoder.Companion.FlyMode.TAKEOFF
                         }
@@ -178,16 +178,14 @@ class MAVLinkDataDecoder(listener: Listener) : DataDecoder(listener) {
                             COPTER_MODE_ALT_HOLD -> flyMode = DataDecoder.Companion.FlyMode.ALTHOLD
                             COPTER_MODE_POSHOLD -> flyMode = DataDecoder.Companion.FlyMode.HOLD
                             COPTER_MODE_RTL -> flyMode = DataDecoder.Companion.FlyMode.RTH
-                            COPTER_MODE_AUTO -> if ( isFailsafe ) flyMode = DataDecoder.Companion.FlyMode.OTHER else flyMode = DataDecoder.Companion.FlyMode.MISSION
+                            COPTER_MODE_AUTO -> if ( isFailsafe ) flyMode = null else flyMode = DataDecoder.Companion.FlyMode.MISSION
                             COPTER_MODE_THROW -> flyMode = DataDecoder.Companion.FlyMode.TAKEOFF
                         }
                     }
                 }
 
                 if ( isFailsafe ) {
-                    if ( flyMode == DataDecoder.Companion.FlyMode.OTHER )
-                        listener.onFlyModeData(armed, false, DataDecoder.Companion.FlyMode.FAILSAFE )
-                        else listener.onFlyModeData(armed, false, flyMode, DataDecoder.Companion.FlyMode.FAILSAFE)
+                    listener.onFlyModeData(armed, false, flyMode, DataDecoder.Companion.FlyMode.FAILSAFE)
                 }
                 else {
                     listener.onFlyModeData(armed, false, flyMode )
