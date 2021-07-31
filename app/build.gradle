@@ -21,8 +21,8 @@ android {
         applicationId "crazydude.com.telemetry"
         minSdkVersion 17
         targetSdkVersion 30
-        versionCode 37
-        versionName "1.9.1"
+        versionCode 38
+        versionName "1.9.2"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled true
     }
