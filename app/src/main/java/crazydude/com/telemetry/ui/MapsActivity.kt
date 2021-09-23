@@ -48,6 +48,7 @@ import crazydude.com.telemetry.protocol.pollers.LogPlayer
 import crazydude.com.telemetry.service.DataService
 import uk.co.deanwild.materialshowcaseview.MaterialShowcaseView
 import java.io.File
+import java.io.PrintWriter
 import java.lang.Exception
 import java.util.*
 import kotlin.collections.ArrayList
@@ -479,6 +480,13 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             switchToReplayMode()
 
             replayFileString = it.name
+
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+            }
 
             val logPlayer =
                 LogPlayer(this)

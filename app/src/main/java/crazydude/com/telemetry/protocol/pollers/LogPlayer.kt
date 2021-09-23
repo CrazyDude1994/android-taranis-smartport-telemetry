@@ -1,12 +1,17 @@
 package crazydude.com.telemetry.protocol.pollers
-
 import android.annotation.SuppressLint
+import android.content.pm.PackageManager
 import android.os.AsyncTask
+import android.os.Environment
+import androidx.core.content.ContextCompat
 import crazydude.com.telemetry.maps.Position
 import crazydude.com.telemetry.protocol.*
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import java.io.File
 import java.io.FileInputStream
+import java.io.PrintWriter
+import java.sql.Timestamp
+import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -18,6 +23,10 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
     private var currentPosition: Int = 0
     private var uniqueData = HashMap<Int, Int>()
     private lateinit var protocol: Protocol
+
+    private var decodedAltitude : Float = -1f;
+    private var decodedSpeed : Float = 0f;
+    private var decodedHeading : Float = 0f;
 
     private val task = @SuppressLint("StaticFieldLeak") object :
         AsyncTask<File, Long, ArrayList<Protocol.Companion.TelemetryData>>() {
@@ -130,6 +139,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
         override fun onPostExecute(result: ArrayList<Protocol.Companion.TelemetryData>) {
             cachedData = result
             dataReadyListener?.onDataReady(result.size)
+            //exportGPX();
         }
 
     }
@@ -207,6 +217,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
     }
 
     override fun onHeadingData(heading: Float) {
+        decodedHeading = heading;
         originalListener.onHeadingData(heading)
     }
 
@@ -230,6 +241,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
     }
 
     override fun onAltitudeData(altitude: Float) {
+        decodedAltitude = altitude;
         originalListener.onAltitudeData(altitude)
     }
 
@@ -254,6 +266,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
     }
 
     override fun onGSpeedData(speed: Float) {
+        decodedSpeed = speed;
         originalListener.onGSpeedData(speed)
     }
 
@@ -272,6 +285,88 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
         secondFlightMode: DataDecoder.Companion.FlyMode?
     ) {
         originalListener.onFlyModeData(armed, heading, firstFlightMode, secondFlightMode)
+    }
+
+    fun addHeader(fileWriter : PrintWriter )
+    {
+        fileWriter.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<gpx\n" +
+                "  version=\"1.0\"\n" +
+                "  creator=\"telemetryViewer\"\n" +
+                "  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
+                "  xmlns=\"http://www.topografix.com/GPX/1/0\"\n" +
+                "  xsi:schemaLocation=\"http://www.topografix.com/GPX/1/0 http://www.topografix.com/GPX/1/0/gpx.xsd\">\n" +
+                "<trk>\n" +
+                "<trkseg>")
+    }
+
+    fun addFooter(fileWriter : PrintWriter )
+    {
+        fileWriter.write("</trkseg>\n" +
+                "</trk>\n" +
+                "</gpx>")
+    }
+
+    //https://github.com/Parrot-Developers/mavlink/blob/master/pymavlink/tools/mavtogpx.py
+    fun exportGPX()
+    {
+        val dir = Environment.getExternalStoragePublicDirectory("TelemetryLogs")
+        dir.mkdirs()
+        val file = File(dir, "replay.gpx")
+
+        var fileWriter = file.printWriter()
+        addHeader( fileWriter );
+
+        seek(0);
+
+        decodedAltitude = -10000f;
+        decodedSpeed = 0f;
+        decodedHeading = 0f;
+
+        var lastLon : Double = 0.0;
+        var lastLat : Double = 0.0;
+
+        var startTime = System.currentTimeMillis()
+        val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+
+        for (i in 0 until cachedData.size) {
+                protocol.dataDecoder.decodeData(cachedData[i])
+
+                var output = false;
+                if (decodedCoordinates.size > 0)
+                {
+                    if ( decodedCoordinates[0].lon != lastLon)
+                    {
+                        lastLon = decodedCoordinates[0].lon;
+                        output= true;
+                    }
+                    if ( decodedCoordinates[0].lat != lastLat)
+                    {
+                        lastLat = decodedCoordinates[0].lat;
+                        output= true;
+                    }
+                    decodedCoordinates.clear();
+                }
+
+                if ( output && (decodedAltitude != - 10000f) )
+                {
+                    var t = startTime + i * 1800000L / cachedData.size;
+                    var s = "<trkpt lat=\"" + lastLat.toString() + "\" lon=\"" + lastLon.toString()  + "\">\n" +
+                            "  <ele>" +  ((decodedAltitude + 127) ).toString()  + "</ele>\n" +
+                            //"  <time>%s</time>\n" +
+                            "  <course>" + decodedHeading.toString()  + "</course>\n" +
+                            "  <speed>" + decodedSpeed.toString()  + "</speed>\n" +
+                            "  <fix>3d</fix>\n" +
+                            "  <time>" + sdf.format( Date(t) ) + "</time>\n" +
+                            "</trkpt>";
+                    fileWriter.write(s);
+                }
+        }
+
+        addFooter(fileWriter);
+
+        fileWriter.flush();
+        fileWriter.close()
     }
 
     interface DataReadyListener {
