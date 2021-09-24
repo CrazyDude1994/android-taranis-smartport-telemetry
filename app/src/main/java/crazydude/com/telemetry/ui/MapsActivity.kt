@@ -37,6 +37,7 @@ import com.serenegiant.usbcameratest4.CameraFragment
 import crazydude.com.telemetry.R
 import crazydude.com.telemetry.converter.Converter
 import crazydude.com.telemetry.manager.PreferenceManager
+import crazydude.com.telemetry.manager.SensorTimeoutManager
 import crazydude.com.telemetry.maps.MapLine
 import crazydude.com.telemetry.maps.MapMarker
 import crazydude.com.telemetry.maps.MapWrapper
@@ -55,7 +56,7 @@ import kotlin.collections.ArrayList
 import kotlin.math.roundToInt
 
 //class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
-class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener {
+class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener, SensorTimeoutManager.Listener {
 
     companion object {
         private const val REQUEST_ENABLE_BT: Int = 0
@@ -140,6 +141,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             }
         }
     }
+
+    private val sensorTimeoutManager : SensorTimeoutManager = SensorTimeoutManager( this );
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -776,6 +779,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     override fun onResume() {
         super.onResume()
         map?.onResume()
+        this.sensorTimeoutManager.resume();
         updateWindowFullscreenDecoration()
         updateScreenOrientation()
         updateCompressionQuality()
@@ -784,12 +788,14 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     override fun onPause() {
         super.onPause()
         map?.onPause()
+        this.sensorTimeoutManager.pause();
         updateFullscreenState()//check if user has brought system ui with swipe
     }
 
     override fun onStop() {
         super.onStop()
         map?.onStop()
+        this.sensorTimeoutManager.pause();
     }
 
     private fun connectBluetooth() {
@@ -991,6 +997,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     }
 
     override fun onAltitudeData(altitude: Float) {
+        this.sensorTimeoutManager.onAltitudeData(altitude);
         runOnUiThread {
             this.altitude.text = "${"%.2f".format(altitude)} m"
         }
@@ -1001,6 +1008,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     }
 
     override fun onDistanceData(distance: Int) {
+        this.sensorTimeoutManager.onDistanceData(distance)
         runOnUiThread {
             this.distance.text = "$distance m"
         }
@@ -1019,6 +1027,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     }
 
     override fun onGSpeedData(speed: Float) {
+        this.sensorTimeoutManager.onGSpeedData(speed)
         runOnUiThread {
             if (!preferenceManager.usePitotTube()) {
                 updateSpeed(speed)
@@ -1027,6 +1036,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     }
 
     override fun onAirSpeed(speed: Float) {
+        this.sensorTimeoutManager.onAirSpeed(speed)
         runOnUiThread {
             if (preferenceManager.usePitotTube()) {
                 updateSpeed(speed)
@@ -1035,6 +1045,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     }
 
     override fun onRCChannels(rcChannels:IntArray) {
+        this.sensorTimeoutManager.onRCChannels(rcChannels)
         runOnUiThread {
             this.rc_widget.setChannels(rcChannels)
         }
@@ -1045,6 +1056,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     }
 
     override fun onGPSState(satellites: Int, gpsFix: Boolean) {
+        this.sensorTimeoutManager.onGPSState(satellites, gpsFix)
         runOnUiThread {
             this.hasGPSFix = gpsFix
             if (gpsFix && marker == null) {
@@ -1090,6 +1102,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     }
 
     override fun onRSSIData(rssi: Int) {
+        this.sensorTimeoutManager.onRSSIData(rssi);
         runOnUiThread {
             this.rssi.text = if (rssi == -1) "-" else rssi.toString()
             this.setRSSIIcon(rssi);
@@ -1151,6 +1164,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     }
 
     override fun onVBATData(voltage: Float) {
+        this.sensorTimeoutManager.onVBATData(voltage);
         lastVBAT = voltage
         runOnUiThread {
             updateVoltage()
@@ -1158,6 +1172,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     }
 
     override fun onCurrentData(current: Float) {
+        this.sensorTimeoutManager.onCurrentData(current)
         runOnUiThread {
             this.current.text = "${"%.2f".format(current)} A"
         }
@@ -1210,6 +1225,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             switchToIdleState()
             replayFileString = null
         }
+        this.sensorTimeoutManager.disableTimeouts()
     }
 
     private fun switchToIdleState() {
@@ -1231,6 +1247,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         marker = null
         polyLine?.clear()
         headingPolyline?.remove()
+        this.sensorTimeoutManager.enableTimeouts()
     }
 
     private fun switchToConnectedState() {
@@ -1256,6 +1273,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     }
 
     override fun onFuelData(fuel: Int) {
+        this.sensorTimeoutManager.onFuelData(fuel)
         runOnUiThread {
             val batteryUnits = preferenceManager.getBatteryUnits()
             var realFuel = fuel
@@ -1305,6 +1323,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     }
 
     override fun onGPSData(list: List<Position>, addToEnd: Boolean) {
+        this.sensorTimeoutManager.onGPSData(list, addToEnd);
         runOnUiThread {
             if (hasGPSFix && list.isNotEmpty()) {
                 if (!addToEnd) {
@@ -1318,6 +1337,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     }
 
     override fun onGPSData(latitude: Double, longitude: Double) {
+        this.sensorTimeoutManager.onGPSData(latitude,longitude);
         runOnUiThread {
             if (Position(latitude, longitude) != lastGPS) {
                 lastGPS = Position(latitude, longitude)
@@ -1435,6 +1455,58 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     protected fun updateCompressionQuality() {
         val compressionQuality : String = preferenceManager.getCompressionQuality()
         this.mCameraFragment.setCompressionQuality( if (compressionQuality == "High" ) 2  else if (compressionQuality == "Normal" ) 1 else 0 );
+    }
+
+    //SensorTimeoutListener
+    private fun updateSetSensorGrayed( sensorId : Int )
+    {
+        var alpha = 1f;
+        if (this.sensorTimeoutManager.getSensorTimeout(sensorId)) alpha = 0.5f;
+        when (sensorId) {
+            SensorTimeoutManager.SENSOR_GPS -> {
+                this.satellites.setAlpha(alpha);
+            }
+            SensorTimeoutManager.SENSOR_DISTANCE ->{
+                this.distance.setAlpha(alpha);
+            }
+            SensorTimeoutManager.SENSOR_ALTITUDE ->{
+                this.altitude.setAlpha(alpha);
+            }
+            SensorTimeoutManager.SENSOR_RSSI ->{
+                this.rssi.setAlpha(alpha);
+            }
+            SensorTimeoutManager.SENSOR_VOLTAGE ->{
+                this.voltage.setAlpha(alpha);
+            }
+            SensorTimeoutManager.SENSOR_CURRENT ->{
+                this.current.setAlpha(alpha);
+            }
+            SensorTimeoutManager.SENSOR_SPEED ->{
+                this.speed.setAlpha(alpha);
+            }
+            SensorTimeoutManager.SENSOR_FUEL ->{
+                this.fuel.setAlpha(alpha);
+            }
+            SensorTimeoutManager.SENSOR_RC_CHANNELS ->{
+                this.rc_widget.setAlpha(alpha);
+            }
+        }
+    }
+
+    //SensorTimeoutListener
+    override fun onSensorTimeout( sensorId : Int )
+    {
+        runOnUiThread {
+            this.updateSetSensorGrayed( sensorId );
+        }
+    }
+
+    //SensorTimeoutListener
+    override fun onSensorData( sensorId : Int )
+    {
+        runOnUiThread {
+            this.updateSetSensorGrayed( sensorId );
+        }
     }
 
 }
