@@ -127,6 +127,10 @@ class PreferenceManager(context: Context) {
         return sharedPreferences.getString("log_folder", null)
     }
 
+    fun getUsbSerialBaudrate() : Int {
+       return sharedPreferences.getString("usb_serial_baudrate", "57600")?.toInt() ?: 57600
+    }
+
     fun setLogsStorageFolder(folder: String?) {
         sharedPreferences.edit()
             .putString("log_folder", folder)

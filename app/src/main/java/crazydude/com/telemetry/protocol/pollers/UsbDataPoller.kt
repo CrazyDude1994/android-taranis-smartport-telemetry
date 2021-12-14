@@ -13,10 +13,10 @@ import java.util.concurrent.Executors
 class UsbDataPoller(
     private val listener: DataDecoder.Listener,
     private val serialPort: UsbSerialPort,
+    private val baudrate: Int,
     private val connection: UsbDeviceConnection,
     private val logFile: OutputStream?
 ) : DataPoller {
-
     private var outputManager: SerialInputOutputManager? = null
     private var selectedProtocol: Protocol? = null
 
@@ -28,7 +28,7 @@ class UsbDataPoller(
             logFile?.close()
         }
             serialPort.setParameters(
-                57600,
+                baudrate,
                 8,
                 UsbSerialPort.STOPBITS_1,
                 UsbSerialPort.PARITY_NONE
