@@ -66,6 +66,17 @@
 
     </PreferenceCategory>
 
+    <PreferenceCategory android:title="USB Serial">
+        <ListPreference
+            android:title="Baudrate"
+            android:key="usb_serial_baudrate"
+            android:summary="Adjust baudrate"
+            android:entries="@array/baudrates"
+            android:entryValues="@array/baudrates"
+            android:defaultValue="57600"
+            />
+    </PreferenceCategory>
+
     <PreferenceCategory android:title="Sensors">
 
         <Preference

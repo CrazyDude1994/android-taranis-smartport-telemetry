@@ -148,6 +148,7 @@ class DataService : Service(), DataDecoder.Listener {
         dataPoller = UsbDataPoller(
             this,
             serialPort,
+            preferenceManager.getUsbSerialBaudrate(),
             connection,
             logFile
         )

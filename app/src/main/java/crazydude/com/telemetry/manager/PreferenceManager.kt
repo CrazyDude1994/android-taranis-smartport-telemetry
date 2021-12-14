@@ -125,6 +125,10 @@ class PreferenceManager(context: Context) {
         commit.apply()
     }
 
+    fun getUsbSerialBaudrate() : Int {
+       return sharedPreferences.getString("usb_serial_baudrate", "57600")?.toInt() ?: 57600
+    }
+
     data class SensorSetting(
         val name: String,
         val index: Int,
