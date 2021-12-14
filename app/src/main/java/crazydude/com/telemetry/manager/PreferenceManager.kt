@@ -128,7 +128,7 @@ class PreferenceManager(context: Context) {
     }
 
     fun getUsbSerialBaudrate() : Int {
-       return sharedPreferences.getString("usb_serial_baudrate", "38400")?.toInt() ?: 38400
+       return sharedPreferences.getString("usb_serial_baudrate", "57600")?.toInt() ?: 57600
     }
 
     fun setLogsStorageFolder(folder: String?) {

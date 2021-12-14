@@ -61,7 +61,7 @@
             android:summary="Adjust baudrate"
             android:entries="@array/baudrates"
             android:entryValues="@array/baudrates"
-            android:defaultValue="38400"
+            android:defaultValue="57600"
             />
     </PreferenceCategory>
 
