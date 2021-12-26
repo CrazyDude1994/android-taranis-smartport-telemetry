@@ -95,6 +95,12 @@
                 android:key="show_artificial_horizon"
                 android:summary="Shows attitude. Please set frsky_pitch_roll = ON in CLI for Inav 2.0.+."
                 android:title="Show artificial horizon view" />
+        <SwitchPreference
+            android:title="Crossfire RF/LQ"
+            android:key="use_crsf_lq"
+            android:defaultValue="false"
+            android:summary="Show RF/LQ insted of RSSI for Crossfie"
+            />
 
     </PreferenceCategory>
 

@@ -16,7 +16,6 @@ import android.os.*
 import android.provider.DocumentsContract
 import android.text.Html
 import android.text.method.LinkMovementMethod
-import android.util.Log
 import android.view.View
 import android.widget.*
 import androidx.activity.viewModels
@@ -31,7 +30,6 @@ import com.google.android.gms.maps.*
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.maps.android.SphericalUtil
 import com.hoho.android.usbserial.driver.CdcAcmSerialDriver
-import com.hoho.android.usbserial.driver.ProbeTable
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
 import crazydude.com.telemetry.R
@@ -1018,9 +1016,19 @@ class MapsActivity : AppCompatActivity() {
     }
 
     private fun updateRSSI() {
-        var rssi = binding.telemetry?.value?.rssi
-        this.binding.topLayout.rssi.text = if (rssi == -1) "-" else rssi.toString()
-        this.setRSSIIcon(rssi?:-1);
+        var iconValue = 0;
+        var text = ""
+        var lq = binding.telemetry?.value?.crsfLq
+        var rf = binding.telemetry?.value?.crsfRf
+        if (preferenceManager.useCrsfLq() && lq != -1 && rf != -1 ) {
+            iconValue = lq!!;
+            text  = rf.toString() + ":" + lq.toString()
+        } else {
+            iconValue = binding.telemetry?.value?.rssi!!
+            text = if (iconValue == -1) "-" else iconValue.toString()
+        }
+        this.binding.topLayout.rssi.text = text
+        this.setRSSIIcon(iconValue ?: -1);
     }
 
     private fun checkSendDataDialogShown() {

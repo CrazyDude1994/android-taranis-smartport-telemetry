@@ -137,6 +137,10 @@ class PreferenceManager(context: Context) {
             .apply()
     }
 
+    fun useCrsfLq() : Boolean {
+        return sharedPreferences.getBoolean("use_crsf_lq", false)
+    }
+
     data class SensorSetting(
         val name: String,
         val index: Int,
