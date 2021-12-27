@@ -13,6 +13,7 @@
             android:key="log_folder"
             android:title="Logs directory" />
 
+
     <com.jaredrummler.android.colorpicker.ColorPreferenceCompat
             android:defaultValue="@color/colorPlane"
             android:key="plane_color"
@@ -99,7 +100,7 @@
             android:title="Crossfire RF/LQ"
             android:key="use_crsf_lq"
             android:defaultValue="false"
-            android:summary="Show RF/LQ insted of RSSI for Crossfie"
+            android:summary="Show RF/LQ instead of RSSI for Crossfire"
             />
 
     </PreferenceCategory>
