@@ -21,10 +21,6 @@ class PrefsFragment : PreferenceFragmentCompat() {
     private lateinit var prefManager: PreferenceManager
     private val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
         updateSummary()
-        FirebaseAnalytics.getInstance(context!!).setUserProperty(
-            "telemetry_sharing_enable",
-            prefManager.isSendDataEnabled().toString().toLowerCase()
-        )
     }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
@@ -88,7 +84,5 @@ class PrefsFragment : PreferenceFragmentCompat() {
     private fun updateSummary() {
         preferenceScreen.findPreference("log_folder").summary =
             prefManager.getLogsStorageFolder() ?: "No directory has been set yet"
-        preferenceScreen.findPreference("callsign").summary = prefManager.getCallsign()
-        preferenceScreen.findPreference("model").summary = prefManager.getModel()
     }
 }
