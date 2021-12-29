@@ -5,12 +5,10 @@ import android.content.*
 import android.os.Bundle
 import android.widget.Toast
 import androidx.preference.PreferenceFragmentCompat
-import com.google.firebase.analytics.FirebaseAnalytics
 import crazydude.com.telemetry.R
 import crazydude.com.telemetry.manager.PreferenceManager
 import crazydude.com.telemetry.utils.FileLogger
 import java.io.IOException
-import java.lang.Exception
 
 class PrefsFragment : PreferenceFragmentCompat() {
 

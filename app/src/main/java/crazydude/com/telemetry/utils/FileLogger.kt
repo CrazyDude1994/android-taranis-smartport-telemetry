@@ -1,8 +1,6 @@
 package crazydude.com.telemetry.utils
 
 import android.content.Context
-import android.os.Environment
-import com.google.firebase.analytics.FirebaseAnalytics
 import java.io.*
 import java.text.SimpleDateFormat
 import java.util.*

@@ -24,9 +24,6 @@ import crazydude.com.telemetry.protocol.pollers.*
 import crazydude.com.telemetry.ui.MapsActivity
 import crazydude.com.telemetry.utils.FileLogger
 import crazydude.com.telemetry.utils.LogFile
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 import java.io.IOException
 import java.io.OutputStream
 import java.util.*

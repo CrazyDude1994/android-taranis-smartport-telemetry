@@ -14,9 +14,6 @@ import android.hardware.usb.UsbManager
 import android.net.Uri
 import android.os.*
 import android.provider.DocumentsContract
-import android.text.Html
-import android.text.method.LinkMovementMethod
-import android.util.Log
 import android.view.View
 import android.widget.*
 import androidx.activity.viewModels
@@ -31,7 +28,6 @@ import com.google.android.gms.maps.*
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.maps.android.SphericalUtil
 import com.hoho.android.usbserial.driver.CdcAcmSerialDriver
-import com.hoho.android.usbserial.driver.ProbeTable
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
 import crazydude.com.telemetry.R
