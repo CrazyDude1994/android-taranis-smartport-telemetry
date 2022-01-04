@@ -55,6 +55,12 @@ class CrsfDataDecoder(listener: Listener) : DataDecoder(listener) {
             Protocol.RSSI -> {
                 listener.onRSSIData((data.data - MIN_RSSI) * 100 / (MAX_RSSI - MIN_RSSI))
             }
+            Protocol.CRSF_LQ -> {
+                listener.onCrsfLqData(data.data)
+            }
+            Protocol.CRSF_RF -> {
+                listener.onCrsfRfData(data.data)
+            }
             Protocol.FUEL -> {
                 listener.onFuelData(data.data)
             }

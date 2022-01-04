@@ -13,6 +13,7 @@
             android:key="log_folder"
             android:title="Logs directory" />
 
+
     <com.jaredrummler.android.colorpicker.ColorPreferenceCompat
             android:defaultValue="@color/colorPlane"
             android:key="plane_color"
@@ -95,6 +96,12 @@
                 android:key="show_artificial_horizon"
                 android:summary="Shows attitude. Please set frsky_pitch_roll = ON in CLI for Inav 2.0.+."
                 android:title="Show artificial horizon view" />
+        <SwitchPreference
+            android:title="Crossfire RF/LQ"
+            android:key="use_crsf_lq"
+            android:defaultValue="false"
+            android:summary="Show RF/LQ instead of RSSI for Crossfire"
+            />
 
     </PreferenceCategory>
 

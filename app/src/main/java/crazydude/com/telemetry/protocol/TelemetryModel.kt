@@ -25,7 +25,9 @@ data class TelemetryModel(
     var flightMode1: DataDecoder.Companion.FlyMode? = null,
     var flightMode2: DataDecoder.Companion.FlyMode? = null,
     var airSpeed: Float = 0f,
-    var rssi: Int = -1) {
+    var rssi: Int = -1,
+    var crsfLq: Int = -1,
+    var crsfRf: Int = -1) {
 
     fun decodeCurrentModes() : String {
         var mode = if (armed) "Armed" else "Disarmed"

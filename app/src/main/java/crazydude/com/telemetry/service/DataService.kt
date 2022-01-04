@@ -287,6 +287,14 @@ class DataService : Service(), DataDecoder.Listener {
         telemetryModel.rssi = rssi
     }
 
+    override fun onCrsfLqData(lq: Int) {
+        telemetryModel.crsfLq = lq
+    }
+
+    override fun onCrsfRfData(rf: Int) {
+        telemetryModel.crsfRf = rf
+    }
+
     override fun onDisconnected() {
         dataPoller = null
         telemetryModel = TelemetryModel()

@@ -197,6 +197,20 @@ class CrsfProtocol : Protocol {
                                 inputData
                             )
                         )
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(
+                                CRSF_LQ,
+                                uplinkLQ,
+                                inputData
+                            )
+                        )
+                        dataDecoder.decodeData(
+                            Protocol.Companion.TelemetryData(
+                                CRSF_RF,
+                                rfMode,
+                                inputData
+                            )
+                        )
                     }
                 }
                 FLIGHT_MODE.toByte() -> {
