@@ -294,6 +294,14 @@ class DataService : Service(), DataDecoder.Listener {
         dataListener?.onRSSIData(rssi)
     }
 
+    override fun onCrsfLqData(lq: Int) {
+        dataListener?.onCrsfLqData(lq)
+    }
+
+    override fun onCrsfRfData(rf: Int) {
+        dataListener?.onCrsfLqData(rf)
+    }
+
     override fun onDisconnected() {
         points.clear()
         dataListener?.onDisconnected()

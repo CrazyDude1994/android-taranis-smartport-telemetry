@@ -107,6 +107,13 @@
                 android:defaultValue="true"
                 android:key="show_artificial_horizon"/>
 
+        <SwitchPreference
+            android:title="Crossfire RF/LQ"
+            android:key="use_crsf_lq"
+            android:defaultValue="false"
+            android:summary="Show RF/LQ instead of RSSI for Crossfire"
+            />
+
     </PreferenceCategory>
 
     <PreferenceCategory android:title="UAV Radar">

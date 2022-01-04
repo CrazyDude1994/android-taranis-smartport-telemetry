@@ -129,6 +129,9 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
 
     private var fullscreenWindow = false
 
+    private var crsf_rf = -1;
+    private var crsf_lq = -1;
+
     private val serviceConnection: ServiceConnection = object : ServiceConnection {
         override fun onServiceDisconnected(p0: ComponentName?) {
             onDisconnected()
@@ -1129,13 +1132,42 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         }
     }
 
+    fun showCrsfLq() :Boolean {
+        return preferenceManager.useCrsfLq() && crsf_lq != -1 && crsf_rf != -1;
+    }
+
+
     override fun onRSSIData(rssi: Int) {
         this.sensorTimeoutManager.onRSSIData(rssi);
+
+        if (showCrsfLq() )  return;
+
         runOnUiThread {
             this.rssi.text = if (rssi == -1) "-" else rssi.toString()
             this.setRSSIIcon(rssi);
         }
     }
+
+    override fun onCrsfLqData(lq: Int){
+        this.sensorTimeoutManager.onCrsfLqData(lq);
+        if ( showCrsfLq() ) {
+            runOnUiThread {
+                this.rssi.text  = crsf_rf.toString() + ":" + crsf_lq.toString()
+                this.setRSSIIcon(crsf_lq!!);
+            }
+        }
+    }
+
+    override fun onCrsfRfData(rf: Int){
+        this.sensorTimeoutManager.onCrsfRfData(rf);
+        if ( showCrsfLq() ) {
+            runOnUiThread {
+                this.rssi.text  = crsf_rf.toString() + ":" + crsf_lq.toString()
+                this.setRSSIIcon(crsf_lq!!);
+            }
+        }
+    }
+
 
     private fun checkSendDataDialogShown() {
         if (!preferenceManager.isSendDataDialogShown()) {
@@ -1240,6 +1272,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
 
     override fun onDisconnected() {
         Toast.makeText(this, "Disconnected", Toast.LENGTH_SHORT).show()
+        crsf_rf = -1;
+        crsf_lq = -1;
         switchToIdleState()
     }
 
@@ -1526,7 +1560,14 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                 this.altitude.setAlpha(alpha);
             }
             SensorTimeoutManager.SENSOR_RSSI ->{
-                this.rssi.setAlpha(alpha);
+                if  (!this.showCrsfLq()) {
+                    this.rssi.setAlpha(alpha);
+                }
+            }
+            SensorTimeoutManager.SENSOR_LQ ->{
+                if  (this.showCrsfLq()) {
+                    this.rssi.setAlpha(alpha);
+                }
             }
             SensorTimeoutManager.SENSOR_VOLTAGE ->{
                 this.voltage.setAlpha(alpha);

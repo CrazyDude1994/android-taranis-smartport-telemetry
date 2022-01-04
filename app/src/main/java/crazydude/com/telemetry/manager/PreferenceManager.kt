@@ -129,7 +129,12 @@ class PreferenceManager(context: Context) {
        return sharedPreferences.getString("usb_serial_baudrate", "57600")?.toInt() ?: 57600
     }
 
-    data class SensorSetting(
+    
+    fun useCrsfLq() : Boolean {
+        return sharedPreferences.getBoolean("use_crsf_lq", false)
+    }
+
+	data class SensorSetting(
         val name: String,
         val index: Int,
         val position: String = "top",

@@ -222,6 +222,14 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
         originalListener.onRSSIData(rssi)
     }
 
+    override fun onCrsfLqData(lq: Int) {
+        originalListener.onCrsfLqData(lq)
+    }
+
+    override fun onCrsfRfData(rf: Int) {
+        originalListener.onCrsfRfData(rf)
+    }
+
     override fun onGPSData(list: List<Position>, addToEnd: Boolean) {
 
     }

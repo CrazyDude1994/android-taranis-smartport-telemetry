@@ -21,6 +21,8 @@ class SensorTimeoutManager(protected val listener: SensorTimeoutManager.Listener
         public const val SENSOR_FUEL = 7;
         public const val SENSOR_RC_CHANNELS = 8;
         public const val SENSOR_STATUSTEXT = 9;
+        public const val SENSOR_LQ = 10;
+        public const val SENSOR_RF = 11;
 
         private const val SENSOR_COUNT = 10;
 
@@ -139,6 +141,15 @@ class SensorTimeoutManager(protected val listener: SensorTimeoutManager.Listener
     override fun onRSSIData(rssi: Int) {
         this.onSensorData(SensorTimeoutManager.SENSOR_RSSI);
     }
+
+    override fun onCrsfLqData(lq: Int){
+        this.onSensorData(SensorTimeoutManager.SENSOR_LQ);
+    }
+
+    override fun onCrsfRfData(rf: Int){
+        this.onSensorData(SensorTimeoutManager.SENSOR_RF);
+    }
+
     override fun onDisconnected(){
 
     }

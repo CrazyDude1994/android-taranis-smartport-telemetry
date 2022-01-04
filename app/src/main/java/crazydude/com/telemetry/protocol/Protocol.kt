@@ -62,6 +62,8 @@ abstract class Protocol(val dataDecoder: DataDecoder) {
         const val ARDU_BATT_2 = 52
         const val ARDU_BATT_1 = 53
         const val ARDU_PARAM = 54
+        const val CRSF_LQ = 55
+        const val CRSF_RF = 56
 
         const val RC_CHANNEL_0 = 100
         const val RC_CHANNEL_1 = 101

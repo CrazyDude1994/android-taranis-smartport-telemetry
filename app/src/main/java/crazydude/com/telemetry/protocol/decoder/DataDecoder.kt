@@ -46,6 +46,12 @@ abstract class DataDecoder(protected val listener: Listener) {
             override fun onRSSIData(rssi: Int) {
             }
 
+            override fun onCrsfLqData(lq: Int) {
+            }
+
+            override fun onCrsfRfData(rf: Int) {
+            }
+
             override fun onDisconnected() {
             }
 
@@ -115,6 +121,8 @@ abstract class DataDecoder(protected val listener: Listener) {
         fun onCurrentData(current: Float)
         fun onHeadingData(heading: Float)
         fun onRSSIData(rssi: Int) //-1 - unknown/invalid, or device-dependent value
+        fun onCrsfLqData(lq: Int)
+        fun onCrsfRfData(rf: Int)
         fun onDisconnected()
         fun onGPSState(satellites: Int, gpsFix: Boolean)
         fun onVSpeedData(vspeed: Float)
