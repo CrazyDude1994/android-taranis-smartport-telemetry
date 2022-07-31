@@ -3,5 +3,5 @@
     android:width="12dp" xmlns:android="http://schemas.android.com/apk/res/android">
     <path android:fillColor="#FF000000" android:pathData="M 0 2 L 10 2 10 3 0 3"/>
     <path android:fillColor="#FF000000" android:pathData="M 0 22 L 10 22 10 20 0 20"/>
-    <path android:fillColor="#FF000000" android:pathData="M 4 7.2 L 4 22 6 22 6 7.2    8.5 10.3 10 9 5 3   0 9 1.5 10.3"/>
+    <path android:fillColor="#FF000000" android:pathData="M 4.2 6.4 L 4.3 22 5.8 22 5.8 6.4    8.8 10.2 10 9.3 5 3   0 9.3 1.2 10.2"/>
 </vector>
