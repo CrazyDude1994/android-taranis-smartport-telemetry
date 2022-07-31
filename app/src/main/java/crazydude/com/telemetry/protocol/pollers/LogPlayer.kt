@@ -271,6 +271,10 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
         originalListener.onRCChannels(rcChannels)
     }
 
+    override fun onStatusText(message : String) {
+        originalListener.onStatusText(message)
+    }
+
     override fun onSuccessDecode() {
         originalListener.onSuccessDecode()
     }

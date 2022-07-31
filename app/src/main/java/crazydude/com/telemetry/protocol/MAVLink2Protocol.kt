@@ -47,6 +47,7 @@ class MAVLink2Protocol : Protocol {
         private const val MAV_PACKET_RADIO_STATUS_ID = 109
         private const val MAV_PACKET_GPS_ORIGIN_ID = 49
         private const val MAV_PACKET_HOME_POSITION_ID = 242
+        private const val MAV_PACKET_STATUSTEXT_ID = 253
 
         private const val MAV_PACKET_STATUS_LENGTH = 31
         private const val MAV_PACKET_HEARTBEAT_LENGTH = 9
@@ -55,7 +56,8 @@ class MAVLink2Protocol : Protocol {
         private const val MAV_PACKET_VFR_HUD_LENGTH = 20
         private const val MAV_PACKET_GPS_RAW_LENGTH = 30
         private const val MAV_PACKET_RADIO_STATUS_LENGTH = 9
-        private const val  MAV_PACKET_HOME_POSITION_LENGTH = 52
+        private const val MAV_PACKET_HOME_POSITION_LENGTH = 52
+        private const val MAV_PACKET_STATUSTEXT_LEN = 54
     }
 
     override fun process(data: Int) {
@@ -152,6 +154,9 @@ class MAVLink2Protocol : Protocol {
                 )
             )
             dataDecoder.decodeData(Protocol.Companion.TelemetryData(Protocol.FUEL, fuel.toInt()))
+        } else if (messageId == MAV_PACKET_STATUSTEXT_ID) {
+            val severity = byteBuffer.get()
+            dataDecoder.decodeData(Protocol.Companion.TelemetryData(STATUSTEXT, severity.toInt(), byteBuffer.array()))
         } else if (messageId == MAV_PACKET_HEARTBEAT_ID) {
             val customMode = byteBuffer.int
             val aircraftType = byteBuffer.get()

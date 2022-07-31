@@ -353,6 +353,10 @@ class DataService : Service(), DataDecoder.Listener {
         dataListener?.onRCChannels(rcChannels)
     }
 
+    override fun onStatusText(message: String) {
+        dataListener?.onStatusText(message)
+    }
+
     fun disconnect() {
         points.clear()
         dataPoller?.disconnect()

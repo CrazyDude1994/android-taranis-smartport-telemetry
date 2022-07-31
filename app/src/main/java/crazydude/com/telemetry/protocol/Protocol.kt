@@ -80,6 +80,8 @@ abstract class Protocol(val dataDecoder: DataDecoder) {
         const val RC_CHANNEL_14 = 114
         const val RC_CHANNEL_15 = 115
 
+        const val STATUSTEXT = 120
+
         class TelemetryData(val telemetryType: Int, val data: Int, val rawData: ByteArray? = null) {
             override fun equals(other: Any?): Boolean {
                 if (this === other) return true

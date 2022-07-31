@@ -20,8 +20,9 @@ class SensorTimeoutManager(protected val listener: SensorTimeoutManager.Listener
         public const val SENSOR_SPEED = 6;
         public const val SENSOR_FUEL = 7;
         public const val SENSOR_RC_CHANNELS = 8;
+        public const val SENSOR_STATUSTEXT = 9;
 
-        private const val SENSOR_COUNT = 9;
+        private const val SENSOR_COUNT = 10;
 
         private const val SENSOR_TIMEOUT_MS = 4000;
     }
@@ -182,6 +183,10 @@ class SensorTimeoutManager(protected val listener: SensorTimeoutManager.Listener
 
     override fun onRCChannels(rcChannels:IntArray){
         this.onSensorData(SensorTimeoutManager.SENSOR_RC_CHANNELS);
+    }
+
+    override fun onStatusText(message: String){
+        this.onSensorData(SensorTimeoutManager.SENSOR_STATUSTEXT);
     }
 
     override fun onSuccessDecode(){

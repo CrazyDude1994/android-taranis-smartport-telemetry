@@ -214,6 +214,13 @@ class MAVLinkDataDecoder(listener: Listener) : DataDecoder(listener) {
                     listener.onFlyModeData(armed, false, flyMode )
                 }
             }
+            Protocol.STATUSTEXT -> {
+                if (data.rawData !=null) {
+                    val byteBuffer = data.rawData.sliceArray( 1..50 )
+                    val message = String( byteBuffer )
+                    listener.onStatusText(message)
+                }
+            }
             Protocol.ATTITUDE -> {
                 val byteBuffer = ByteBuffer.wrap(data.rawData).order(ByteOrder.LITTLE_ENDIAN)
                 val time = byteBuffer.int

@@ -34,6 +34,10 @@ class OsmMapWrapper(private val context: Context, private val mapView: MapView, 
         callback()
     }
 
+    override fun initialized() : Boolean {
+        return true;
+    }
+
     override var mapType: Int
         get() = 0
         set(value) {}

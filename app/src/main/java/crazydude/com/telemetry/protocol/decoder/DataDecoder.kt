@@ -89,6 +89,9 @@ abstract class DataDecoder(protected val listener: Listener) {
             override fun onAirSpeed(speed: Float) {
             }
 
+            override fun onStatusText(message:String) {
+            }
+
             override fun onSuccessDecode() {
             }
         }
@@ -130,6 +133,7 @@ abstract class DataDecoder(protected val listener: Listener) {
 
         fun onAirSpeed(speed: Float)
         fun onRCChannels(rcChannels:IntArray)
+        fun onStatusText(message: String)
         fun onSuccessDecode()
     }
 

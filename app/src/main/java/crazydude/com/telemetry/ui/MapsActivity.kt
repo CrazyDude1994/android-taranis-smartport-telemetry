@@ -88,6 +88,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     private lateinit var traveled_distance: TextView
     private lateinit var altitude: TextView
     private lateinit var mode: TextView
+    private lateinit var statustext: TextView
     private lateinit var followButton: FloatingActionButton
     private lateinit var mapTypeButton: FloatingActionButton
     private lateinit var fullscreenButton: ImageView
@@ -173,6 +174,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         traveled_distance = findViewById(R.id.traveled_distance)
         altitude = findViewById(R.id.altitude)
         mode = findViewById(R.id.mode)
+        statustext = findViewById(R.id.statustext)
         followButton = findViewById(R.id.follow_button)
         mapTypeButton = findViewById(R.id.map_type_button)
         settingsButton = findViewById(R.id.settings_button)
@@ -235,7 +237,9 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         followButton.setOnClickListener {
             followMode = true
             marker?.let {
-                map?.moveCamera(it.position)
+                if (map?.initialized() ?: false) {
+                    map?.moveCamera(it.position)
+                }
             }
         }
 
@@ -354,6 +358,9 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             map?.onStart()
             map?.onResume()
         }
+
+        headingPolyline = null;
+        polyLine = null;
     }
 
     private fun initHeadingLine() {
@@ -884,6 +891,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         traveled_distance.text = "0m"
         this.lastTraveledDistance = 0.0;
         mode.text = "Disconnected"
+        statustext.text="";
         horizonView.setPitch(0f)
         horizonView.setRoll(0f)
         if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
@@ -933,10 +941,13 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
 
     override fun onDestroy() {
         super.onDestroy()
+        headingPolyline = null;
+        polyLine = null;
         map?.onDestroy()
         if (!isChangingConfigurations) {
             dataService?.setDataListener(null)
         }
+        map=null;
         this.unregisterReceiver(this.batInfoReceiver)
         unbindService(serviceConnection)
     }
@@ -1058,6 +1069,13 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         }
     }
 
+    override fun onStatusText(message: String) {
+        this.sensorTimeoutManager.onStatusText(message)
+        runOnUiThread {
+            this.statustext.text = message;
+        }
+    }
+
     private fun updateSpeed(speed: Float) {
         this.speed.text = "${speed.roundToInt()} km/h"
     }
@@ -1066,12 +1084,15 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         this.sensorTimeoutManager.onGPSState(satellites, gpsFix)
         runOnUiThread {
             this.hasGPSFix = gpsFix
-            if (gpsFix && marker == null) {
+            if (gpsFix && marker == null && (map?.initialized() ?: false)) {
                 marker = map?.addMarker(R.drawable.ic_plane, preferenceManager.getPlaneColor(), lastGPS)
                 if (headingPolyline == null && preferenceManager.isHeadingLineEnabled()) {
                     headingPolyline = createHeadingPolyline()
                 }
-                map?.moveCamera(lastGPS, 15f)
+                if ( map?.initialized() ?: false)
+                {
+                    map?.moveCamera(lastGPS, 15f)
+                }
             }
             this.satellites.text = satellites.toString()
         }
@@ -1521,6 +1542,11 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             }
             SensorTimeoutManager.SENSOR_RC_CHANNELS ->{
                 this.rc_widget.setAlpha(alpha);
+            }
+            SensorTimeoutManager.SENSOR_STATUSTEXT ->{
+                if ( this.sensorTimeoutManager.getSensorTimeout(sensorId) ){
+                    this.statustext.text = "";
+                }
             }
         }
     }

@@ -24,22 +24,45 @@
                 android:visibility="visible" />
 
         <crazydude.com.telemetry.ui.TextViewOutline
+                android:id="@+id/statustext"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignWithParentIfMissing="true"
+                android:layout_above="@id/mode"
+                android:layout_toLeftOf="@+id/buttons_box"
+                android:layout_alignParentStart="true"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginBottom="-12dp"
+                android:ellipsize="end"
+                android:gravity="left"
+                android:text="Ready"
+                android:textColor="@android:color/white"
+                android:textSize="18sp"
                 android:textStyle="bold"
-                app:outlineSize="3dp"
                 app:outlineColor="@android:color/black"
+                app:outlineSize="3dp" />
+
+        <crazydude.com.telemetry.ui.TextViewOutline
                 android:id="@+id/mode"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_margin="8dp"
-                android:drawablePadding="4dp"
+                android:layout_alignWithParentIfMissing="true"
+                android:layout_above="@id/seekbar"
+                android:layout_alignParentStart="true"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginBottom="8dp"
                 android:ellipsize="end"
+                android:gravity="left"
                 android:lines="1"
                 android:text="Disconnected"
-                android:layout_above="@id/seekbar"
                 android:textColor="@android:color/white"
                 android:textSize="18sp"
-                android:layout_alignWithParentIfMissing="true"
-                android:gravity="center"/>
+                android:textStyle="bold"
+                app:outlineColor="@android:color/black"
+                app:outlineSize="3dp" />
 
         <crazydude.com.telemetry.ui.HorizonView
                 android:id="@+id/horizon_view"
