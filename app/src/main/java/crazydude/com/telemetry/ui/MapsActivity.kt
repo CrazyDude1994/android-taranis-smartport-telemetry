@@ -27,6 +27,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
+import com.google.android.gms.maps.model.LatLng
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.maps.android.SphericalUtil
@@ -84,6 +85,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     private lateinit var phoneBattery: TextView
     private lateinit var speed: TextView
     private lateinit var distance: TextView
+    private lateinit var traveled_distance: TextView
     private lateinit var altitude: TextView
     private lateinit var mode: TextView
     private lateinit var followButton: FloatingActionButton
@@ -122,6 +124,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     private var lastVBAT = 0f
     private var lastCellVoltage = 0f
     private var lastPhoneBattery = 0
+    private var lastTraveledDistance = 0.0
 
     private var fullscreenWindow = false
 
@@ -167,6 +170,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         phoneBattery = findViewById(R.id.phone_battery)
         speed = findViewById(R.id.speed)
         distance = findViewById(R.id.distance)
+        traveled_distance = findViewById(R.id.traveled_distance)
         altitude = findViewById(R.id.altitude)
         mode = findViewById(R.id.mode)
         followButton = findViewById(R.id.follow_button)
@@ -194,10 +198,11 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             Pair(PreferenceManager.sensors.elementAt(3).name, current),
             Pair(PreferenceManager.sensors.elementAt(4).name, speed),
             Pair(PreferenceManager.sensors.elementAt(5).name, distance),
-            Pair(PreferenceManager.sensors.elementAt(6).name, altitude),
-            Pair(PreferenceManager.sensors.elementAt(7).name, phoneBattery),
-            Pair(PreferenceManager.sensors.elementAt(8).name, rc_widget),
-            Pair(PreferenceManager.sensors.elementAt(9).name, rssi)
+            Pair(PreferenceManager.sensors.elementAt(6).name, traveled_distance),
+            Pair(PreferenceManager.sensors.elementAt(7).name, altitude),
+            Pair(PreferenceManager.sensors.elementAt(8).name, phoneBattery),
+            Pair(PreferenceManager.sensors.elementAt(9).name, rc_widget),
+            Pair(PreferenceManager.sensors.elementAt(10).name, rssi)
         )
 
         firebaseAnalytics = FirebaseAnalytics.getInstance(this)
@@ -876,6 +881,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         altitude.text = "-"
         speed.text = "-"
         distance.text = "-"
+        traveled_distance.text = "0m"
+        this.lastTraveledDistance = 0.0;
         mode.text = "Disconnected"
         horizonView.setPitch(0f)
         horizonView.setRoll(0f)
@@ -1328,9 +1335,27 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             if (hasGPSFix && list.isNotEmpty()) {
                 if (!addToEnd) {
                     polyLine?.clear()
+                    this.lastTraveledDistance = 0.0;
+                    lastGPS = Position(list[0].lat, list[0].lon)
                 }
                 polyLine?.addPoints(list)
                 polyLine?.removeAt(polyLine?.size!! - 1)
+
+                if ( list.size >= 2 && this.lastGPS.lat != 0.0 && this.lastGPS.lon != 0.0) {
+                    this.lastTraveledDistance += SphericalUtil.computeDistanceBetween(
+                        this.lastGPS.toLatLng(), LatLng( list[0].lat, list[0].lon)
+                    )
+                    lastGPS = Position(list[0].lat, list[0].lon)
+                }
+                for ( i in 1..list.size - 2) {
+                    this.lastTraveledDistance += SphericalUtil.computeDistanceBetween(
+                        LatLng( list[i-1].lat, list[i-1].lon), LatLng(list[i].lat, list[i].lon)
+                    )
+                }
+                if ( list.size >= 3){
+                    lastGPS = Position(list[list.size - 2].lat, list[list.size - 2].lon)
+                }
+
                 onGPSData(list[list.size - 1].lat, list[list.size - 1].lon)
             }
         }
@@ -1340,6 +1365,10 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         this.sensorTimeoutManager.onGPSData(latitude,longitude);
         runOnUiThread {
             if (Position(latitude, longitude) != lastGPS) {
+                var d = 0.0;
+                if ( this.lastGPS.lat != 0.0 && this.lastGPS.lon != 0.0 ) {
+                    d = SphericalUtil.computeDistanceBetween( this.lastGPS.toLatLng(), LatLng(latitude, longitude) )
+                }
                 lastGPS = Position(latitude, longitude)
                 marker?.let { it.position = lastGPS }
                 updateHeading()
@@ -1348,6 +1377,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                 }
                 if (hasGPSFix) {
                     polyLine?.addPoints(listOf(lastGPS))
+                    this.lastTraveledDistance += d
+                    this.traveled_distance.text = "${this.lastTraveledDistance.roundToInt()} m"
                 }
             }
         }
@@ -1465,6 +1496,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         when (sensorId) {
             SensorTimeoutManager.SENSOR_GPS -> {
                 this.satellites.setAlpha(alpha);
+                this.traveled_distance.setAlpha(alpha);
             }
             SensorTimeoutManager.SENSOR_DISTANCE ->{
                 this.distance.setAlpha(alpha);

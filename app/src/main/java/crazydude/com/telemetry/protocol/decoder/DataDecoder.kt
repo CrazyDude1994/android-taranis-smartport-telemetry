@@ -95,6 +95,10 @@ abstract class DataDecoder(protected val listener: Listener) {
 
     }
 
+    open fun restart() {
+
+    }
+
     abstract fun decodeData(data: Protocol.Companion.TelemetryData)
 
     interface Listener {
@@ -127,6 +131,14 @@ abstract class DataDecoder(protected val listener: Listener) {
         fun onAirSpeed(speed: Float)
         fun onRCChannels(rcChannels:IntArray)
         fun onSuccessDecode()
+    }
+
+    fun isGPSData( telemetryType : Int ) : Boolean {
+        return telemetryType == Protocol.GPS ||
+            telemetryType == Protocol.GPS_LATITUDE ||
+            telemetryType == Protocol.GPS_LONGITUDE ||
+            telemetryType == Protocol.GPS_STATE_ARDU ||
+            telemetryType == Protocol.ARDU_GPS_STATUS
     }
 
 }

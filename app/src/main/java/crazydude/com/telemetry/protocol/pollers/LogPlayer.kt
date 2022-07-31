@@ -152,12 +152,10 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
     fun seek(position: Int) {
         uniqueData.clear()
         decodedCoordinates.clear()
-        val addToEnd: Boolean
+        var addToEnd: Boolean = false;
         if (position > currentPosition) {
             for (i in currentPosition until position) {
-                if (cachedData[i].telemetryType == Protocol.GPS || cachedData[i].telemetryType == Protocol.GPS_LATITUDE
-                    || cachedData[i].telemetryType == Protocol.GPS_LONGITUDE
-                ) {
+                if ( protocol.dataDecoder.isGPSData( cachedData[i].telemetryType )) {
                     protocol.dataDecoder.decodeData(cachedData[i])
                 } else if (cachedData[i].telemetryType == Protocol.FLYMODE) {
                     protocol.dataDecoder.decodeData(cachedData[i])
@@ -167,11 +165,10 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
             }
             addToEnd = true
             currentPosition = position
-        } else {
+        } else if (position < currentPosition) {
+            protocol.dataDecoder.restart()
             for (i in 0 until position) {
-                if (cachedData[i].telemetryType == Protocol.GPS || cachedData[i].telemetryType == Protocol.GPS_LATITUDE
-                    || cachedData[i].telemetryType == Protocol.GPS_LONGITUDE
-                ) {
+                if ( protocol.dataDecoder.isGPSData( cachedData[i].telemetryType )) {
                     protocol.dataDecoder.decodeData(cachedData[i])
                 } else if (cachedData[i].telemetryType == Protocol.FLYMODE) {
                     protocol.dataDecoder.decodeData(cachedData[i])

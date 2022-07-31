@@ -82,6 +82,29 @@ class MAVLinkDataDecoder(listener: Listener) : DataDecoder(listener) {
         private const val MAV_STATE_CRITICAL = 5
     }
 
+    init {
+        this.restart()
+    }
+
+    override fun restart() {
+        this.newLatitude = false
+        this.newLongitude = false
+        this.latitude = 0.0
+        this.longitude = 0.0
+        this.homeLatitude = 0.0
+        this.homeLongitude = 0.0
+        this.armedLatitude = 0.0
+        this.armedLongitude = 0.0
+        this.originLatitude = 0.0
+        this.originLongitude = 0.0
+        this.fix = false
+        this.satellites = 0
+        this.armed = false;
+        this.armedOnce = false;
+        this.rcChannels = IntArray(8) {1500};
+    }
+
+
     override fun decodeData(data: Protocol.Companion.TelemetryData) {
         var decoded = true
         when (data.telemetryType) {
@@ -238,7 +261,7 @@ class MAVLinkDataDecoder(listener: Listener) : DataDecoder(listener) {
         }
 
         if (newLatitude && newLongitude) {
-            if (latitude > 0 && longitude > 0) {
+            if (latitude != 0.0 && longitude != 0.0) {
 
             	listener.onGPSData(latitude, longitude)
 
@@ -248,7 +271,7 @@ class MAVLinkDataDecoder(listener: Listener) : DataDecoder(listener) {
                     armedOnce = true;
                 }
 
-                if (homeLatitude > 0 && homeLongitude > 0) {
+                if (homeLatitude != 0.0 && homeLongitude != 0.0) {
 
                     val distance = SphericalUtil.computeDistanceBetween(
                         LatLng(
@@ -258,7 +281,7 @@ class MAVLinkDataDecoder(listener: Listener) : DataDecoder(listener) {
                     )
 
                     listener.onDistanceData(distance.toInt())
-                } else if (originLatitude > 0 && originLongitude > 0 ) {
+                } else if (originLatitude != 0.0 && originLongitude != 0.0 ) {
 
                         val distance = SphericalUtil.computeDistanceBetween(
                             LatLng(
@@ -268,7 +291,7 @@ class MAVLinkDataDecoder(listener: Listener) : DataDecoder(listener) {
                         )
 
                         listener.onDistanceData(distance.toInt())
-                } else if (armedLatitude > 0 && armedLongitude > 0 ) {
+                } else if (armedLatitude != 0.0 && armedLongitude != 0.0 ) {
 
                     val distance = SphericalUtil.computeDistanceBetween(
                         LatLng(
