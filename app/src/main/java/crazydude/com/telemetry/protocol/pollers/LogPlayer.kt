@@ -157,7 +157,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
             for (i in currentPosition until position) {
                 if ( protocol.dataDecoder.isGPSData( cachedData[i].telemetryType )) {
                     protocol.dataDecoder.decodeData(cachedData[i])
-                } else if (cachedData[i].telemetryType == Protocol.FLYMODE) {
+                } else if (cachedData[i].telemetryType == Protocol.FLYMODE || cachedData[i].telemetryType == Protocol.STATUSTEXT) {
                     protocol.dataDecoder.decodeData(cachedData[i])
                 } else {
                     uniqueData[cachedData[i].telemetryType] = i
@@ -170,7 +170,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
             for (i in 0 until position) {
                 if ( protocol.dataDecoder.isGPSData( cachedData[i].telemetryType )) {
                     protocol.dataDecoder.decodeData(cachedData[i])
-                } else if (cachedData[i].telemetryType == Protocol.FLYMODE) {
+                } else if (cachedData[i].telemetryType == Protocol.FLYMODE || cachedData[i].telemetryType == Protocol.STATUSTEXT) {
                     protocol.dataDecoder.decodeData(cachedData[i])
                 } else {
                     uniqueData[cachedData[i].telemetryType] = i
