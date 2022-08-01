@@ -1,10 +1,7 @@
 package crazydude.com.telemetry.service
 
 import android.annotation.TargetApi
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
-import android.app.Service
+import android.app.*
 import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.content.Intent
@@ -54,6 +51,7 @@ class DataService : Service(), DataDecoder.Listener {
     private val apiHandler = Handler()
     private lateinit var preferenceManager: PreferenceManager
     val points: ArrayList<Position> = ArrayList()
+    private var notification: Notification? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -66,17 +64,16 @@ class DataService : Service(), DataDecoder.Listener {
                 NotificationChannel("bt_channel", "Bluetooth", importance)
             val notificationManager: NotificationManager =
                 getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
+                notificationManager.createNotificationChannel(channel)
         }
 
 
-        val notification = NotificationCompat.Builder(this, "bt_channel")
+        notification = NotificationCompat.Builder(this, "bt_channel")
             .setContentText("Telemetry service is running. To stop - disconnect and close the app")
             .setContentTitle("Telemetry service is running")
             .setContentIntent(PendingIntent.getActivity(this, -1, Intent(this, MapsActivity::class.java), 0))
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .build()
-        startForeground(1, notification)
     }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
@@ -194,6 +191,8 @@ class DataService : Service(), DataDecoder.Listener {
         if (preferenceManager.isSendDataEnabled()) {
             createSession()
         }
+
+        startForeground(1, notification)
     }
 
     fun createSession() {
@@ -301,6 +300,7 @@ class DataService : Service(), DataDecoder.Listener {
         dataPoller = null
         satellites = 0
         hasGPSFix = false
+        stopForeground(true)
     }
 
     override fun onGPSState(satellites: Int, gpsFix: Boolean) {
