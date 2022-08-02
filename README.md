@@ -12,11 +12,11 @@ Latest build is available in Releases: https://github.com/RomanLut/android-taran
 
 I am contributing most bugsfixes and enchancements to Crasydude's repository. But due to significant differences in UI structure, some features are not merged:
 - UVC video support, video recording, recording quality selection
+- RC Channels display (mavlink only, 8ch only for Mavlink v1)
+- Travelled distance display
 - persistent fullscreen state
 - stable ( no jittering ) sensors display
 - better Altitude and Distance to home icons
-- Travelled distance display
-- RC Chanels display (mavlink)
 
 
 
