@@ -256,7 +256,7 @@ class MAVLinkDataDecoder(listener: Listener) : DataDecoder(listener) {
 				//send 0..100% 
                 listener.onRSSIData( if ( data.data == 255) -1 else data.data * 100 / 254);
             }
-            in Protocol.RC_CHANNEL_0..Protocol.RC_CHANNEL_15 -> {
+            in Protocol.RC_CHANNEL_0..Protocol.RC_CHANNEL_17 -> {
                 val index = data.telemetryType - Protocol.RC_CHANNEL_0;
                 if ( index >= rcChannels.size) rcChannels = IntArray(index+1) { i -> if (i < rcChannels.size) rcChannels[i] else 1500 }
                 rcChannels[index] = data.data

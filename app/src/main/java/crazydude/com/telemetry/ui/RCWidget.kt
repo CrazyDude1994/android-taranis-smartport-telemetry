@@ -15,6 +15,8 @@ class RCWidget @JvmOverloads constructor(
     private val paint: Paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private var height: Float = 0f
 
+    private var lastRCCount: Int = 0;
+
     private var rcChannels : IntArray = IntArray(0) {1500}
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -26,6 +28,7 @@ class RCWidget @JvmOverloads constructor(
         val height: Int
 
         var rcCount = if ( rcChannels.size > 8 ) rcChannels.size else 8;
+        lastRCCount = rcCount;
 
         val desiredWidth =
             Math.ceil(0.1 * heightSize + 0.3 * heightSize * (rcCount-1) + 0.2 * heightSize).toInt();
@@ -79,6 +82,9 @@ class RCWidget @JvmOverloads constructor(
         canvas?.let {
 
             var rcCount = if ( rcChannels.size > 8 ) rcChannels.size else 8;
+            if ( lastRCCount != rcCount ) {
+                requestLayout()
+            }
 
             for (ch in 0..rcCount-1) {
                 var x = height * 0.1f + ch * height * 0.3f;
@@ -111,7 +117,7 @@ class RCWidget @JvmOverloads constructor(
             paint.textAlign = Paint.Align.CENTER
             paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
 
-            for (ch in 0..15) {
+            for (ch in 0..rcCount-1) {
                 var x = height * 0.1f + ch * height * 0.3f + height * 0.15f / 2.0f;
                 canvas.drawText((ch + 1).toString(), x, height * 0.95f, paint);
             }

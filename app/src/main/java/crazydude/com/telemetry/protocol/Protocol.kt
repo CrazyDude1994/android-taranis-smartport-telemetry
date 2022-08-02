@@ -81,6 +81,8 @@ abstract class Protocol(val dataDecoder: DataDecoder) {
         const val RC_CHANNEL_13 = 113
         const val RC_CHANNEL_14 = 114
         const val RC_CHANNEL_15 = 115
+        const val RC_CHANNEL_16 = 116
+        const val RC_CHANNEL_17 = 117
 
         const val STATUSTEXT = 120
 
