@@ -2,13 +2,13 @@
 
 This is fork of CrazyDude's excellent application https://github.com/CrazyDude1994/android-taranis-smartport-telemetry
 
+![](doc/screenshot.jpg) 
+
 This version contains support of ROTG01/ROTG02 video receivers with recording:
 
-![alt text](https://raw.githubusercontent.com/RomanLut/android-taranis-smartport-telemetry/master/doc/uvc_video_tx16s.jpg "ROTG support")
+![](doc/uvc_video_tx16s.jpg) 
 
-While CrazyDude is still deciding whether he want to merge this into his repository https://github.com/CrazyDude1994/android-taranis-smartport-telemetry/pull/102, I will maintain my development version here.
-Latest build can always be downloaded here:
-https://github.com/RomanLut/android-taranis-smartport-telemetry/blob/master/app-debug.apk
+Latest build is available in Releases: https://github.com/RomanLut/android-taranis-smartport-telemetry/releases
 
 I am contributing most bugsfixes and enchancements to Crasydude's repository. But due to significant differences in UI structure, some features are not merged:
 - UVC video support, video recording, recording quality selection
