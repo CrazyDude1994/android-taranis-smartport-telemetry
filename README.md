@@ -15,6 +15,10 @@ I am contributing most bugsfixes and enchancements to Crasydude's repository. Bu
 - persistent fullscreen state
 - stable ( no jittering ) sensors display
 - better Altitude and Distance to home icons
+- Travelled distance display
+- RC Chanels display (mavlink)
+
+
 
 
 
