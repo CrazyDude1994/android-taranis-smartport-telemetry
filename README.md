@@ -11,7 +11,7 @@ This version contains support of ROTG01/ROTG02 video receivers with recording:
 Latest build is available in Releases: https://github.com/RomanLut/android-taranis-smartport-telemetry/releases
 
 I am contributing most bugsfixes and enchancements to Crasydude's repository. But due to significant differences in UI structure, some features are not merged or merged with delay:
-- UVC video support, video recording, recording quality selection
+- UVC video support, video recording (DVR)
 - RC Channels display (mavlink only, 8ch only for Mavlink v1)
 - Travelled distance display
 - persistent fullscreen state
