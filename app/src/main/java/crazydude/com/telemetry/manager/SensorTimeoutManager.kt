@@ -24,7 +24,7 @@ class SensorTimeoutManager(protected val listener: SensorTimeoutManager.Listener
         public const val SENSOR_LQ = 10;
         public const val SENSOR_RF = 11;
 
-        private const val SENSOR_COUNT = 10;
+        private const val SENSOR_COUNT = 12;
 
         private const val SENSOR_TIMEOUT_MS = 4000;
     }
