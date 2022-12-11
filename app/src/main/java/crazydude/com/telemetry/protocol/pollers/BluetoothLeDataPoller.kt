@@ -70,7 +70,17 @@ class BluetoothLeDataPoller(
                         connected = true
                         serviceSelected = false
                         protocolDetectors.clear()
-                        gatt?.discoverServices()
+
+                        //change MTU to max crsf packet length + 3 to be abe to receive biggest CRSF packet from ELRS without need of fragmentation.
+                        // Should be set on both ends (smaller from two is used).
+                        //BTW HM-10 module always use MTU=23
+                        try{
+                            gatt?.requestMtu(64+3);
+                        }
+                        catch(e: NoSuchMethodError ) {
+                            gatt?.discoverServices();
+                        }
+
                     } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                         if (connected) {
                             runOnMainThread(Runnable {
@@ -84,6 +94,10 @@ class BluetoothLeDataPoller(
                         connected = false
                         closeConnection()
                     }
+                }
+
+                override fun onMtuChanged(gatt: BluetoothGatt, mtu:Int, status:Int) {
+                    gatt?.discoverServices()
                 }
 
                 override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
