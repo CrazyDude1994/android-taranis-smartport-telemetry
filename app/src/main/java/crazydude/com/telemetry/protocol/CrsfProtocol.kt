@@ -26,17 +26,21 @@ class CrsfProtocol : Protocol {
         private const val LINK_STATS = 0x14
         private const val ATTITUDE_TYPE = 0x1E
         private const val FLIGHT_MODE = 0x21
+        private const val RC_CHANNELS_PACKED = 0x16
 
         private const val MAX_BUFFER_FILL_LIMIT = 128
         private const val MIN_BUFFER_FILL_LEVEL_BEFORE_LOOKING_FOR_VALID_PACKETS = 20 //arbitrary number which is probably bigger than most packets
         private const val MAX_PAYLOAD_SIZE = 62
-        private const val MIN_PAYLOAD_SIZE = 6
-        private const val MIN_FLIGHT_MODE_PACKET_LEN = 6
+        private const val MIN_PAYLOAD_SIZE = 5
+
+        //packet length + 1 byte crc
+        private const val MIN_FLIGHT_MODE_PACKET_LEN = 4
         private const val GPS_PACKET_LEN = 16
         private const val ATTITUDE_PACKET_LEN = 7
         private const val BATTERY_PACKET_LEN = 9
         private const val VARIO_PACKET_LEN = 3
         private const val LINK_STATS_PACKET_LEN = 11
+        private const val RC_CHANNELS_PACKED_PACKET_LEN = 23;
     }
 
     override fun process(data: Int) {
@@ -91,6 +95,16 @@ class CrsfProtocol : Protocol {
         if (startCharPos > 0) {
             buffer.subList(0, startCharPos).clear()
         }
+    }
+
+    private fun remapChannel(value : Int) : Int {
+        //The values are CRSF channel values (0-1984).
+        // CRSF 172 represents 988us, CRSF 992 represents 1500us,
+        // and CRSF 1811 represents 2012us.
+        // Example: All channels set to 1500us (992)
+        var v = value - 992;
+        v = v * (2012 - 988) / (1811-172);
+        return v + 1500;
     }
 
     private fun proccessFrame(inputData: ByteArray) {
@@ -241,6 +255,25 @@ class CrsfProtocol : Protocol {
                         dataDecoder.decodeData(Protocol.Companion.TelemetryData(PITCH, pitch.toInt()))
                         dataDecoder.decodeData(Protocol.Companion.TelemetryData(ROLL, roll.toInt()))
                         dataDecoder.decodeData(Protocol.Companion.TelemetryData(YAW, yaw.toInt()))
+                    }
+                }
+                RC_CHANNELS_PACKED.toByte() -> {
+                    if (inputData.size == RC_CHANNELS_PACKED_PACKET_LEN) {
+                        var bitsMerged = 0
+                        var readValue: UInt = 0U;
+                        var ch = 0;
+
+                        for (n in 0 until 16) {
+                            while (bitsMerged < 11) {
+                                val readByte = data.get().toUByte();
+                                readValue = readValue or (readByte.toUInt() shl bitsMerged)
+                                bitsMerged += 8
+                            }
+                            dataDecoder.decodeData(Protocol.Companion.TelemetryData(RC_CHANNEL_0 + ch, this.remapChannel((readValue and 0x7ffU).toInt())))
+                            readValue = readValue shr 11;
+                            bitsMerged -= 11;
+                            ch++;
+                        }
                     }
                 }
             }
