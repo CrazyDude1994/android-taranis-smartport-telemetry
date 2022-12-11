@@ -3,8 +3,8 @@ package crazydude.com.telemetry.protocol.decoder
 import android.util.Log
 import crazydude.com.telemetry.protocol.Protocol
 
-const val MAX_RSSI = 0
-const val MIN_RSSI = -130
+const val MAX_RSSI = -30
+const val MIN_RSSI = -120
 
 class CrsfDataDecoder(listener: Listener) : DataDecoder(listener) {
 
@@ -12,6 +12,22 @@ class CrsfDataDecoder(listener: Listener) : DataDecoder(listener) {
     private var newLongitude = false
     private var latitude: Double = 0.0
     private var longitude: Double = 0.0
+    private var rcChannels = IntArray(16) {1500};
+
+    private fun sq(v : Int) : Int {
+        return v*v;
+    }
+
+    init {
+        this.restart()
+    }
+    override fun restart() {
+        this.newLatitude = false
+        this.newLongitude = false
+        this.latitude = 0.0
+        this.longitude = 0.0
+        this.rcChannels = IntArray(16) { 1500 };
+    }
 
     override fun decodeData(data: Protocol.Companion.TelemetryData) {
         var decoded = true
@@ -53,7 +69,13 @@ class CrsfDataDecoder(listener: Listener) : DataDecoder(listener) {
                 listener.onVSpeedData(speed)
             }
             Protocol.RSSI -> {
-                listener.onRSSIData((data.data - MIN_RSSI) * 100 / (MAX_RSSI - MIN_RSSI))
+                //data.data is RSSI in dbm, negative number like -76
+                //convert RSSI to % like inav do with default MIN_RSSI, MAX_RSSI settings
+                var v = (100 * sq(MAX_RSSI - MIN_RSSI) - (100 * sq(MAX_RSSI  - data.data))) / sq(MAX_RSSI - MIN_RSSI);
+                if (data.data >= MAX_RSSI ) v = 99;
+                if (data.data < MIN_RSSI) v = 0;
+
+                listener.onRSSIData(v)
             }
             Protocol.CRSF_LQ -> {
                 listener.onCrsfLqData(data.data)
@@ -90,10 +112,10 @@ class CrsfDataDecoder(listener: Listener) : DataDecoder(listener) {
                         "HRST" -> {
                             listener.onFlyModeData(true, false, Companion.FlyMode.HOME_RESET, null)
                         }
-                        "3CRS" -> {
+                        "3CRS","CRUZ" -> {
                             listener.onFlyModeData(true, false, Companion.FlyMode.CRUISE3D, null)
                         }
-                        "CRS" -> {
+                        "CRS", "CRSH" -> {
                             listener.onFlyModeData(true, false, Companion.FlyMode.CRUISE, null)
                         }
                         "AH" -> {
@@ -132,7 +154,11 @@ class CrsfDataDecoder(listener: Listener) : DataDecoder(listener) {
                 val yaw = Math.toDegrees(data.data.toDouble() / 10000)
                 listener.onHeadingData(yaw.toFloat())
             }
-
+            in Protocol.RC_CHANNEL_0..Protocol.RC_CHANNEL_15 -> {
+                val index = data.telemetryType - Protocol.RC_CHANNEL_0;
+                rcChannels[index] = data.data
+                listener.onRCChannels(rcChannels)
+            }
             else -> {
                 decoded = false
             }
