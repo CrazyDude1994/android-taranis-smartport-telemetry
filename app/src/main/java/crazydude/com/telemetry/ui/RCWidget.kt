@@ -71,7 +71,7 @@ class RCWidget @JvmOverloads constructor(
     private fun getRCChannelFloat( channelIndex : Int) : Float
     {
         if ( this.rcChannels.size > channelIndex ) {
-            return (this.rcChannels[channelIndex]- 1000) / 1000.0f;
+            return (this.rcChannels[channelIndex].coerceIn(1000,2000)- 1000) / 1000.0f;
         }
         return 1.0f;
     }
