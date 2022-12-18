@@ -1,0 +1,12 @@
+<vector android:height="24dp" android:viewportHeight="240"
+    android:viewportWidth="240" android:width="24dp" xmlns:android="http://schemas.android.com/apk/res/android">
+    <path android:fillColor="#fff" android:name="Shape 1" android:pathData="m23 87v70l53 -35l-53 -35z"/>
+    <path android:fillColor="#fff" android:name="Shape 2" android:pathData="m167 123 52 -36v70l-52 -34z"/>
+    <path android:fillColor="#fff" android:name="Shape 3" android:pathData="m88 18c0 0 -4.21 0.34 -4 6c0.18 4.94 3.82 5 3.99 5c0 0 0.01 -0 0.01 -0h68c0 0 2.92 -0.67 3 -5c0.1 -5.25 -3 -6 -3 -6z"/>
+    <path android:fillColor="#fff" android:name="Shape 3 copy" android:pathData="m88 84c0 0 -4.21 0.34 -4 6c0.18 4.94 3.82 5 3.99 5c0 0 0.01 -0 0.01 -0h68c0 0 2.92 -0.67 3 -5c0.1 -5.25 -3 -6 -3 -6z"/>
+    <path android:fillColor="#fff" android:name="Shape 3 copy 2" android:pathData="m88 149c0 0 -4.21 0.34 -4 6c0.18 4.94 3.82 5 3.99 5c0 0 0.01 -0 0.01 -0h68c0 0 2.92 -0.67 3 -5c0.1 -5.25 -3 -6 -3 -6z"/>
+    <path android:fillColor="#fff" android:name="Shape 3 copy 3" android:pathData="m88 213c0 0 -4.21 0.34 -4 6c0.18 4.94 3.82 5 3.99 5c0 0 0.01 -0 0.01 -0h68c0 0 2.92 -0.67 3 -5c0.1 -5.25 -3 -6 -3 -6z"/>
+    <path android:fillColor="#fff" android:name="Shape 4" android:pathData="m103 52h36c0 0 3.04 0.12 3 5c-0.03 4.03 -2.83 4.97 -3 5h-36c0 0 -2.88 -0.13 -3 -5c-0.12 -4.5 3 -5 3 -5z"/>
+    <path android:fillColor="#fff" android:name="Shape 4 copy" android:pathData="m103 118h36c0 0 3.04 0.12 3 5c-0.03 4.03 -2.83 4.97 -3 5h-36c0 0 -2.88 -0.13 -3 -5c-0.12 -4.5 3 -5 3 -5z"/>
+    <path android:fillColor="#fff" android:name="Shape 4 copy 2" android:pathData="m103 182h36c0 0 3.04 0.12 3 5c-0.03 4.03 -2.83 4.97 -3 5h-36c0 0 -2.88 -0.13 -3 -5c-0.12 -4.5 3 -5 3 -5z"/>
+</vector>

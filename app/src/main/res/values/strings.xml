@@ -14,6 +14,11 @@
         <item>mWh</item>
     </string-array>
 
+    <string-array name="ReportVoltage">
+        <item>Battery</item>
+        <item>Cell</item>
+    </string-array>
+
     <string-array name="ScreenOrientationLock">
         <item>No lock</item>
         <item>Portrait</item>

@@ -50,10 +50,10 @@ import crazydude.com.telemetry.protocol.pollers.LogPlayer
 import crazydude.com.telemetry.service.DataService
 import uk.co.deanwild.materialshowcaseview.MaterialShowcaseView
 import java.io.File
-import java.io.PrintWriter
 import java.lang.Exception
 import java.util.*
 import kotlin.collections.ArrayList
+import kotlin.math.ceil
 import kotlin.math.roundToInt
 
 //class MapsActivity : AppCompatActivity(), DataDecoder.Listener {
@@ -84,9 +84,12 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     private lateinit var voltage: TextView
     private lateinit var phoneBattery: TextView
     private lateinit var speed: TextView
+    private lateinit var airspeed: TextView
+    private lateinit var vspeed: TextView
     private lateinit var distance: TextView
     private lateinit var traveled_distance: TextView
     private lateinit var altitude: TextView
+    private lateinit var altitude_msl: TextView
     private lateinit var mode: TextView
     private lateinit var statustext: TextView
     private lateinit var followButton: FloatingActionButton
@@ -105,6 +108,18 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     private lateinit var videoHolder: AspectFrameLayout
     private lateinit var mapViewHolder: FrameLayout
     private lateinit var rc_widget : RCWidget
+    private lateinit var dnSnr: TextView
+    private lateinit var upSnr: TextView
+    private lateinit var upLq: TextView
+    private lateinit var dnLq: TextView
+    private lateinit var elrsRate: TextView
+    private lateinit var ant: TextView
+    private lateinit var power: TextView
+    private lateinit var rssiDbm1: TextView
+    private lateinit var rssiDbm2: TextView
+    private lateinit var rssiDbmd: TextView
+    private lateinit var cell_voltage: TextView
+    private lateinit var throttle: TextView
 
     private lateinit var mCameraFragment : com.serenegiant.usbcameratest4.CameraFragment
 
@@ -122,15 +137,11 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     private var hasGPSFix = false
     private var replayFileString: String? = null
     private var dataService: DataService? = null
-    private var lastVBAT = 0f
-    private var lastCellVoltage = 0f
     private var lastPhoneBattery = 0
     private var lastTraveledDistance = 0.0
+    private var lastCellVoltage = 0.0f
 
     private var fullscreenWindow = false
-
-    private var crsf_rf = -1;
-    private var crsf_lq = -1;
 
     private val serviceConnection: ServiceConnection = object : ServiceConnection {
         override fun onServiceDisconnected(p0: ComponentName?) {
@@ -173,9 +184,12 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         voltage = findViewById(R.id.voltage)
         phoneBattery = findViewById(R.id.phone_battery)
         speed = findViewById(R.id.speed)
+        airspeed = findViewById(R.id.airspeed)
+        vspeed = findViewById(R.id.vspeed)
         distance = findViewById(R.id.distance)
         traveled_distance = findViewById(R.id.traveled_distance)
         altitude = findViewById(R.id.altitude)
+        altitude_msl = findViewById(R.id.altitude_msl)
         mode = findViewById(R.id.mode)
         statustext = findViewById(R.id.statustext)
         followButton = findViewById(R.id.follow_button)
@@ -193,6 +207,18 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         videoHolder = findViewById(R.id.viewHolder)
         mapViewHolder = findViewById(R.id.mapViewHolder)
         rc_widget = findViewById(R.id.rc_widget)
+        dnSnr = findViewById(R.id.dn_snr)
+        upSnr = findViewById(R.id.up_snr)
+        upLq = findViewById(R.id.up_lq)
+        dnLq = findViewById(R.id.dn_lq)
+        elrsRate = findViewById(R.id.elrs_rate)
+        ant = findViewById(R.id.ant)
+        power = findViewById(R.id.power)
+        rssiDbm1 = findViewById(R.id.up_rssi_dbm1)
+        rssiDbm2 = findViewById(R.id.up_rssi_dbm2)
+        rssiDbmd = findViewById(R.id.dn_rssi_dbm)
+        cell_voltage = findViewById(R.id.cell_voltage)
+        throttle = findViewById(R.id.throttle)
 
         videoHolder.setAspectRatio(640.0/480)
 
@@ -207,7 +233,22 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             Pair(PreferenceManager.sensors.elementAt(7).name, altitude),
             Pair(PreferenceManager.sensors.elementAt(8).name, phoneBattery),
             Pair(PreferenceManager.sensors.elementAt(9).name, rc_widget),
-            Pair(PreferenceManager.sensors.elementAt(10).name, rssi)
+            Pair(PreferenceManager.sensors.elementAt(10).name, rssi),
+            Pair(PreferenceManager.sensors.elementAt(11).name, dnSnr),
+            Pair(PreferenceManager.sensors.elementAt(12).name, upSnr),
+            Pair(PreferenceManager.sensors.elementAt(13).name, upLq),
+            Pair(PreferenceManager.sensors.elementAt(14).name, dnLq),
+            Pair(PreferenceManager.sensors.elementAt(15).name, elrsRate),
+            Pair(PreferenceManager.sensors.elementAt(16).name, ant),
+            Pair(PreferenceManager.sensors.elementAt(17).name, power),
+            Pair(PreferenceManager.sensors.elementAt(18).name, rssiDbm1),
+            Pair(PreferenceManager.sensors.elementAt(19).name, rssiDbm2),
+            Pair(PreferenceManager.sensors.elementAt(20).name, rssiDbmd),
+            Pair(PreferenceManager.sensors.elementAt(21).name, airspeed),
+            Pair(PreferenceManager.sensors.elementAt(22).name, vspeed),
+            Pair(PreferenceManager.sensors.elementAt(23).name, cell_voltage),
+            Pair(PreferenceManager.sensors.elementAt(24).name, altitude_msl),
+            Pair(PreferenceManager.sensors.elementAt(25).name, throttle)
         )
 
         firebaseAnalytics = FirebaseAnalytics.getInstance(this)
@@ -458,14 +499,14 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                 val dir = Environment.getExternalStoragePublicDirectory("TelemetryLogs")
                 if (dir.exists()) {
                     val files =
-                        dir.listFiles { file -> file.extension == "log" && file.length() > 0 }
+                        dir.listFiles { file -> file.extension == "log" && file.length() > 0 }.sorted()
                             .reversed()
                     this.showDialog( AlertDialog.Builder(this)
                         .setAdapter(
                             ArrayAdapter(
                                 this,
                                 android.R.layout.simple_list_item_1,
-                                files.map { i -> "${i.nameWithoutExtension} (${i.length() / 1024} Kb)" })
+                                files.map { i -> "${i.nameWithoutExtension} (${ceil(i.length() / 102.4) /10} Kb)" })
                         ) { _, i ->
                                 updateWindowFullscreenDecoration()
                                 startReplay(files[i])
@@ -666,6 +707,9 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             }
             DataDecoder.Companion.FlyMode.AUTONOMOUS -> {
                 mode.text = mode.text.toString() + " | Autonomous"
+            }
+            DataDecoder.Companion.FlyMode.RATE -> {
+                mode.text = mode.text.toString() + " | Rate"
             }
             null -> {
             }
@@ -954,30 +998,37 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         phoneBattery.text = "-"
         current.text = "-"
         fuel.text = "-"
+        this.setFuelIcon(-1);
         altitude.text = "-"
+        altitude_msl.text = "-"
         speed.text = "-"
+        airspeed.text = "-"
+        vspeed.text = "-"
         distance.text = "-"
-        traveled_distance.text = "0m"
+        traveled_distance.text = "0 m"
         this.lastTraveledDistance = 0.0;
         mode.text = "Disconnected"
         statustext.text="";
+        dnSnr.text = "-"
+        upSnr.text = "-"
+        dnLq.text = "-"
+        elrsRate.text = "-"
+        this.setDNLQIcon( 100 )
+        upLq.text = "-"
+        this.setUPLQIcon( 100 )
+        ant.text = "-"
+        power.text = "-"
+        rssiDbm1.text = "-"
+        this.setRssiDbm1Icon( 0 )
+        rssiDbm2.text = "-"
+        this.setRssiDbm2Icon( 0 )
+        rssiDbmd.text = "-"
+        this.setRssiDbmdIcon( 0 )
         horizonView.setPitch(0f)
         horizonView.setRoll(0f)
-        if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            this.fuel.setCompoundDrawablesWithIntrinsicBounds(
-                ContextCompat.getDrawable(this, R.drawable.ic_battery_unknown),
-                null,
-                null,
-                null
-            )
-        } else {
-            this.fuel.setCompoundDrawablesWithIntrinsicBounds(
-                null,
-                ContextCompat.getDrawable(this, R.drawable.ic_battery_unknown),
-                null,
-                null
-            )
-        }
+        cell_voltage.text = "-"
+        this.lastCellVoltage = 0.0f;
+        throttle.text = "-"
     }
 
     private fun bleCheck() =
@@ -1080,24 +1131,61 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     }
 
     override fun onVSpeedData(vspeed: Float) {
+        this.sensorTimeoutManager.onVSpeedData(vspeed);
+        runOnUiThread {
+            this.vspeed.text = "${"%.1f".format(vspeed)} m/s"
+        }
+    }
 
+    override fun onThrottleData(throttle: Int) {
+        this.sensorTimeoutManager.onThrottleData(throttle);
+        runOnUiThread {
+            this.throttle.text = throttle.toString();
+        }
+    }
+
+    private fun formatDistance( v : Float ) : String {
+        if ( v < 1000 ){
+            return "${"%.0f".format(v)} m"
+        }
+        else {
+            return "${"%.2f".format(v/ 1000)} km"
+        }
+    }
+
+    private fun formatHeight( v : Float ) : String {
+        if ( v < 10 ){
+            return "${"%.2f".format(v)} m"
+        }
+        else if ( v < 100 ){
+            return "${"%.1f".format(v)} m"
+        }
+        else if ( v < 1000 ){
+            return "${"%.0f".format(v)} m"
+        }
+        else {
+            return "${"%.2f".format(v/ 1000)} km"
+        }
     }
 
     override fun onAltitudeData(altitude: Float) {
         this.sensorTimeoutManager.onAltitudeData(altitude);
         runOnUiThread {
-            this.altitude.text = "${"%.2f".format(altitude)} m"
+            this.altitude.text = this.formatHeight(altitude);
         }
     }
 
     override fun onGPSAltitudeData(altitude: Float) {
-
+        this.sensorTimeoutManager.onGPSAltitudeData(altitude);
+        runOnUiThread {
+            this.altitude_msl.text = this.formatHeight(altitude);
+        }
     }
 
     override fun onDistanceData(distance: Int) {
         this.sensorTimeoutManager.onDistanceData(distance)
         runOnUiThread {
-            this.distance.text = "$distance m"
+            this.distance.text = this.formatDistance(distance.toFloat());
         }
     }
 
@@ -1116,18 +1204,14 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     override fun onGSpeedData(speed: Float) {
         this.sensorTimeoutManager.onGSpeedData(speed)
         runOnUiThread {
-            if (!preferenceManager.usePitotTube()) {
-                updateSpeed(speed)
-            }
+            this.speed.text = "${speed.roundToInt()} km/h"
         }
     }
 
-    override fun onAirSpeed(speed: Float) {
-        this.sensorTimeoutManager.onAirSpeed(speed)
+    override fun onAirSpeedData(speed: Float) {
+        this.sensorTimeoutManager.onAirSpeedData(speed)
         runOnUiThread {
-            if (preferenceManager.usePitotTube()) {
-                updateSpeed(speed)
-            }
+            this.airspeed.text = "${speed.roundToInt()} km/h"
         }
     }
 
@@ -1143,10 +1227,6 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         runOnUiThread {
             this.statustext.text = message;
         }
-    }
-
-    private fun updateSpeed(speed: Float) {
-        this.speed.text = "${speed.roundToInt()} km/h"
     }
 
     override fun onGPSState(satellites: Int, gpsFix: Boolean) {
@@ -1177,7 +1257,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             in 61..80 -> R.drawable.ic_rssi_4
             in 41..69 -> R.drawable.ic_rssi_3
             in 21..40 -> R.drawable.ic_rssi_2
-            in 0..20 -> R.drawable.ic_rssi_1
+            in 1..20 -> R.drawable.ic_rssi_1
+            0 -> R.drawable.ic_rssi_0
             else -> R.drawable.ic_rssi_5
         }.let {
             if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
@@ -1198,15 +1279,148 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         }
     }
 
-    fun showCrsfLq() :Boolean {
-        return preferenceManager.useCrsfLq() && crsf_lq != -1 && crsf_rf != -1;
+    private fun setUPLQIcon(lq : Int )  {
+        when (lq) {
+            in 81..100 -> R.drawable.ic_up_lq_5
+            in 61..80 -> R.drawable.ic_up_lq_4
+            in 41..69 -> R.drawable.ic_up_lq_3
+            in 21..40 -> R.drawable.ic_up_lq_2
+            in 1..20 -> R.drawable.ic_up_lq_1
+            0 -> R.drawable.ic_up_lq_0
+            else -> R.drawable.ic_up_lq_5
+        }.let {
+            if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                this.upLq.setCompoundDrawablesWithIntrinsicBounds(
+                    ContextCompat.getDrawable(
+                        this,
+                        it
+                    ), null, null, null
+                )
+            } else {
+                this.upLq.setCompoundDrawablesWithIntrinsicBounds(
+                    null,
+                    ContextCompat.getDrawable(this, it),
+                    null,
+                    null
+                )
+            }
+        }
     }
 
+    private fun setDNLQIcon(lq : Int )  {
+        when (lq) {
+            in 81..100 -> R.drawable.ic_dn_lq_5
+            in 61..80 -> R.drawable.ic_dn_lq_4
+            in 41..69 -> R.drawable.ic_dn_lq_3
+            in 21..40 -> R.drawable.ic_dn_lq_2
+            in 1..20 -> R.drawable.ic_dn_lq_1
+            0 -> R.drawable.ic_dn_lq_0
+            else -> R.drawable.ic_dn_lq_5
+        }.let {
+            if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                this.dnLq.setCompoundDrawablesWithIntrinsicBounds(
+                    ContextCompat.getDrawable(
+                        this,
+                        it
+                    ), null, null, null
+                )
+            } else {
+                this.dnLq.setCompoundDrawablesWithIntrinsicBounds(
+                    null,
+                    ContextCompat.getDrawable(this, it),
+                    null,
+                    null
+                )
+            }
+        }
+    }
+
+    private fun setRssiDbm1Icon(rssi : Int )  {
+        when (rssi) {
+            in -31..0 -> R.drawable.ic_rssi_dbm1_5
+            in -51..-30 -> R.drawable.ic_rssi_dbm1_4
+            in -71..-59 -> R.drawable.ic_rssi_dbm1_3
+            in -91..-70 -> R.drawable.ic_rssi_dbm1_2
+            in -120..-90 -> R.drawable.ic_rssi_dbm1_1
+            0 -> R.drawable.ic_rssi_dbm1_0
+            else -> R.drawable.ic_rssi_dbm1_5
+        }.let {
+            if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                this.rssiDbm1.setCompoundDrawablesWithIntrinsicBounds(
+                    ContextCompat.getDrawable(
+                        this,
+                        it
+                    ), null, null, null
+                )
+            } else {
+                this.rssiDbm1.setCompoundDrawablesWithIntrinsicBounds(
+                    null,
+                    ContextCompat.getDrawable(this, it),
+                    null,
+                    null
+                )
+            }
+        }
+    }
+
+    private fun setRssiDbm2Icon(rssi : Int )  {
+        when (rssi) {
+            in -31..0 -> R.drawable.ic_rssi_dbm2_5
+            in -51..-30 -> R.drawable.ic_rssi_dbm2_4
+            in -71..-50 -> R.drawable.ic_rssi_dbm2_3
+            in -91..-70 -> R.drawable.ic_rssi_dbm2_2
+            in -121..-90 -> R.drawable.ic_rssi_dbm2_1
+            0 -> R.drawable.ic_rssi_dbm2_0
+            else -> R.drawable.ic_rssi_dbm2_5
+        }.let {
+            if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                this.rssiDbm2.setCompoundDrawablesWithIntrinsicBounds(
+                    ContextCompat.getDrawable(
+                        this,
+                        it
+                    ), null, null, null
+                )
+            } else {
+                this.rssiDbm2.setCompoundDrawablesWithIntrinsicBounds(
+                    null,
+                    ContextCompat.getDrawable(this, it),
+                    null,
+                    null
+                )
+            }
+        }
+    }
+
+    private fun setRssiDbmdIcon(rssi : Int )  {
+        when (rssi) {
+            in -31..0 -> R.drawable.ic_rssi_dbmd_5
+            in -51..-30 -> R.drawable.ic_rssi_dbmd_4
+            in -71..50 -> R.drawable.ic_rssi_dbmd_3
+            in -91..-70 -> R.drawable.ic_rssi_dbmd_2
+            in -120..-90 -> R.drawable.ic_rssi_dbmd_1
+            0 -> R.drawable.ic_rssi_dbmd_0
+            else -> R.drawable.ic_rssi_dbmd_5
+        }.let {
+            if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                this.rssiDbmd.setCompoundDrawablesWithIntrinsicBounds(
+                    ContextCompat.getDrawable(
+                        this,
+                        it
+                    ), null, null, null
+                )
+            } else {
+                this.rssiDbmd.setCompoundDrawablesWithIntrinsicBounds(
+                    null,
+                    ContextCompat.getDrawable(this, it),
+                    null,
+                    null
+                )
+            }
+        }
+    }
 
     override fun onRSSIData(rssi: Int) {
         this.sensorTimeoutManager.onRSSIData(rssi);
-
-        if (showCrsfLq() )  return;
 
         runOnUiThread {
             this.rssi.text = if (rssi == -1) "-" else rssi.toString()
@@ -1214,24 +1428,72 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         }
     }
 
-    override fun onCrsfLqData(lq: Int){
-        this.sensorTimeoutManager.onCrsfLqData(lq);
-        if ( showCrsfLq() ) {
-            runOnUiThread {
-                this.rssi.text  = crsf_rf.toString() + ":" + crsf_lq.toString()
-                this.setRSSIIcon(crsf_lq!!);
-            }
+    override fun onUpLqData(lq: Int) {
+        this.sensorTimeoutManager.onUpLqData(lq);
+
+        runOnUiThread {
+            this.upLq.text = if (lq == -1) "-" else lq.toString()
+            this.setUPLQIcon(lq);
         }
     }
 
-    override fun onCrsfRfData(rf: Int){
-        this.sensorTimeoutManager.onCrsfRfData(rf);
-        if ( showCrsfLq() ) {
-            runOnUiThread {
-                this.rssi.text  = crsf_rf.toString() + ":" + crsf_lq.toString()
-                this.setRSSIIcon(crsf_lq!!);
-            }
+    override fun onDnLqData(lq: Int) {
+        this.sensorTimeoutManager.onDnLqData(lq);
+
+        runOnUiThread {
+            this.dnLq.text = if (lq == -1) "-" else lq.toString()
+            this.setDNLQIcon(lq);
         }
+    }
+
+    override fun onRssiDbm1Data(rssi: Int) {
+        this.sensorTimeoutManager.onRssiDbm1Data(rssi);
+
+        runOnUiThread {
+            this.rssiDbm1.text = if (rssi == 0) "-" else rssi.toString()
+            this.setRssiDbm1Icon(rssi);
+        }
+    }
+
+    override fun onRssiDbm2Data(rssi: Int) {
+        this.sensorTimeoutManager.onRssiDbm2Data(rssi);
+
+        runOnUiThread {
+            this.rssiDbm2.text = if (rssi == 0) "-" else rssi.toString()
+            this.setRssiDbm2Icon(rssi);
+        }
+    }
+
+    override fun onRssiDbmdData(rssi: Int) {
+        this.sensorTimeoutManager.onRssiDbmdData(rssi);
+
+        runOnUiThread {
+            this.rssiDbmd.text = if (rssi == 0) "-" else rssi.toString()
+            this.setRssiDbmdIcon(rssi);
+        }
+    }
+
+    override fun onElrsModeModeData(mode: Int){
+        this.sensorTimeoutManager.onElrsModeModeData(mode);
+            runOnUiThread {
+                when (mode) {
+                    13 -> this.elrsRate.text = "F1000"
+                    12 -> this.elrsRate.text = "F500"
+                    11 -> this.elrsRate.text = "D500"
+                    10 -> this.elrsRate.text = "D250"
+                    9 -> this.elrsRate.text = "L500"
+                    8 -> this.elrsRate.text = "L333c" //8ch
+                    7 -> this.elrsRate.text = "L250"
+                    6 -> this.elrsRate.text = "L200"
+                    5 -> this.elrsRate.text = "L150"
+                    4 -> this.elrsRate.text = "L100"
+                    3 -> this.elrsRate.text = "L100c"  //8ch
+                    2 -> this.elrsRate.text = "L50"
+                    1 -> this.elrsRate.text = "L25"
+                    0 -> this.elrsRate.text = "L4"
+                    else -> this.elrsRate.text = mode.toString();
+                }
+            }
     }
 
 
@@ -1291,9 +1553,29 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
 
     override fun onVBATData(voltage: Float) {
         this.sensorTimeoutManager.onVBATData(voltage);
-        lastVBAT = voltage
         runOnUiThread {
-            updateVoltage()
+            this.voltage.text = "${"%.2f".format(voltage)} V"
+        }
+    }
+
+    override fun onCellVoltageData(voltage: Float) {
+        this.lastCellVoltage = voltage;
+        runOnUiThread {
+            this.cell_voltage.text = "${"%.2f".format(voltage)} V"
+        }
+    }
+
+    override fun onVBATOrCellData(voltage: Float) {
+        this.sensorTimeoutManager.onVBATOrCellData(voltage);
+        runOnUiThread {
+            val reportVoltage = preferenceManager.getReportVoltage()
+            if ( reportVoltage == "Battery" ){
+                this.voltage.text = "${"%.2f".format(voltage)} V"
+            }
+            else {
+                this.cell_voltage.text = "${"%.2f".format(voltage)} V"
+                this.lastCellVoltage = voltage;
+            }
         }
     }
 
@@ -1301,6 +1583,42 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         this.sensorTimeoutManager.onCurrentData(current)
         runOnUiThread {
             this.current.text = "${"%.2f".format(current)} A"
+        }
+    }
+
+    override fun onDNSNRData(snr: Int) {
+        this.sensorTimeoutManager.onDNSNRData(snr);
+        runOnUiThread {
+            this.dnSnr.text = snr.toString();
+        }
+    }
+
+    override fun onUPSNRData(snr: Int) {
+        this.sensorTimeoutManager.onUPSNRData(snr);
+        runOnUiThread {
+            this.upSnr.text = snr.toString();
+        }
+    }
+
+    override fun onAntData(activeAntena: Int) {
+        this.sensorTimeoutManager.onAntData(activeAntena);
+        runOnUiThread {
+            this.ant.text = (activeAntena+1).toString();
+        }
+    }
+
+    override fun onPowerData(power: Int) {
+        this.sensorTimeoutManager.onPowerData(power);
+        runOnUiThread {
+            when (power) {
+                1 -> this.power.text = "10mW"
+                2 -> this.power.text = "25mW"
+                3 -> this.power.text = "100mW"
+                4 -> this.power.text = "500mW"
+                5 -> this.power.text = "1W"
+                6 -> this.power.text = "2W"
+                else -> this.power.text = power.toString();
+            }
         }
     }
 
@@ -1322,24 +1640,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         }
     }
 
-    override fun onCellVoltageData(voltage: Float) {
-        lastCellVoltage = voltage
-        runOnUiThread {
-            updateVoltage()
-        }
-    }
-
-    private fun updateVoltage() {
-        if ( lastCellVoltage > 0 )
-            this.voltage.text = "${"%.2f".format(lastVBAT)} (${"%.2f".format(lastCellVoltage)}) V"
-        else
-            this.voltage.text = "${"%.2f".format(lastVBAT)} V"
-    }
-
     override fun onDisconnected() {
         Toast.makeText(this, "Disconnected", Toast.LENGTH_SHORT).show()
-        crsf_rf = -1;
-        crsf_lq = -1;
         switchToIdleState()
     }
 
@@ -1382,6 +1684,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         replayButton.visibility = View.GONE
         connectButton.text = getString(R.string.disconnect)
         connectButton.isEnabled = true
+        mode.text = "Connected"
         connectButton.setOnClickListener {
             connectButton.isEnabled = false
             connectButton.text = getString(R.string.disconnecting)
@@ -1400,51 +1703,75 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         }
     }
 
+    private fun setFuelIcon(percentage: Int) {
+        when (percentage) {
+            in 91..100 -> R.drawable.ic_battery_full
+            in 81..90 -> R.drawable.ic_battery_90
+            in 61..80 -> R.drawable.ic_battery_80
+            in 51..60 -> R.drawable.ic_battery_60
+            in 31..50 -> R.drawable.ic_battery_50
+            in 21..30 -> R.drawable.ic_battery_30
+            in 0..20 -> R.drawable.ic_battery_alert
+            else -> R.drawable.ic_battery_unknown
+        }.let {
+            if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                this.fuel.setCompoundDrawablesWithIntrinsicBounds(
+                    ContextCompat.getDrawable(this, it),
+                    null,
+                    null,
+                    null
+                )
+            } else {
+                this.fuel.setCompoundDrawablesWithIntrinsicBounds(
+                    null,
+                    ContextCompat.getDrawable(this, it),
+                    null,
+                    null
+                )
+            }
+        }
+    }
+
+    private fun formatPower( v : Int, suffix : String ) : String {
+        if ( v < 1000 ){
+            return "$v $suffix"
+        }
+        else {
+            if ( suffix == "mAh" ) {
+                return "${"%.2f".format(v/ 1000f)} Ah"
+            }
+            else {
+                return "${"%.2f".format(v/ 1000f)} Wh"
+            }
+        }
+    }
+
     override fun onFuelData(fuel: Int) {
         this.sensorTimeoutManager.onFuelData(fuel)
         runOnUiThread {
             val batteryUnits = preferenceManager.getBatteryUnits()
-            var realFuel = fuel
+            var percentage = fuel
 
             when (batteryUnits) {
                 "mAh", "mWh" -> {
-                    this.fuel.text = "$fuel $batteryUnits"
-                    if ( lastCellVoltage > 0)
-                        realFuel = ((1 - (4.2f - lastCellVoltage)).coerceIn(0f, 1f) * 100).toInt()
+                    this.fuel.text = this.formatPower( fuel, batteryUnits )
+                    //for icon, calculate percentage from cell voltage if available
+                    if ( (lastCellVoltage > 0) && (lastCellVoltage <= 4.4)) {
+                        percentage = ((1 - (4.2f - lastCellVoltage)).coerceIn(0f, 1f) * 100).toInt()
+                    }
+                    else {
+                        percentage = -1;  //unknnow icon
+                    }
                 }
                 "Percentage" -> {
                     this.fuel.text = "$fuel%"
                 }
             }
 
-            when (realFuel) {
-                in 91..100 -> R.drawable.ic_battery_full
-                in 81..90 -> R.drawable.ic_battery_90
-                in 61..80 -> R.drawable.ic_battery_80
-                in 51..60 -> R.drawable.ic_battery_60
-                in 31..50 -> R.drawable.ic_battery_50
-                in 21..30 -> R.drawable.ic_battery_30
-                in 0..20 -> R.drawable.ic_battery_alert
-                else -> R.drawable.ic_battery_unknown
-            }.let {
-                if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                    this.fuel.setCompoundDrawablesWithIntrinsicBounds(
-                        ContextCompat.getDrawable(this, it),
-                        null,
-                        null,
-                        null
-                    )
-                } else {
-                    this.fuel.setCompoundDrawablesWithIntrinsicBounds(
-                        null,
-                        ContextCompat.getDrawable(this, it),
-                        null,
-                        null
-                    )
-                }
-            }
+            this.setFuelIcon( percentage );
         }
     }
+
 
     override fun onSuccessDecode() {
 
@@ -1499,7 +1826,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                 if (hasGPSFix) {
                     polyLine?.addPoints(listOf(lastGPS))
                     this.lastTraveledDistance += d
-                    this.traveled_distance.text = "${this.lastTraveledDistance.roundToInt()} m"
+                    this.traveled_distance.text = this.formatDistance( this.lastTraveledDistance.toFloat() );
                 }
             }
         }
@@ -1509,6 +1836,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         runOnUiThread {
             Toast.makeText(this, "Connected!", Toast.LENGTH_SHORT).show()
             switchToConnectedState()
+            this.lastTraveledDistance = 0.0;
+            this.traveled_distance.text = "-"
         }
     }
 
@@ -1625,24 +1954,50 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             SensorTimeoutManager.SENSOR_ALTITUDE ->{
                 this.altitude.setAlpha(alpha);
             }
-            SensorTimeoutManager.SENSOR_RSSI ->{
-                if  (!this.showCrsfLq()) {
-                    this.rssi.setAlpha(alpha);
-                }
+            SensorTimeoutManager.SENSOR_GPS_ALTITUDE ->{
+                this.altitude_msl.setAlpha(alpha);
             }
-            SensorTimeoutManager.SENSOR_LQ ->{
-                if  (this.showCrsfLq()) {
-                    this.rssi.setAlpha(alpha);
-                }
+            SensorTimeoutManager.SENSOR_RSSI ->{
+                this.rssi.setAlpha(alpha);
+            }
+            SensorTimeoutManager.SENSOR_UP_LQ ->{
+                this.upLq.setAlpha(alpha);
+            }
+            SensorTimeoutManager.SENSOR_DN_LQ ->{
+                this.dnLq.setAlpha(alpha);
+            }
+            SensorTimeoutManager.SENSOR_ELRS_MODE ->{
+                this.elrsRate.setAlpha(alpha);
             }
             SensorTimeoutManager.SENSOR_VOLTAGE ->{
                 this.voltage.setAlpha(alpha);
+            }
+            SensorTimeoutManager.SENSOR_CELL_VOLTAGE ->{
+                this.cell_voltage.setAlpha(alpha);
+            }
+            SensorTimeoutManager.SENSOR_VBAT_OR_CELL ->{
+                val reportVoltage = preferenceManager.getReportVoltage()
+                if ( reportVoltage == "Battery" ){
+                    this.voltage.setAlpha(alpha);
+                }
+                else {
+                    this.cell_voltage.setAlpha(alpha);
+                }
             }
             SensorTimeoutManager.SENSOR_CURRENT ->{
                 this.current.setAlpha(alpha);
             }
             SensorTimeoutManager.SENSOR_SPEED ->{
                 this.speed.setAlpha(alpha);
+            }
+            SensorTimeoutManager.SENSOR_AIRSPEED ->{
+                this.airspeed.setAlpha(alpha);
+            }
+            SensorTimeoutManager.SENSOR_VSPEED ->{
+                this.vspeed.setAlpha(alpha);
+            }
+            SensorTimeoutManager.SENSOR_THROTTLE ->{
+                this.throttle.setAlpha(alpha);
             }
             SensorTimeoutManager.SENSOR_FUEL ->{
                 this.fuel.setAlpha(alpha);
@@ -1654,6 +2009,27 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                 if ( this.sensorTimeoutManager.getSensorTimeout(sensorId) ){
                     this.statustext.text = "";
                 }
+            }
+            SensorTimeoutManager.SENSOR_DN_SNR ->{
+                this.dnSnr.setAlpha(alpha);
+            }
+            SensorTimeoutManager.SENSOR_UP_SNR ->{
+                this.upSnr.setAlpha(alpha);
+            }
+            SensorTimeoutManager.SENSOR_ANT ->{
+                this.ant.setAlpha(alpha);
+            }
+            SensorTimeoutManager.SENSOR_POWER ->{
+                this.power.setAlpha(alpha);
+            }
+            SensorTimeoutManager.SENSOR_RSSI_DBM_1 ->{
+                this.rssiDbm1.setAlpha(alpha);
+            }
+            SensorTimeoutManager.SENSOR_RSSI_DBM_2 ->{
+                this.rssiDbm2.setAlpha(alpha);
+            }
+            SensorTimeoutManager.SENSOR_RSSI_DBM_D ->{
+                this.rssiDbmd.setAlpha(alpha);
             }
         }
     }

@@ -1,0 +1,6 @@
+<vector android:height="24dp" android:viewportHeight="240"
+    android:viewportWidth="240" android:width="24dp" xmlns:android="http://schemas.android.com/apk/res/android">
+    <path android:fillColor="#fff" android:name="ANT" android:pathData="m61.12 170.56 6.19 23.26h-12.38l6.19 -23.26zm-8.11 -20.08 -20.49 70.52h15.27l3.79 -14.4h19.06l3.79 14.4h15.68l-20.49 -70.52zm43.14 0v70.52h13.93v-49.16l23.38 49.16h14.66v-70.52h-13.93v40.4l-19.35 -40.4zm58 0v13.45h17.92v57.07h15.23v-57.07h17.92v-13.45z"/>
+    <path android:fillColor="#fff" android:name="Shape 1" android:pathData="m112 66v61h17v-62l34 -53h-85"/>
+    <path android:fillColor="#000" android:name="Shape 3" android:pathData="m103 25 18 29 16 -29"/>
+</vector>

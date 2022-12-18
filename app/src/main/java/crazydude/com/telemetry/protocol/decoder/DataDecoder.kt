@@ -11,7 +11,7 @@ abstract class DataDecoder(protected val listener: Listener) {
         enum class FlyMode {
             ACRO, HORIZON, ANGLE, FAILSAFE, RTH, WAYPOINT, MANUAL, CRUISE, HOLD, HOME_RESET, CRUISE3D, ALTHOLD, ERROR,
             WAIT, AUTONOMOUS, CIRCLE, STABILIZE, TRAINING, FBWA, FBWB, AUTOTUNE, LOITER, TAKEOFF, AVOID_ADSB, GUIDED,
-            INITIALISING, LANDING, MISSION, QSTABILIZE, QHOVER, QLOITER, QLAND, QRTL, QAUTOTUNE, QACRO
+            INITIALISING, LANDING, MISSION, QSTABILIZE, QHOVER, QLOITER, QLAND, QRTL, QAUTOTUNE, QACRO, RATE
         }
 
         open class DefaultDecodeListener: Listener {
@@ -37,6 +37,9 @@ abstract class DataDecoder(protected val listener: Listener) {
             override fun onCellVoltageData(voltage: Float) {
             }
 
+            override fun onVBATOrCellData(voltage: Float) {
+            }
+
             override fun onCurrentData(current: Float) {
             }
 
@@ -46,10 +49,13 @@ abstract class DataDecoder(protected val listener: Listener) {
             override fun onRSSIData(rssi: Int) {
             }
 
-            override fun onCrsfLqData(lq: Int) {
+            override fun onUpLqData(lq: Int) {
             }
 
-            override fun onCrsfRfData(rf: Int) {
+            override fun onDnLqData(lq: Int) {
+            }
+
+            override fun onElrsModeModeData(mode: Int) {
             }
 
             override fun onDisconnected() {
@@ -59,6 +65,9 @@ abstract class DataDecoder(protected val listener: Listener) {
             }
 
             override fun onVSpeedData(vspeed: Float) {
+            }
+
+            override fun onThrottleData(throttle: Int) {
             }
 
             override fun onAltitudeData(altitude: Float) {
@@ -92,10 +101,31 @@ abstract class DataDecoder(protected val listener: Listener) {
             }
 
 
-            override fun onAirSpeed(speed: Float) {
+            override fun onAirSpeedData(speed: Float) {
             }
 
             override fun onStatusText(message:String) {
+            }
+
+            override fun onDNSNRData(snr: Int) {
+            }
+
+            override fun onUPSNRData(snr: Int) {
+            }
+
+            override fun onAntData(activeAntena: Int) {
+            }
+
+            override fun onPowerData(power: Int) {
+            }
+
+            override fun onRssiDbm1Data(rssi: Int) {
+            }
+
+            override fun onRssiDbm2Data(rssi: Int) {
+            }
+
+            override fun onRssiDbmdData(rssi: Int) {
             }
 
             override fun onSuccessDecode() {
@@ -121,11 +151,13 @@ abstract class DataDecoder(protected val listener: Listener) {
         fun onCurrentData(current: Float)
         fun onHeadingData(heading: Float)
         fun onRSSIData(rssi: Int) //-1 - unknown/invalid, or device-dependent value
-        fun onCrsfLqData(lq: Int)
-        fun onCrsfRfData(rf: Int)
+        fun onUpLqData(lq: Int)
+        fun onDnLqData(lq: Int)
+        fun onElrsModeModeData(mode: Int)
         fun onDisconnected()
         fun onGPSState(satellites: Int, gpsFix: Boolean)
         fun onVSpeedData(vspeed: Float)
+        fun onThrottleData(throttle: Int)
         fun onAltitudeData(altitude: Float)
         fun onGPSAltitudeData(altitude: Float)
         fun onDistanceData(distance: Int)
@@ -139,9 +171,17 @@ abstract class DataDecoder(protected val listener: Listener) {
             secondFlightMode: FlyMode? = null
         )
 
-        fun onAirSpeed(speed: Float)
+        fun onAirSpeedData(speed: Float)
         fun onRCChannels(rcChannels:IntArray)
         fun onStatusText(message: String)
+        fun onDNSNRData(snr: Int)
+        fun onUPSNRData(snr: Int)
+        fun onAntData(activeAntena: Int)
+        fun onPowerData(power: Int)
+        fun onRssiDbm1Data(rssi: Int)
+        fun onRssiDbm2Data(rssi: Int)
+        fun onRssiDbmdData(rssi: Int)
+        fun onVBATOrCellData(voltage: Float)
         fun onSuccessDecode()
     }
 

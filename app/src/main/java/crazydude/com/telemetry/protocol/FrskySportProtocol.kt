@@ -148,7 +148,7 @@ class FrSkySportProtocol : Protocol {
                         //Log.d(TAG, "VBAT: $rawData")
                         dataDecoder.decodeData(
                             Protocol.Companion.TelemetryData(
-                                VBAT,
+                                VBAT_OR_CELL,
                                 rawData
                             )
                         )
@@ -219,7 +219,7 @@ class FrSkySportProtocol : Protocol {
                         //Log.d(TAG, "GAlt: $rawData")
                         dataDecoder.decodeData(
                             Protocol.Companion.TelemetryData(
-                                GALT,
+                                GPS_ALTITUDE,
                                 rawData
                             )
                         )
@@ -294,7 +294,7 @@ class FrSkySportProtocol : Protocol {
                     }
                     SPORT_DATA_ID_GPS_ALT_BP_SENSOR -> {
                         dataDecoder.decodeData(
-                            Protocol.Companion.TelemetryData(GALT, rawData) //gps altitude integer part
+                            Protocol.Companion.TelemetryData(GPS_ALTITUDE, rawData) //gps altitude integer part
                         )
                     }
                     SPORT_DATA_ID_TEMP1_SENSOR -> {

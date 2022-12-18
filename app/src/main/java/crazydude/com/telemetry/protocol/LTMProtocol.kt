@@ -91,47 +91,16 @@ class LTMProtocol : Protocol {
                     if (checksum.toInt() == 0) {
                         when (packetType) {
                             Companion.PacketType.GPS -> {
-                                dataDecoder.decodeData(
-                                    Protocol.Companion.TelemetryData(
-                                        GPS,
-                                        0,
-                                        buffer
-                                    )
-                                )
+                                dataDecoder.decodeData( Protocol.Companion.TelemetryData( GPS, 0, buffer ))
                             }
                             Companion.PacketType.ATTITUDE -> {
-                                dataDecoder.decodeData(
-                                    Protocol.Companion.TelemetryData(
-                                        ATTITUDE,
-                                        0,
-                                        buffer
-                                    )
-                                )
+                                dataDecoder.decodeData( Protocol.Companion.TelemetryData( ATTITUDE, 0, buffer ))
                             }
                             Companion.PacketType.STATUS -> {
-                                dataDecoder.decodeData(
-                                    Protocol.Companion.TelemetryData(
-                                        VBAT,
-                                        0,
-                                        buffer.copyOfRange(0, 2)
-                                    )
-                                )
-                                dataDecoder.decodeData(
-                                    Protocol.Companion.TelemetryData(
-                                        FUEL,
-                                        0,
-                                        buffer.copyOfRange(2, 4)
-                                    )
-                                )
-                                dataDecoder.decodeData(
-                                    Protocol.Companion.TelemetryData(
-                                        FLYMODE,
-                                        0,
-                                        buffer.copyOfRange(6, 7)
-                                    )
-                                )
+                                dataDecoder.decodeData( Protocol.Companion.TelemetryData( FLYMODE, 0, buffer ) )
                             }
                             Companion.PacketType.ORIGIN -> {
+                                dataDecoder.decodeData( Protocol.Companion.TelemetryData( ORIGIN, 0, buffer ) )
                             }
                             Companion.PacketType.NAVIGATION -> {
                             }

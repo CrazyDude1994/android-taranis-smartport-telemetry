@@ -112,7 +112,171 @@
                     android:gravity="center_horizontal"
                     android:text="-"
                     android:textColor="@android:color/white"
+                    android:textSize="16sp"
                     app:minText="100%"
+                    app:iconWidthDp="29"/>
+
+            <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/up_snr"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="6dp"
+                    android:drawableStart="@drawable/ic_up_snr"
+                    android:drawablePadding="0dp"
+                    android:gravity="center_horizontal"
+                    android:text="10"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="10"
+                    app:iconWidthDp="24"/>
+
+            <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/dn_snr"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="6dp"
+                    android:drawableStart="@drawable/ic_dn_snr"
+                    android:drawablePadding="0dp"
+                    android:gravity="center_horizontal"
+                    android:text="10"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="10"
+                    app:iconWidthDp="24"/>
+
+            <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/up_lq"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="6dp"
+                    android:drawableStart="@drawable/ic_up_lq_5"
+                    android:drawablePadding="4dp"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_horizontal"
+                    android:text="-"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="00"
+                    app:iconWidthDp="24"/>
+
+            <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/dn_lq"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="6dp"
+                    android:drawableStart="@drawable/ic_dn_lq_5"
+                    android:drawablePadding="4dp"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_horizontal"
+                    android:text="-"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="00"
+                    app:iconWidthDp="24"/>
+
+            <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/elrs_rate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="6dp"
+                    android:drawableStart="@drawable/ic_elrs_rate"
+                    android:drawablePadding="0dp"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_horizontal"
+                    android:text="-"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="W100"
+                    app:iconWidthDp="24"/>
+
+            <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/ant"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="6dp"
+                    android:drawableStart="@drawable/ic_ant"
+                    android:drawablePadding="0dp"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_horizontal"
+                    android:text="-"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="1"
+                    app:iconWidthDp="24"/>
+
+            <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/power"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="6dp"
+                    android:drawableStart="@drawable/ic_pwr"
+                    android:drawablePadding="0dp"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_horizontal"
+                    android:text="-"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="10mW"
+                    app:iconWidthDp="24"/>
+
+            <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/up_rssi_dbm1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="6dp"
+                    android:drawableStart="@drawable/ic_rssi_dbm1_5"
+                    android:drawablePadding="4dp"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_horizontal"
+                    android:text="-"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="-00"
+                    app:iconWidthDp="24"/>
+
+            <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/up_rssi_dbm2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="6dp"
+                    android:drawableStart="@drawable/ic_rssi_dbm2_5"
+                    android:drawablePadding="4dp"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_horizontal"
+                    android:text="-"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="-00"
+                    app:iconWidthDp="24"/>
+
+            <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/dn_rssi_dbm"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="6dp"
+                    android:drawableStart="@drawable/ic_rssi_dbmd_5"
+                    android:drawablePadding="4dp"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_horizontal"
+                    android:text="-"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="-00"
+                    app:iconWidthDp="24"/>
+
+            <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/cell_voltage"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="6dp"
+                    android:drawableStart="@drawable/ic_cell_voltage"
+                    android:drawablePadding="4dp"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_horizontal"
+                    android:text="-"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="0,0 V"
                     app:iconWidthDp="29"/>
 
         </com.nex3z.flowlayout.FlowLayout>

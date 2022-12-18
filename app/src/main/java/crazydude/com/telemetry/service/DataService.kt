@@ -11,8 +11,6 @@ import android.os.*
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import com.google.android.gms.maps.model.LatLng
-import com.google.firebase.analytics.FirebaseAnalytics
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import crazydude.com.telemetry.R
 import crazydude.com.telemetry.api.*
@@ -264,6 +262,10 @@ class DataService : Service(), DataDecoder.Listener {
         dataListener?.onCellVoltageData(voltage)
     }
 
+    override fun onVBATOrCellData(voltage: Float) {
+        dataListener?.onVBATOrCellData(voltage)
+    }
+
     override fun onCurrentData(current: Float) {
         dataListener?.onCurrentData(current)
     }
@@ -273,11 +275,8 @@ class DataService : Service(), DataDecoder.Listener {
         dataListener?.onHeadingData(heading)
     }
 
-    override fun onAirSpeed(speed: Float) {
-        if (preferenceManager.usePitotTube()) {
-            lastSpeed = speed
-        }
-        dataListener?.onAirSpeed(speed)
+    override fun onAirSpeedData(speed: Float) {
+        dataListener?.onAirSpeedData(speed)
     }
 
     override fun onSuccessDecode() {
@@ -288,12 +287,16 @@ class DataService : Service(), DataDecoder.Listener {
         dataListener?.onRSSIData(rssi)
     }
 
-    override fun onCrsfLqData(lq: Int) {
-        dataListener?.onCrsfLqData(lq)
+    override fun onUpLqData(lq: Int) {
+        dataListener?.onUpLqData(lq)
     }
 
-    override fun onCrsfRfData(rf: Int) {
-        dataListener?.onCrsfLqData(rf)
+    override fun onDnLqData(lq: Int) {
+        dataListener?.onDnLqData(lq)
+    }
+
+    override fun onElrsModeModeData(mode: Int) {
+        dataListener?.onElrsModeModeData(mode)
     }
 
     override fun onDisconnected() {
@@ -312,6 +315,10 @@ class DataService : Service(), DataDecoder.Listener {
 
     override fun onVSpeedData(vspeed: Float) {
         dataListener?.onVSpeedData(vspeed)
+    }
+
+    override fun onThrottleData(throttle :Int) {
+        dataListener?.onThrottleData(throttle)
     }
 
     override fun onAltitudeData(altitude: Float) {
@@ -336,9 +343,7 @@ class DataService : Service(), DataDecoder.Listener {
     }
 
     override fun onGSpeedData(speed: Float) {
-        if (!preferenceManager.usePitotTube()) {
-            lastSpeed = speed
-        }
+        lastSpeed = speed
         dataListener?.onGSpeedData(speed)
     }
 
@@ -358,6 +363,34 @@ class DataService : Service(), DataDecoder.Listener {
 
     override fun onStatusText(message: String) {
         dataListener?.onStatusText(message)
+    }
+
+    override fun onDNSNRData(snr: Int) {
+        dataListener?.onDNSNRData(snr)
+    }
+
+    override fun onUPSNRData(snr: Int) {
+        dataListener?.onUPSNRData(snr)
+    }
+
+    override fun onAntData(activeAntena: Int) {
+        dataListener?.onAntData(activeAntena)
+    }
+
+    override fun onPowerData(power: Int) {
+        dataListener?.onPowerData(power)
+    }
+
+    override fun onRssiDbm1Data(rssi: Int) {
+        dataListener?.onRssiDbm1Data(rssi)
+    }
+
+    override fun onRssiDbm2Data(rssi: Int) {
+        dataListener?.onRssiDbm2Data(rssi)
+    }
+
+    override fun onRssiDbmdData(rssi: Int) {
+        dataListener?.onRssiDbmdData(rssi)
     }
 
     fun disconnect() {

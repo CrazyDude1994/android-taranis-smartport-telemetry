@@ -88,31 +88,26 @@
         </Preference>
 
         <ListPreference
-                android:title="Battery units (CLI smartport_fuel_unit)"
-                android:summary="%s"
+                android:title="Battery units"
+                android:summary="(CLI smartport_fuel_unit)\n%s"
                 android:entries="@array/BatteryUnits"
                 android:entryValues="@array/BatteryUnits"
                 android:defaultValue="mAh"
                 android:key="battery_units"/>
 
-        <SwitchPreference
-                android:title="Use pitot tube"
-                android:summary="Uses pitot tube sensor as air speed source"
-                android:defaultValue="false"
-                android:key="use_pitot_tube"/>
+        <ListPreference
+                android:title="Voltage reported by telemetry"
+                android:summary="(CRSF, FrSky)\n(CLI report_cell_voltage)\n%s"
+                android:entries="@array/ReportVoltage"
+                android:entryValues="@array/ReportVoltage"
+                android:defaultValue="Battery"
+                android:key="report_voltage"/>
 
         <SwitchPreference
                 android:title="Show artificial horizon view"
                 android:summary="Shows attitude. Please set frsky_pitch_roll = ON in CLI for Inav 2.0.+."
                 android:defaultValue="true"
                 android:key="show_artificial_horizon"/>
-
-        <SwitchPreference
-            android:title="Crossfire RF/LQ"
-            android:key="use_crsf_lq"
-            android:defaultValue="false"
-            android:summary="Show RF/LQ instead of RSSI for Crossfire"
-            />
 
     </PreferenceCategory>
 

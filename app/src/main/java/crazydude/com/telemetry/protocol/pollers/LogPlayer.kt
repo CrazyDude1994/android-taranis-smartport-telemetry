@@ -1,16 +1,13 @@
 package crazydude.com.telemetry.protocol.pollers
 import android.annotation.SuppressLint
-import android.content.pm.PackageManager
 import android.os.AsyncTask
 import android.os.Environment
-import androidx.core.content.ContextCompat
 import crazydude.com.telemetry.maps.Position
 import crazydude.com.telemetry.protocol.*
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import java.io.File
 import java.io.FileInputStream
 import java.io.PrintWriter
-import java.sql.Timestamp
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
@@ -209,6 +206,10 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
         originalListener.onCellVoltageData(voltage)
     }
 
+    override fun onVBATOrCellData(voltage: Float) {
+        originalListener.onVBATOrCellData(voltage)
+    }
+
     override fun onCurrentData(current: Float) {
         originalListener.onCurrentData(current)
     }
@@ -222,12 +223,20 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
         originalListener.onRSSIData(rssi)
     }
 
-    override fun onCrsfLqData(lq: Int) {
-        originalListener.onCrsfLqData(lq)
+    override fun onUpLqData(lq: Int) {
+        originalListener.onUpLqData(lq)
     }
 
-    override fun onCrsfRfData(rf: Int) {
-        originalListener.onCrsfRfData(rf)
+    override fun onDnLqData(lq: Int) {
+        originalListener.onDnLqData(lq)
+    }
+
+    override fun onElrsModeModeData(rf: Int) {
+        originalListener.onElrsModeModeData(rf)
+    }
+
+    override fun onAntData(activeAntena: Int) {
+        originalListener.onAntData(activeAntena)
     }
 
     override fun onGPSData(list: List<Position>, addToEnd: Boolean) {
@@ -243,6 +252,10 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
 
     override fun onVSpeedData(vspeed: Float) {
         originalListener.onVSpeedData(vspeed)
+    }
+
+    override fun onThrottleData(throttle :Int) {
+        originalListener.onThrottleData(throttle)
     }
 
     override fun onAltitudeData(altitude: Float) {
@@ -262,8 +275,8 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
         originalListener.onRollData(rollAngle)
     }
 
-    override fun onAirSpeed(speed: Float) {
-        originalListener.onAirSpeed(speed)
+    override fun onAirSpeedData(speed: Float) {
+        originalListener.onAirSpeedData(speed)
     }
 
     override fun onPitchData(pitchAngle: Float) {
@@ -281,6 +294,30 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
 
     override fun onStatusText(message : String) {
         originalListener.onStatusText(message)
+    }
+
+    override fun onDNSNRData(snr: Int) {
+        originalListener.onDNSNRData(snr)
+    }
+
+    override fun onUPSNRData(snr: Int) {
+        originalListener.onUPSNRData(snr)
+    }
+
+    override fun onPowerData(power: Int) {
+        originalListener.onPowerData(power)
+    }
+
+    override fun onRssiDbm1Data(rssi: Int) {
+        originalListener.onRssiDbm1Data(rssi)
+    }
+
+    override fun onRssiDbm2Data(rssi: Int) {
+        originalListener.onRssiDbm2Data(rssi)
+    }
+
+    override fun onRssiDbmdData(rssi: Int) {
+        originalListener.onRssiDbmdData(rssi)
     }
 
     override fun onSuccessDecode() {

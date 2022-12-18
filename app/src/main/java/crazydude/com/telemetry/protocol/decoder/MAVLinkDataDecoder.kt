@@ -116,6 +116,10 @@ class MAVLinkDataDecoder(listener: Listener) : DataDecoder(listener) {
                 val value = data.data / 100f
                 listener.onCurrentData(value)
             }
+            Protocol.GPS_ALTITUDE -> {
+                val gps_altitude = data.data / 1000.0f
+                listener.onGPSAltitudeData(gps_altitude)
+            }
             Protocol.GPS_LONGITUDE -> {
                 longitude = data.data / 10000000.toDouble()
                 newLongitude = true
@@ -139,6 +143,14 @@ class MAVLinkDataDecoder(listener: Listener) : DataDecoder(listener) {
             Protocol.GSPEED -> {
                 val speed = (data.data / 100f) * 3.6f
                 listener.onGSpeedData(speed)
+            }
+            Protocol.ASPEED -> {
+                val speed = (data.data / 100f) * 3.6f
+                listener.onAirSpeedData(speed)
+            }
+            Protocol.VSPEED -> {
+                val speed = (data.data / 100f)
+                listener.onVSpeedData(speed)
             }
             Protocol.FUEL -> {
                 listener.onFuelData(data.data)
@@ -255,6 +267,9 @@ class MAVLinkDataDecoder(listener: Listener) : DataDecoder(listener) {
                 //https://github.com/mavlink/mavlink/issues/1027
 				//send 0..100% 
                 listener.onRSSIData( if ( data.data == 255) -1 else data.data * 100 / 254);
+            }
+            Protocol.THROTTLE -> {
+                listener.onThrottleData(data.data)
             }
             in Protocol.RC_CHANNEL_0..Protocol.RC_CHANNEL_17 -> {
                 val index = data.telemetryType - Protocol.RC_CHANNEL_0;

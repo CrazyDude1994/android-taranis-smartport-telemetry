@@ -11,7 +11,6 @@ import crazydude.com.telemetry.protocol.*
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import java.io.FileOutputStream
 import java.io.IOException
-import java.io.OutputStreamWriter
 import java.util.*
 import kotlin.collections.HashMap
 
@@ -24,7 +23,6 @@ class BluetoothLeDataPoller(
 ) : DataPoller {
 
     private lateinit var selectedProtocol: Protocol
-    private var outputStreamWriter: OutputStreamWriter? = null
     private var connected = false
     private var bluetoothGatt: BluetoothGatt?
 

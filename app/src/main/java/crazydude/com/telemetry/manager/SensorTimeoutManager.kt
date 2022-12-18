@@ -21,10 +21,24 @@ class SensorTimeoutManager(protected val listener: SensorTimeoutManager.Listener
         public const val SENSOR_FUEL = 7;
         public const val SENSOR_RC_CHANNELS = 8;
         public const val SENSOR_STATUSTEXT = 9;
-        public const val SENSOR_LQ = 10;
-        public const val SENSOR_RF = 11;
+        public const val SENSOR_UP_LQ = 10;
+        public const val SENSOR_DN_LQ = 11;
+        public const val SENSOR_ELRS_MODE = 12;
+        public const val SENSOR_DN_SNR = 13;
+        public const val SENSOR_UP_SNR = 14;
+        public const val SENSOR_ANT = 15;
+        public const val SENSOR_POWER = 16;
+        public const val SENSOR_RSSI_DBM_1 = 17;
+        public const val SENSOR_RSSI_DBM_2 = 18;
+        public const val SENSOR_RSSI_DBM_D = 19;
+        public const val SENSOR_AIRSPEED = 20;
+        public const val SENSOR_VSPEED = 21;
+        public const val SENSOR_CELL_VOLTAGE = 22;
+        public const val SENSOR_VBAT_OR_CELL = 23;
+        public const val SENSOR_GPS_ALTITUDE = 24;
+        public const val SENSOR_THROTTLE = 25;
 
-        private const val SENSOR_COUNT = 12;
+        private const val SENSOR_COUNT = 26;
 
         private const val SENSOR_TIMEOUT_MS = 4000;
     }
@@ -128,7 +142,7 @@ class SensorTimeoutManager(protected val listener: SensorTimeoutManager.Listener
     }
 
     override fun onCellVoltageData(voltage: Float){
-
+        this.onSensorData(SensorTimeoutManager.SENSOR_CELL_VOLTAGE);
     }
 
     override fun onCurrentData(current: Float){
@@ -142,12 +156,16 @@ class SensorTimeoutManager(protected val listener: SensorTimeoutManager.Listener
         this.onSensorData(SensorTimeoutManager.SENSOR_RSSI);
     }
 
-    override fun onCrsfLqData(lq: Int){
-        this.onSensorData(SensorTimeoutManager.SENSOR_LQ);
+    override fun onUpLqData(lq: Int){
+        this.onSensorData(SensorTimeoutManager.SENSOR_UP_LQ);
     }
 
-    override fun onCrsfRfData(rf: Int){
-        this.onSensorData(SensorTimeoutManager.SENSOR_RF);
+    override fun onDnLqData(lq: Int){
+        this.onSensorData(SensorTimeoutManager.SENSOR_DN_LQ);
+    }
+
+    override fun onElrsModeModeData(rf: Int){
+        this.onSensorData(SensorTimeoutManager.SENSOR_ELRS_MODE);
     }
 
     override fun onDisconnected(){
@@ -158,23 +176,33 @@ class SensorTimeoutManager(protected val listener: SensorTimeoutManager.Listener
     }
 
     override fun onVSpeedData(vspeed: Float){
+        this.onSensorData(SensorTimeoutManager.SENSOR_VSPEED);
+    }
+
+    override fun onThrottleData(throttle: Int){
+        this.onSensorData(SensorTimeoutManager.SENSOR_THROTTLE);
     }
 
     override fun onAltitudeData(altitude: Float){
         this.onSensorData(SensorTimeoutManager.SENSOR_ALTITUDE);
     }
-    override fun onGPSAltitudeData(altitude: Float){
 
+    override fun onGPSAltitudeData(altitude: Float){
+        this.onSensorData(SensorTimeoutManager.SENSOR_GPS_ALTITUDE);
     }
+
     override fun onDistanceData(distance: Int){
         this.onSensorData(SensorTimeoutManager.SENSOR_DISTANCE);
     }
+
     override fun onRollData(rollAngle: Float){
 
     }
+
     override fun onPitchData(pitchAngle: Float){
 
     }
+
     override fun onGSpeedData(speed: Float){
         this.onSensorData(SensorTimeoutManager.SENSOR_SPEED);
     }
@@ -188,8 +216,8 @@ class SensorTimeoutManager(protected val listener: SensorTimeoutManager.Listener
 
     }
 
-    override fun onAirSpeed(speed: Float){
-        this.onSensorData(SensorTimeoutManager.SENSOR_SPEED);
+    override fun onAirSpeedData(speed: Float){
+        this.onSensorData(SensorTimeoutManager.SENSOR_AIRSPEED);
     }
 
     override fun onRCChannels(rcChannels:IntArray){
@@ -199,6 +227,39 @@ class SensorTimeoutManager(protected val listener: SensorTimeoutManager.Listener
     override fun onStatusText(message: String){
         this.onSensorData(SensorTimeoutManager.SENSOR_STATUSTEXT);
     }
+
+    override fun onDNSNRData(snr: Int){
+        this.onSensorData(SensorTimeoutManager.SENSOR_DN_SNR);
+    }
+
+    override fun onUPSNRData(snr: Int){
+        this.onSensorData(SensorTimeoutManager.SENSOR_UP_SNR);
+    }
+
+    override fun onAntData(snr: Int){
+        this.onSensorData(SensorTimeoutManager.SENSOR_ANT);
+    }
+
+    override fun onPowerData(power: Int){
+        this.onSensorData(SensorTimeoutManager.SENSOR_POWER);
+    }
+
+    override fun onRssiDbm1Data(rssi: Int){
+        this.onSensorData(SensorTimeoutManager.SENSOR_RSSI_DBM_1);
+    }
+
+    override fun onRssiDbm2Data(rssi: Int){
+        this.onSensorData(SensorTimeoutManager.SENSOR_RSSI_DBM_2);
+    }
+
+    override fun onRssiDbmdData(rssi: Int){
+        this.onSensorData(SensorTimeoutManager.SENSOR_RSSI_DBM_D);
+    }
+
+    override fun onVBATOrCellData(voltage: Float) {
+        this.onSensorData(SensorTimeoutManager.SENSOR_VBAT_OR_CELL);
+    }
+
 
     override fun onSuccessDecode(){
 

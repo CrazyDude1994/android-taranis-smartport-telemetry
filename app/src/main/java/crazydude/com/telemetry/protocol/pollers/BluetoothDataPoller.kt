@@ -7,7 +7,6 @@ import crazydude.com.telemetry.protocol.*
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import java.io.FileOutputStream
 import java.io.IOException
-import java.io.OutputStreamWriter
 
 class BluetoothDataPoller(
     private val bluetoothSocket: BluetoothSocket,
@@ -17,7 +16,6 @@ class BluetoothDataPoller(
 
     private var selectedProtocol: Protocol? = null
     private lateinit var thread: Thread
-    private var outputStreamWriter: OutputStreamWriter? = null
 
     init {
         thread = Thread(Runnable {
@@ -91,11 +89,6 @@ class BluetoothDataPoller(
                 } catch (e: IOException) {
                     // ignore
                 }
-                try {
-                    outputStreamWriter?.close()
-                } catch (e: IOException) {
-                    // ignore
-                }
                 runOnMainThread(Runnable {
                     listener.onConnectionFailed()
                 })
@@ -103,11 +96,6 @@ class BluetoothDataPoller(
             }
             try {
                 outputStream?.close()
-            } catch (e: IOException) {
-                // ignore
-            }
-            try {
-                outputStreamWriter?.close()
             } catch (e: IOException) {
                 // ignore
             }

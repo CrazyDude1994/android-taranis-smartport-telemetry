@@ -125,18 +125,8 @@ class MAVLinkProtocol : Protocol {
             val errorsCount4 = byteBuffer.short
             val fuel = byteBuffer.get()
 
-            dataDecoder.decodeData(
-                Protocol.Companion.TelemetryData(
-                    VBAT,
-                    voltage.toInt()
-                )
-            )
-            dataDecoder.decodeData(
-                Protocol.Companion.TelemetryData(
-                    Protocol.CURRENT,
-                    current.toInt()
-                )
-            )
+            dataDecoder.decodeData( Protocol.Companion.TelemetryData( VBAT, voltage.toInt()))
+            dataDecoder.decodeData( Protocol.Companion.TelemetryData( Protocol.CURRENT, current.toInt()))
             dataDecoder.decodeData(Protocol.Companion.TelemetryData(Protocol.FUEL, fuel.toInt()))
         } else if (messageId == MAV_PACKET_STATUSTEXT_ID) {
             val severity = byteBuffer.get()
@@ -190,12 +180,10 @@ class MAVLinkProtocol : Protocol {
             val heading = byteBuffer.short
             val throttle = byteBuffer.short
 
-            dataDecoder.decodeData(
-                Protocol.Companion.TelemetryData(
-                    GSPEED,
-                    (groundSpeed * 100).toInt()
-                )
-            )
+            dataDecoder.decodeData( Protocol.Companion.TelemetryData( GSPEED, (groundSpeed * 100).toInt()))
+            dataDecoder.decodeData( Protocol.Companion.TelemetryData( ASPEED, (airSpeed * 100).toInt()))
+            dataDecoder.decodeData( Protocol.Companion.TelemetryData( VSPEED, (vspeed * 100).toInt()))
+            dataDecoder.decodeData( Protocol.Companion.TelemetryData( THROTTLE, throttle.toInt()))
             dataDecoder.decodeData(Protocol.Companion.TelemetryData(ALTITUDE, (alt * 100).toInt()))
 
         } else if (messageId == MAV_PACKET_RADIO_STATUS_ID && packetLength == MAV_PACKET_RADIO_STATUS_LENGTH) {
@@ -220,27 +208,13 @@ class MAVLinkProtocol : Protocol {
             val fixType = byteBuffer.get()
             val satellites = byteBuffer.get()
 
-            dataDecoder.decodeData(
-                Protocol.Companion.TelemetryData(
-                    Protocol.GPS_STATE,
-                    fixType.toInt()
-                )
-            )
-            dataDecoder.decodeData(
-                Protocol.Companion.TelemetryData(
-                    Protocol.GPS_SATELLITES,
-                    satellites.toInt()
-                )
-            )
+            dataDecoder.decodeData( Protocol.Companion.TelemetryData( Protocol.GPS_STATE, fixType.toInt()))
+            dataDecoder.decodeData( Protocol.Companion.TelemetryData( Protocol.GPS_SATELLITES, satellites.toInt()))
+            dataDecoder.decodeData(Protocol.Companion.TelemetryData(Protocol.GPS_ALTITUDE, altitude))
             dataDecoder.decodeData(Protocol.Companion.TelemetryData(Protocol.GPS_LATITUDE, lat))
             dataDecoder.decodeData(Protocol.Companion.TelemetryData(Protocol.GPS_LONGITUDE, lon))
             if (cog.toInt() != -1)
-                dataDecoder.decodeData(
-                    Protocol.Companion.TelemetryData(
-                        Protocol.HEADING,
-                        cog.toInt()
-                    )
-                )
+                dataDecoder.decodeData( Protocol.Companion.TelemetryData( Protocol.HEADING, cog.toInt()))
         } else if (messageId == MAV_PACKET_GPS_ORIGIN_ID) {
             val lat = byteBuffer.int
             val lon = byteBuffer.int

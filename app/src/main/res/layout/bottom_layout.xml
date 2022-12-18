@@ -87,9 +87,72 @@
                     android:layout_width="wrap_content"
                     android:layout_centerVertical="true"
                     android:gravity="center_horizontal"
-                    android:layout_height="36dp">
+                    android:layout_height="36dp"/>
 
-            </crazydude.com.telemetry.ui.RCWidget>
+            <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/airspeed"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="6dp"
+                    android:drawableStart="@drawable/ic_airspeed"
+                    android:drawableLeft="@drawable/ic_airspeed"
+                    android:drawablePadding="4dp"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_horizontal"
+                    android:text="-"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="00 km/h"
+                    app:iconWidthDp="29"/>
+
+            <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/vspeed"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="6dp"
+                    android:drawableStart="@drawable/ic_vario"
+                    android:drawableLeft="@drawable/ic_vario"
+                    android:drawablePadding="4dp"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_horizontal"
+                    android:text="-"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="00,0 m/s"
+                    app:iconWidthDp="29"/>
+
+            <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/altitude_msl"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="6dp"
+                    android:drawableStart="@drawable/ic_altitutde_msl"
+                    android:drawableLeft="@drawable/ic_altitutde_msl"
+                    android:drawablePadding="4dp"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_horizontal"
+                    android:text="-"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="000,00 m"
+                    app:iconWidthDp="20"/>
+
+            <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/throttle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="6dp"
+                    android:drawableStart="@drawable/ic_throttle"
+                    android:drawableLeft="@drawable/ic_throttle"
+                    android:drawablePadding="4dp"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_horizontal"
+                    android:text="-"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="100"
+                    app:iconWidthDp="24"/>
+
         </com.nex3z.flowlayout.FlowLayout>
 
     </RelativeLayout>

@@ -23,7 +23,22 @@ class PreferenceManager(context: Context) {
             SensorSetting("Altitude", 3, "bottom"),
             SensorSetting("Phone Battery", 5),
             SensorSetting("RC Channels", 4, "bottom", false),
-            SensorSetting("Rssi", 0 )
+            SensorSetting("Rssi", 0 ),
+            SensorSetting("Uplink SNR", 6, "top", false ),
+            SensorSetting("Downlink SNR", 7, "top", false ),
+            SensorSetting("Uplink LQ", 8, "top", false ),
+            SensorSetting("Downlink LQ", 9, "top", false ),
+            SensorSetting("ELRS Rate", 10, "top", false ),
+            SensorSetting("Active Antena", 11, "top", false ),
+            SensorSetting("Uplink Power", 12, "top", false ),
+            SensorSetting("Uplink Antena 1 RSSI, dbm", 13, "top", false ),
+            SensorSetting("Uplink Antena 2 RSSI, dbm", 14, "top", false ),
+            SensorSetting("Downlink Antena RSSI, dbm", 15, "top", false ),
+            SensorSetting("AirSpeed", 5, "bottom", false),
+            SensorSetting("Vertical Speed", 6, "bottom", false),
+            SensorSetting("Cell Voltage", 16, "top", false ),
+            SensorSetting("Altitude above MSL", 7, "bottom", false),
+            SensorSetting("Throttle", 8, "bottom", false)
         )
     }
 
@@ -64,8 +79,8 @@ class PreferenceManager(context: Context) {
         return sharedPreferences.getString("battery_units", "mAh") ?: "mAh"
     }
 
-    fun usePitotTube(): Boolean {
-        return sharedPreferences.getBoolean("use_pitot_tube", false)
+    fun getReportVoltage(): String {
+        return sharedPreferences.getString("report_voltage", "Battery") ?: "Battery"
     }
 
     fun showArtificialHorizonView(): Boolean {
@@ -127,11 +142,6 @@ class PreferenceManager(context: Context) {
 
     fun getUsbSerialBaudrate() : Int {
        return sharedPreferences.getString("usb_serial_baudrate", "57600")?.toInt() ?: 57600
-    }
-
-    
-    fun useCrsfLq() : Boolean {
-        return sharedPreferences.getBoolean("use_crsf_lq", false)
     }
 
 	data class SensorSetting(

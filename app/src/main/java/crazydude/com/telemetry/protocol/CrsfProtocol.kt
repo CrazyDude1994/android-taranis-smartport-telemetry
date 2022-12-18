@@ -119,18 +119,9 @@ class CrsfProtocol : Protocol {
                         val capacityArray = ByteArray(4)
                         data.get(capacityArray, 1, 3)
                         val capacity = ByteBuffer.wrap(capacityArray).int
-                        dataDecoder.decodeData(
-                            Protocol.Companion.TelemetryData(
-                                VBAT,
-                                voltage.toInt()
-                            )
-                        )
-                        dataDecoder.decodeData(
-                            Protocol.Companion.TelemetryData(
-                                CURRENT,
-                                current.toInt()
-                            )
-                        )
+
+                        dataDecoder.decodeData( Protocol.Companion.TelemetryData( VBAT_OR_CELL, voltage.toInt()))
+                        dataDecoder.decodeData( Protocol.Companion.TelemetryData( CURRENT, current.toInt()))
                         dataDecoder.decodeData(Protocol.Companion.TelemetryData(FUEL, capacity))
                     }
                 }
@@ -142,53 +133,21 @@ class CrsfProtocol : Protocol {
                         val heading = data.short
                         val altitude = data.short
                         val satellites = data.get()
-                        dataDecoder.decodeData(
-                            Protocol.Companion.TelemetryData(
-                                GPS_SATELLITES,
-                                satellites.toInt()
-                            )
-                        )
-                        dataDecoder.decodeData(
-                            Protocol.Companion.TelemetryData(
-                                GPS_LATITUDE,
-                                latitude
-                            )
-                        )
-                        dataDecoder.decodeData(
-                            Protocol.Companion.TelemetryData(
-                                GPS_LONGITUDE,
-                                longitude
-                            )
-                        )
-                        dataDecoder.decodeData(
-                            Protocol.Companion.TelemetryData(
-                                GSPEED,
-                                groundSpeed.toInt()
-                            )
-                        )
-                        dataDecoder.decodeData(
-                            Protocol.Companion.TelemetryData(
-                                HEADING,
-                                heading.toInt()
-                            )
-                        )
-                        dataDecoder.decodeData(
-                            Protocol.Companion.TelemetryData(
-                                ALTITUDE,
-                                altitude.toInt()
-                            )
-                        )
+
+                        dataDecoder.decodeData( Protocol.Companion.TelemetryData( GPS_SATELLITES, satellites.toInt()))
+                        dataDecoder.decodeData( Protocol.Companion.TelemetryData( GPS_ALTITUDE, altitude.toInt()))
+                        dataDecoder.decodeData( Protocol.Companion.TelemetryData( GPS_LATITUDE,latitude ))
+                        dataDecoder.decodeData( Protocol.Companion.TelemetryData( GPS_LONGITUDE, longitude ))
+                        dataDecoder.decodeData( Protocol.Companion.TelemetryData( GSPEED,groundSpeed.toInt()))
+                        dataDecoder.decodeData( Protocol.Companion.TelemetryData( HEADING, heading.toInt()))
+                        dataDecoder.decodeData( Protocol.Companion.TelemetryData( ALTITUDE, altitude.toInt() ))
                     }
                 }
                 VARIO_TYPE.toByte() -> {
                     if (inputData.size == VARIO_PACKET_LEN) {
                         val vspeed = data.short
-                        dataDecoder.decodeData(
-                            Protocol.Companion.TelemetryData(
-                                VSPEED,
-                                vspeed.toInt()
-                            )
-                        )
+
+                        dataDecoder.decodeData( Protocol.Companion.TelemetryData( VSPEED, vspeed.toInt()))
                     }
                 }
                 LINK_STATS.toByte() -> {
@@ -204,27 +163,18 @@ class CrsfProtocol : Protocol {
                         val downlinkLQ = data.get().toUByte().toInt()
                         val downlinkSNR = data.get().toInt()
                         val rssi = (if (activeAntenna == 1) uplinkRSSIAnt2 else uplinkRSSIAnt1)
-                        dataDecoder.decodeData(
-                            Protocol.Companion.TelemetryData(
-                                RSSI,
-                                rssi,
-                                inputData
-                            )
-                        )
-                        dataDecoder.decodeData(
-                            Protocol.Companion.TelemetryData(
-                                CRSF_LQ,
-                                uplinkLQ,
-                                inputData
-                            )
-                        )
-                        dataDecoder.decodeData(
-                            Protocol.Companion.TelemetryData(
-                                CRSF_RF,
-                                rfMode,
-                                inputData
-                            )
-                        )
+
+                        dataDecoder.decodeData( Protocol.Companion.TelemetryData( RSSI, rssi, inputData ))
+                        dataDecoder.decodeData( Protocol.Companion.TelemetryData( CRSF_UP_LQ, uplinkLQ, inputData))
+                        dataDecoder.decodeData( Protocol.Companion.TelemetryData( CRSF_DN_LQ, downlinkLQ, inputData))
+                        dataDecoder.decodeData( Protocol.Companion.TelemetryData( ELRS_RF_MODE, rfMode, inputData ))
+                        dataDecoder.decodeData( Protocol.Companion.TelemetryData( DN_SNR, downlinkSNR, inputData ))
+                        dataDecoder.decodeData( Protocol.Companion.TelemetryData( UP_SNR, uplinkSNR, inputData ) )
+                        dataDecoder.decodeData( Protocol.Companion.TelemetryData( ANT, activeAntenna, inputData ) )
+                        dataDecoder.decodeData( Protocol.Companion.TelemetryData( POWER, uplinkTxPwr, inputData ))
+                        dataDecoder.decodeData( Protocol.Companion.TelemetryData( RSSI_DBM_1, uplinkRSSIAnt1, inputData ))
+                        dataDecoder.decodeData( Protocol.Companion.TelemetryData( RSSI_DBM_2, uplinkRSSIAnt2, inputData ))
+                        dataDecoder.decodeData( Protocol.Companion.TelemetryData( RSSI_DBM_D, downlinkRSSI, inputData ))
                     }
                 }
                 FLIGHT_MODE.toByte() -> {
@@ -237,13 +187,7 @@ class CrsfProtocol : Protocol {
                             pos++
                         } while ((byte != 0x00.toByte()) && (pos < inputData.size - 1))
                         if (byteArray[pos - 1] == 0x00.toByte()) {
-                            dataDecoder.decodeData(
-                                Protocol.Companion.TelemetryData(
-                                    FLYMODE,
-                                    0,
-                                    byteArray
-                                )
-                            )
+                            dataDecoder.decodeData( Protocol.Companion.TelemetryData( FLYMODE, 0, byteArray ) )
                         }
                     }
                 }
