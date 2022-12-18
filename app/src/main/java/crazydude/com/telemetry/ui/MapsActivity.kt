@@ -48,6 +48,7 @@ import crazydude.com.telemetry.maps.osm.OsmMapWrapper
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import crazydude.com.telemetry.protocol.pollers.LogPlayer
 import crazydude.com.telemetry.service.DataService
+import kotlinx.android.synthetic.main.top_layout.*
 import uk.co.deanwild.materialshowcaseview.MaterialShowcaseView
 import java.io.File
 import java.lang.Exception
@@ -120,6 +121,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     private lateinit var rssiDbmd: TextView
     private lateinit var cell_voltage: TextView
     private lateinit var throttle: TextView
+    private lateinit var tlmRate: TextView
 
     private lateinit var mCameraFragment : com.serenegiant.usbcameratest4.CameraFragment
 
@@ -219,6 +221,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         rssiDbmd = findViewById(R.id.dn_rssi_dbm)
         cell_voltage = findViewById(R.id.cell_voltage)
         throttle = findViewById(R.id.throttle)
+        tlmRate = findViewById(R.id.tlm_rate)
 
         videoHolder.setAspectRatio(640.0/480)
 
@@ -248,7 +251,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             Pair(PreferenceManager.sensors.elementAt(22).name, vspeed),
             Pair(PreferenceManager.sensors.elementAt(23).name, cell_voltage),
             Pair(PreferenceManager.sensors.elementAt(24).name, altitude_msl),
-            Pair(PreferenceManager.sensors.elementAt(25).name, throttle)
+            Pair(PreferenceManager.sensors.elementAt(25).name, throttle),
+            Pair(PreferenceManager.sensors.elementAt(26).name, tlmRate)
         )
 
         firebaseAnalytics = FirebaseAnalytics.getInstance(this)
@@ -1029,6 +1033,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         cell_voltage.text = "-"
         this.lastCellVoltage = 0.0f;
         throttle.text = "-"
+        tlmRate.text = "-"
     }
 
     private fun bleCheck() =
@@ -1772,9 +1777,12 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         }
     }
 
+    override fun onTelemetryByte() {
+        this.sensorTimeoutManager.onTelemetryByte()
+    }
 
     override fun onSuccessDecode() {
-
+        this.sensorTimeoutManager.onSuccessDecode()
     }
 
     override fun onGPSData(list: List<Position>, addToEnd: Boolean) {
@@ -2047,6 +2055,17 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     {
         runOnUiThread {
             this.updateSetSensorGrayed( sensorId );
+        }
+    }
+
+    override fun onTelemetryRate(rate: Int) {
+        runOnUiThread {
+            if ( rate< 1000 ) {
+                this.tlm_rate.text = "${rate} b/s"
+            }
+            else {
+                this.tlm_rate.text = "${"%.1f".format(rate/ 100f)} kb/s"
+            }
         }
     }
 

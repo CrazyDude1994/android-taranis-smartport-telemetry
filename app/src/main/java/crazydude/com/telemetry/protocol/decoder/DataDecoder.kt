@@ -128,6 +128,9 @@ abstract class DataDecoder(protected val listener: Listener) {
             override fun onRssiDbmdData(rssi: Int) {
             }
 
+            override fun onTelemetryByte() {
+            }
+
             override fun onSuccessDecode() {
             }
         }
@@ -139,6 +142,10 @@ abstract class DataDecoder(protected val listener: Listener) {
     }
 
     abstract fun decodeData(data: Protocol.Companion.TelemetryData)
+
+    fun onTelemetryByte() {
+        this.listener.onTelemetryByte();
+    }
 
     interface Listener {
         fun onConnectionFailed()
@@ -182,6 +189,7 @@ abstract class DataDecoder(protected val listener: Listener) {
         fun onRssiDbm2Data(rssi: Int)
         fun onRssiDbmdData(rssi: Int)
         fun onVBATOrCellData(voltage: Float)
+        fun onTelemetryByte()
         fun onSuccessDecode()
     }
 

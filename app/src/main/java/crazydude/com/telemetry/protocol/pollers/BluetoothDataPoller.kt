@@ -77,8 +77,10 @@ class BluetoothDataPoller(
                     outputStream?.write(buffer, 0, size)
                     for (i in 0 until size) {
                         if (selectedProtocol == null) {
+                            listener?.onTelemetryByte();
                             protocolDetector.feedData(buffer[i].toUByte().toInt())
                         } else {
+                            listener?.onTelemetryByte();
                             selectedProtocol?.process(buffer[i].toUByte().toInt())
                         }
                     }

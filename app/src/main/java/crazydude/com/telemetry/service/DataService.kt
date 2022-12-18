@@ -279,6 +279,10 @@ class DataService : Service(), DataDecoder.Listener {
         dataListener?.onAirSpeedData(speed)
     }
 
+    override fun onTelemetryByte() {
+        dataListener?.onTelemetryByte()
+    }
+
     override fun onSuccessDecode() {
         dataListener?.onSuccessDecode()
     }

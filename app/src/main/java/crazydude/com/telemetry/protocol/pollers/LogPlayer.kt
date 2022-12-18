@@ -320,6 +320,10 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
         originalListener.onRssiDbmdData(rssi)
     }
 
+    override fun onTelemetryByte(){
+        originalListener.onTelemetryByte()
+    }
+
     override fun onSuccessDecode() {
         originalListener.onSuccessDecode()
     }

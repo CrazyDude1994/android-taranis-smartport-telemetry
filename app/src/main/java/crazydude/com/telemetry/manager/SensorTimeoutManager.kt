@@ -9,6 +9,7 @@ class SensorTimeoutManager(protected val listener: SensorTimeoutManager.Listener
     interface Listener {
         fun onSensorTimeout( sensorId : Int )
         fun onSensorData( sensorId : Int )
+        fun onTelemetryRate( rate : Int )
     }
     companion object {
         public const val SENSOR_GPS = 0;
@@ -40,14 +41,20 @@ class SensorTimeoutManager(protected val listener: SensorTimeoutManager.Listener
 
         private const val SENSOR_COUNT = 26;
 
+        private const val TIMER_INTERVAL_MS = 400;
         private const val SENSOR_TIMEOUT_MS = 4000;
+        private const val RATE_UPDATE_INTERVAL_MS = 2000;
     }
 
     private var timeoutMS: IntArray = IntArray(SENSOR_COUNT)
 
     private var mTimer: Timer? = null
 
-    private var disabled : Boolean = false;
+    private var disabled : Boolean = false
+
+    private var telemetrySize = 0
+    private var lastRateUpdate = 0
+
 
     fun zeroTimeouts(){
         for( i in 0..SENSOR_COUNT-1){
@@ -57,6 +64,7 @@ class SensorTimeoutManager(protected val listener: SensorTimeoutManager.Listener
 
     init {
         this.zeroTimeouts();
+        lastRateUpdate = 0;
     }
 
     public fun resume()
@@ -68,7 +76,7 @@ class SensorTimeoutManager(protected val listener: SensorTimeoutManager.Listener
                 override fun run() {
                     for( i in 0..SENSOR_COUNT-1){
                         if ( ( timeoutMS[i] < SENSOR_TIMEOUT_MS )){
-                            timeoutMS[i]+=200;
+                            timeoutMS[i]+=TIMER_INTERVAL_MS;
                             if ( timeoutMS[i] >= SENSOR_TIMEOUT_MS )
                             {
                                 if ( !disabled )
@@ -78,8 +86,16 @@ class SensorTimeoutManager(protected val listener: SensorTimeoutManager.Listener
                             }
                         }
                     }
+
+                    lastRateUpdate += TIMER_INTERVAL_MS;
+                    if ( lastRateUpdate >= RATE_UPDATE_INTERVAL_MS) {
+                        listener.onTelemetryRate( telemetrySize * 1000 / RATE_UPDATE_INTERVAL_MS)
+                        lastRateUpdate = 0;
+                        telemetrySize = 0;
+                    }
+
                 }
-            }, 200, 200)
+            }, TIMER_INTERVAL_MS.toLong(), TIMER_INTERVAL_MS.toLong())
         }
     }
 
@@ -260,6 +276,9 @@ class SensorTimeoutManager(protected val listener: SensorTimeoutManager.Listener
         this.onSensorData(SensorTimeoutManager.SENSOR_VBAT_OR_CELL);
     }
 
+    override fun onTelemetryByte(){
+        this.telemetrySize++;
+    }
 
     override fun onSuccessDecode(){
 

@@ -38,7 +38,8 @@ class PreferenceManager(context: Context) {
             SensorSetting("Vertical Speed", 6, "bottom", false),
             SensorSetting("Cell Voltage", 16, "top", false ),
             SensorSetting("Altitude above MSL", 7, "bottom", false),
-            SensorSetting("Throttle", 8, "bottom", false)
+            SensorSetting("Throttle", 8, "bottom", false),
+            SensorSetting("Telemetry rate", 17, "top", false )
         )
     }
 

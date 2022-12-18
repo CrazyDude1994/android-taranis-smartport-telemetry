@@ -43,12 +43,14 @@ class BluetoothLeDataPoller(
                             characteristic.value?.let { bytes ->
                                 outputStream?.write(bytes)
                                 bytes.forEach {
+                                    listener?.onTelemetryByte();
                                     selectedProtocol.process(it.toUByte().toInt())
                                 }
                             }
                         } else {
                             characteristic.value?.let { bytes ->
                                 bytes.forEach {
+                                    listener?.onTelemetryByte();
                                     protocolDetectors[characteristic.uuid]?.feedData(
                                         it.toUByte().toInt()
                                     )

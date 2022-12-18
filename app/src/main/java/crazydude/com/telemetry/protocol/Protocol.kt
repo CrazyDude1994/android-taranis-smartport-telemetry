@@ -125,4 +125,9 @@ abstract class Protocol(val dataDecoder: DataDecoder) {
     }
 
     abstract fun process(data: Int)
+
+    fun onTelemetryByte(){
+        dataDecoder.onTelemetryByte()
+    }
+
 }

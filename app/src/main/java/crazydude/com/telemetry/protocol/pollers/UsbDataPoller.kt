@@ -82,10 +82,12 @@ class UsbDataPoller(
                         logFile?.write(data)
                         if (selectedProtocol != null) {
                             data.forEach {
+                                listener?.onTelemetryByte();
                                 selectedProtocol?.process(it.toUByte().toInt())
                             }
                         } else {
                             data.forEach {
+                                listener?.onTelemetryByte();
                                 protocolDetector.feedData(it.toUByte().toInt())
                             }
                         }

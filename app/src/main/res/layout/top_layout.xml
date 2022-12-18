@@ -279,6 +279,21 @@
                     app:minText="0,0 V"
                     app:iconWidthDp="29"/>
 
+            <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/tlm_rate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="6dp"
+                    android:drawableStart="@drawable/ic_tlm_rate"
+                    android:drawablePadding="4dp"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_horizontal"
+                    android:text="-"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="300 b/s"
+                    app:iconWidthDp="24"/>
+
         </com.nex3z.flowlayout.FlowLayout>
 
         <ImageView
