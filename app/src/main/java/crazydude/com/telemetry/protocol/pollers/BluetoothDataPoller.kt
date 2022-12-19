@@ -17,11 +17,15 @@ class BluetoothDataPoller(
     private var selectedProtocol: Protocol? = null
     private lateinit var thread: Thread
 
+    private var connectedOnce : Boolean = false;
+
     init {
+        connectedOnce = false;
         thread = Thread(Runnable {
             try {
                 bluetoothSocket.connect()
                 if (bluetoothSocket.isConnected) {
+                    connectedOnce = true
                     runOnMainThread(Runnable {
                         listener.onConnected()
                     })
@@ -91,25 +95,22 @@ class BluetoothDataPoller(
                 } catch (e: IOException) {
                     // ignore
                 }
+
+                try {
+                    bluetoothSocket.close()
+                } catch (e: IOException) {
+                    // ignore
+                }
+
                 runOnMainThread(Runnable {
-                    listener.onConnectionFailed()
+                    if (connectedOnce) {
+                        listener.onDisconnected()
+                    }
+                    else {
+                        listener.onConnectionFailed()
+                    }
                 })
                 return@Runnable
-            }
-            try {
-                outputStream?.close()
-            } catch (e: IOException) {
-                // ignore
-            }
-            try {
-                bluetoothSocket.close()
-                runOnMainThread(Runnable {
-                    listener.onDisconnected()
-                })
-            } catch (e: IOException) {
-                runOnMainThread(Runnable {
-                    listener.onDisconnected()
-                })
             }
         })
 
@@ -126,5 +127,10 @@ class BluetoothDataPoller(
 
     override fun disconnect() {
         thread.interrupt()
+        try{
+            this.bluetoothSocket.close();
+        } catch (e: IOException) {
+        // ignore
+        }
     }
 }

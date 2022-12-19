@@ -23,7 +23,8 @@ class BluetoothLeDataPoller(
 ) : DataPoller {
 
     private lateinit var selectedProtocol: Protocol
-    private var connected = false
+    private var connectedOnce = false
+    private var failed = false;
     private var bluetoothGatt: BluetoothGatt?
 
     init {
@@ -67,7 +68,7 @@ class BluetoothLeDataPoller(
                 ) {
                     super.onConnectionStateChange(gatt, status, newState)
                     if (newState == BluetoothProfile.STATE_CONNECTED) {
-                        connected = true
+                        connectedOnce = true
                         serviceSelected = false
                         protocolDetectors.clear()
 
@@ -82,16 +83,19 @@ class BluetoothLeDataPoller(
                         }
 
                     } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                        if (connected) {
-                            runOnMainThread(Runnable {
-                                listener.onDisconnected()
-                            })
-                        } else {
-                            runOnMainThread(Runnable {
-                                listener.onConnectionFailed()
-                            })
+                        if ( !failed)
+                        {
+                            if (connectedOnce) {
+                                runOnMainThread(Runnable {
+                                    listener.onDisconnected()
+                                })
+                            } else {
+                                runOnMainThread(Runnable {
+                                    listener.onConnectionFailed()
+                                })
+                            }
                         }
-                        connected = false
+                        connectedOnce = false
                         closeConnection()
                     }
                 }
@@ -186,6 +190,7 @@ class BluetoothLeDataPoller(
                             AsyncTask.execute {
                                 Thread.sleep(10000)
                                 if (!serviceSelected) {
+                                    failed = true
                                     notifyCharacteristicList.forEach {
                                         val reg = gatt.setCharacteristicNotification(it, false)
                                         if (reg) {
@@ -196,10 +201,11 @@ class BluetoothLeDataPoller(
                                             }
                                         }
                                         protocolDetectors.clear()
-                                        runOnMainThread(Runnable {
-                                            listener.onConnectionFailed()
-                                        })
                                     }
+                                    gatt?.disconnect()
+                                    runOnMainThread(Runnable {
+                                        listener.onConnectionFailed()
+                                    })
                                 }
                             }
                         }

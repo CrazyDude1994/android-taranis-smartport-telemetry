@@ -18,20 +18,26 @@ class UsbDataPoller(
 ) : DataPoller {
     private var outputManager: SerialInputOutputManager? = null
     private var selectedProtocol: Protocol? = null
+    private var connectedOnce = false
 
     init {
+        connectedOnce = false
         try {
             serialPort.open(connection)
+            connectedOnce = true;
         } catch (e: IOException) {
             listener.onConnectionFailed()
             logFile?.close()
         }
-            serialPort.setParameters(
-                baudrate,
-                8,
-                UsbSerialPort.STOPBITS_1,
-                UsbSerialPort.PARITY_NONE
-            )
+
+        serialPort.setParameters(
+            baudrate,
+            8,
+            UsbSerialPort.STOPBITS_1,
+            UsbSerialPort.PARITY_NONE
+        )
+
+        listener.onConnected()
 
         val protocolDetector =
             ProtocolDetector(object :
@@ -65,15 +71,18 @@ class UsbDataPoller(
                             return
                         }
                     }
-
-                    listener.onConnected()
                 }
             })
 
         outputManager =
             SerialInputOutputManager(serialPort, object : SerialInputOutputManager.Listener {
                 override fun onRunError(e: Exception?) {
-                    listener.onDisconnected()
+                    if (connectedOnce)
+                    {
+                        listener.onDisconnected()
+                    } else {
+                        listener.onConnectionFailed()
+                    }
                     logFile?.close()
                 }
 
