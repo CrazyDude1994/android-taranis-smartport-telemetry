@@ -109,6 +109,12 @@
                 android:defaultValue="true"
                 android:key="show_artificial_horizon"/>
 
+        <SwitchPreference
+                android:title="Voice messages on conection status changes"
+                android:summary="Play voice messages when connection status chages."
+                android:defaultValue="true"
+                android:key="connection_voice_messages"/>
+
     </PreferenceCategory>
 
     <PreferenceCategory android:title="UAV Radar">

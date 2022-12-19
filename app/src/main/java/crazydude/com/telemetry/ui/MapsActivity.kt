@@ -13,6 +13,8 @@ import android.graphics.Color
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbDeviceConnection
 import android.hardware.usb.UsbManager
+import android.media.AudioManager
+import android.media.SoundPool
 import android.net.Uri
 import android.os.*
 import android.text.Html
@@ -70,6 +72,11 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     }
 
     private var map: MapWrapper? = null
+
+    private var soundPool : SoundPool? = null
+    private var connectedSoundId : Int = 0
+    private var disconnectedSoundId : Int = 0
+    private var connectionFailedSoundId : Int = 0
 
     private var marker: MapMarker? = null
     private var polyLine: MapLine? = null
@@ -169,6 +176,11 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         setContentView(R.layout.activity_maps)
 
         preferenceManager = PreferenceManager(this)
+
+        soundPool = SoundPool(5, AudioManager.STREAM_NOTIFICATION, 0)
+        connectedSoundId = soundPool!!.load(this, R.raw.connected, 1)
+        disconnectedSoundId = soundPool!!.load(this, R.raw.disconnected, 1)
+        connectionFailedSoundId = soundPool!!.load(this, R.raw.connection_failed, 1)
 
         mapType = preferenceManager.getMapType()
         followMode = savedInstanceState?.getBoolean("follow_mode", true) ?: true
@@ -1646,8 +1658,14 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     }
 
     override fun onDisconnected() {
-        Toast.makeText(this, "Disconnected", Toast.LENGTH_SHORT).show()
-        switchToIdleState()
+        runOnUiThread {
+            Toast.makeText(this, "Disconnected", Toast.LENGTH_SHORT).show()
+            switchToIdleState()
+
+            if (preferenceManager.getConnectionVoiceMessagesEnabled()) {
+                soundPool!!.play(disconnectedSoundId, 1f, 1f, 0, 0, 1f)
+            }
+        }
     }
 
     private fun switchToReplayMode() {
@@ -1701,10 +1719,15 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         runOnUiThread {
             Toast.makeText(this, "Connection failed", Toast.LENGTH_SHORT).show()
             connectButton.text = getString(R.string.connect)
+            mode.text = "Disconnected"
             connectButton.isEnabled = true
             connectButton.setOnClickListener {
                 connect()
             }
+            if ( preferenceManager.getConnectionVoiceMessagesEnabled()) {
+                soundPool!!.play(connectionFailedSoundId, 1f, 1f, 0, 0, 1f)
+            }
+
         }
     }
 
@@ -1846,6 +1869,10 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             switchToConnectedState()
             this.lastTraveledDistance = 0.0;
             this.traveled_distance.text = "-"
+
+            if ( preferenceManager.getConnectionVoiceMessagesEnabled()) {
+                soundPool!!.play(connectedSoundId, 1f, 1f, 0, 0, 1f)
+            }
         }
     }
 

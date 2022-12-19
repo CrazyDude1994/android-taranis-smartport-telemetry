@@ -179,4 +179,8 @@ class PreferenceManager(context: Context) {
         return sharedPreferences.getString("compression_quality", "Normal") ?: "Normal"
     }
 
+    fun getConnectionVoiceMessagesEnabled(): Boolean {
+        return sharedPreferences.getBoolean("connection_voice_messages", true)
+    }
+
 }
