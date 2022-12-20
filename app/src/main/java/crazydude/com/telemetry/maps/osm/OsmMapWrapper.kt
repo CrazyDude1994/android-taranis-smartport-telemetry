@@ -56,8 +56,8 @@ class OsmMapWrapper(private val context: Context, private val mapView: MapView, 
     }
 
     override fun moveCamera(position: Position, zoom: Float) {
+        mapView.controller.setZoom(zoom.toDouble())  //set zoom first, center second
         mapView.controller.setCenter(position.toGeoPoint())
-        mapView.controller.setZoom(zoom.toDouble())
     }
 
     override fun addMarker(icon: Int, color: Int, position: Position): MapMarker {
@@ -67,7 +67,7 @@ class OsmMapWrapper(private val context: Context, private val mapView: MapView, 
     override fun addPolyline(width: Float, color: Int, vararg points: Position): MapLine {
         val osmLine = OsmLine(mapView)
         osmLine.addPoints(points.toList())
-        osmLine.color = color
+        osmLine.color = color;
         return osmLine
     }
 
@@ -79,7 +79,9 @@ class OsmMapWrapper(private val context: Context, private val mapView: MapView, 
     }
 
     override fun addPolyline(color: Int): MapLine {
-        return OsmLine(mapView)
+        val res = OsmLine(mapView)
+        res.color = color;
+        return res;
     }
 
     override fun onCreate(bundle: Bundle?) {

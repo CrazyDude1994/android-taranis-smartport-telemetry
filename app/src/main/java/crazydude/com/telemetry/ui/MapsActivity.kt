@@ -360,6 +360,11 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
 
 
     private fun initMap(simulateLifecycle: Boolean) {
+
+        headingPolyline = null;
+        polyLine = null;
+        marker = null;
+
         if (mapType in GoogleMap.MAP_TYPE_NORMAL..GoogleMap.MAP_TYPE_HYBRID) {
             initGoogleMap(simulateLifecycle)
         } else {
@@ -377,6 +382,9 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             followMode = false
         }
         polyLine = map?.addPolyline(preferenceManager.getRouteColor())
+        val p = dataService?.points;
+        if (  p!= null )
+            polyLine?.addPoints(p)
         showMyLocation()
     }
 
@@ -407,6 +415,9 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                 RelativeLayout.LayoutParams.WRAP_CONTENT
             )
             polyLine = map?.addPolyline(preferenceManager.getRouteColor())
+            val p = dataService?.points;
+            if  (p != null )
+                polyLine?.addPoints(p)
             map?.setOnCameraMoveStartedListener {
                 followMode = false
             }
@@ -418,9 +429,6 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             map?.onStart()
             map?.onResume()
         }
-
-        headingPolyline = null;
-        polyLine = null;
     }
 
     private fun initHeadingLine() {
@@ -1852,7 +1860,9 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                 marker?.let { it.position = lastGPS }
                 updateHeading()
                 if (followMode) {
-                    map?.moveCamera(lastGPS)
+                    if (map?.initialized() ?: false) {
+                        map?.moveCamera(lastGPS)
+                    }
                 }
                 if (hasGPSFix) {
                     polyLine?.addPoints(listOf(lastGPS))
