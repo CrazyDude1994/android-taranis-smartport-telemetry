@@ -11,6 +11,7 @@ import java.io.PrintWriter
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 
 class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listener {
 
@@ -19,12 +20,14 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
     private var dataReadyListener: DataReadyListener? = null
     private var currentPosition: Int = 0
     private var uniqueData = HashMap<Int, Int>()
+    private var uniqueDataIndex = HashMap<Int, Int>()
     private lateinit var protocol: Protocol
 
     private var decodedAltitude : Float = -1f;
     private var decodedSpeed : Float = 0f;
     private var decodedHeading : Float = 0f;
 
+    //async task used to load file, detect protocol and decode packets into arrayList
     private val task = @SuppressLint("StaticFieldLeak") object :
         AsyncTask<File, Long, ArrayList<Protocol.Companion.TelemetryData>>() {
 
@@ -98,6 +101,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
 
             val buffer = ByteArray(1024)
 
+            //feed protocolDetector until protocol is detected and tempProtocol, protocol are assigned correct protocol decoder
             while (logFile.read(buffer) == buffer.size && tempProtocol == null) {
                 for (byte in buffer) {
                     if (tempProtocol == null) {
@@ -111,6 +115,8 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
             if (tempProtocol == null) {
                 publishProgress(100)
             } else {
+                //now when protocol is detected and tempProtocol is assigned,
+                //feed tempProtocol to decode all packets into arrayList
                 logFile = FileInputStream(file[0])
                 val size = (file[0].length() / 100).toInt()
                 val bytes = ByteArray(size)
@@ -147,17 +153,23 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
     }
 
     fun seek(position: Int) {
+        //seek forward: fire all packets from last position to new position
+        //seek backward: fire all packets from the start to the new position
+
+        //in the range of processed packets during the seek,
+        //packets which produce onGPSData: all fired (are requred to build correct track without cut corners)
+        //other packets: only last one is fired (there is no need to fire data which will be replaced by last packet)
         uniqueData.clear()
+        uniqueDataIndex.clear()
         decodedCoordinates.clear()
         var addToEnd: Boolean = false;
         if (position > currentPosition) {
             for (i in currentPosition until position) {
                 if ( protocol.dataDecoder.isGPSData( cachedData[i].telemetryType )) {
                     protocol.dataDecoder.decodeData(cachedData[i])
-                } else if (cachedData[i].telemetryType == Protocol.FLYMODE || cachedData[i].telemetryType == Protocol.STATUSTEXT) {
-                    protocol.dataDecoder.decodeData(cachedData[i])
                 } else {
                     uniqueData[cachedData[i].telemetryType] = i
+                    uniqueDataIndex[cachedData[i].telemetryType] = decodedCoordinates.size;
                 }
             }
             addToEnd = true
@@ -167,19 +179,56 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
             for (i in 0 until position) {
                 if ( protocol.dataDecoder.isGPSData( cachedData[i].telemetryType )) {
                     protocol.dataDecoder.decodeData(cachedData[i])
-                } else if (cachedData[i].telemetryType == Protocol.FLYMODE || cachedData[i].telemetryType == Protocol.STATUSTEXT) {
-                    protocol.dataDecoder.decodeData(cachedData[i])
                 } else {
                     uniqueData[cachedData[i].telemetryType] = i
+                    uniqueDataIndex[cachedData[i].telemetryType] = decodedCoordinates.size;
                 }
             }
             currentPosition = position
             addToEnd = false
         }
-        uniqueData.entries.forEach {
-            protocol.dataDecoder.decodeData(cachedData[it.value])
+
+        //we can fire only last packet for unique data,
+        //but it has to be correctly fired between gps coords
+        var outDecodedCoordinates = ArrayList<Position>()
+
+        //when decodedCoordinates.size, fire packets with [ids]
+        var outUniqueData: HashMap<Int, ArrayList<Int>> = HashMap<Int, ArrayList<Int>>();
+
+        uniqueDataIndex.forEach {
+            //telemetry packet of 'type' should be fired after decodedCoordinates[index]
+            var type = it.key;
+            var index = it.value;
+            if ( outUniqueData[index] == null) {
+                outUniqueData[index] = ArrayList<Int>();
+            }
+            outUniqueData[index]?.add(type);
         }
-        originalListener.onGPSData(decodedCoordinates, addToEnd)
+
+        for ( index in 0..decodedCoordinates.size) {
+            var uids: ArrayList<Int>? = outUniqueData[index];
+            if (uids != null) {
+                if (outDecodedCoordinates.size > 0) {
+                    originalListener.onGPSData(outDecodedCoordinates, addToEnd)
+                    addToEnd = true;
+                    outDecodedCoordinates.clear();
+                }
+                uids.forEach({
+                    var ci : Int? = uniqueData[it];
+                    if ( ci != null) {
+                        protocol.dataDecoder.decodeData(cachedData[ci])
+                    }
+                })
+            }
+            if ( index < decodedCoordinates.size )
+            {
+                outDecodedCoordinates.add(decodedCoordinates[index]);
+            }
+        }
+
+        if ( outDecodedCoordinates.size > 0 ) {
+            originalListener.onGPSData(outDecodedCoordinates, addToEnd)
+        }
     }
 
     override fun onConnectionFailed() {

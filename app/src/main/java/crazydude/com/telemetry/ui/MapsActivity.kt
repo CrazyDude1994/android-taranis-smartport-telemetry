@@ -51,6 +51,7 @@ import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import crazydude.com.telemetry.protocol.pollers.LogPlayer
 import crazydude.com.telemetry.service.DataService
 import kotlinx.android.synthetic.main.top_layout.*
+import kotlinx.android.synthetic.main.view_map.*
 import uk.co.deanwild.materialshowcaseview.MaterialShowcaseView
 import java.io.File
 import java.lang.Exception
@@ -151,6 +152,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     private var lastCellVoltage = 0.0f
 
     private var fullscreenWindow = false
+
+    private var gotHeading = false;
 
     private val serviceConnection: ServiceConnection = object : ServiceConnection {
         override fun onServiceDisconnected(p0: ComponentName?) {
@@ -571,8 +574,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             ) {
             }
 
-            val logPlayer =
-                LogPlayer(this)
+            val logPlayer = LogPlayer(this)
+
             logPlayer.load(file, object : LogPlayer.DataReadyListener {
                 override fun onUpdate(percent: Int) {
                     progressDialog.progress = percent
@@ -598,6 +601,19 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
 
                         }
                     })
+
+                    //rewind to first gps data to zoom on plane
+                    lastGPS = Position(0.0, 0.0);
+                    gotHeading = false;
+                    for (i in 0..seekBar.max - 1) {
+                        logPlayer.seek(i)
+                        if (lastGPS.lat != 0.0 && lastGPS.lon != 0.0 && marker!= null && gotHeading) {
+                            break;
+                        }
+                    }
+
+                    polyLine?.clear()
+                    logPlayer.seek(0);
                 }
             })
         }
@@ -1260,8 +1276,10 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             this.hasGPSFix = gpsFix
             if (gpsFix && marker == null && (map?.initialized() ?: false)) {
                 marker = map?.addMarker(R.drawable.ic_plane, preferenceManager.getPlaneColor(), lastGPS)
+                marker?.rotation = lastHeading;
                 if (headingPolyline == null && preferenceManager.isHeadingLineEnabled()) {
                     headingPolyline = createHeadingPolyline()
+                    updateHeading()
                 }
                 if ( map?.initialized() ?: false)
                 {
@@ -1648,6 +1666,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     }
 
     override fun onHeadingData(heading: Float) {
+        gotHeading = true;
         lastHeading = heading
         runOnUiThread {
             marker?.let {
@@ -1658,10 +1677,12 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     }
 
     private fun updateHeading() {
-        headingPolyline?.let { headingLine ->
-            headingLine.setPoint(0, lastGPS)
-            val computeOffset = SphericalUtil.computeOffset(lastGPS.toLatLng(), 1000.0, lastHeading.toDouble())
-            headingLine.setPoint(1, Position(computeOffset.latitude, computeOffset.longitude))
+        if (lastGPS.lat != 0.0 && lastGPS.lon != 0.0) {
+            headingPolyline?.let { headingLine ->
+                headingLine.setPoint(0, lastGPS)
+                val computeOffset = SphericalUtil.computeOffset(lastGPS.toLatLng(), 1000.0, lastHeading.toDouble())
+                headingLine.setPoint(1, Position(computeOffset.latitude, computeOffset.longitude))
+            }
         }
     }
 
@@ -1677,6 +1698,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     }
 
     private fun switchToReplayMode() {
+        followMode = true;
         seekBar.setOnSeekBarChangeListener(null)
         seekBar.progress = 0
         directionsButton.show()
@@ -1687,6 +1709,12 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             replayFileString = null
         }
         this.sensorTimeoutManager.disableTimeouts()
+        lastGPS = Position(0.0, 0.0);
+        hasGPSFix = false;
+        marker?.remove()
+        marker = null
+        headingPolyline?.remove()
+        headingPolyline = null
     }
 
     private fun switchToIdleState() {
@@ -1825,6 +1853,9 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                     this.lastTraveledDistance = 0.0;
                     lastGPS = Position(list[0].lat, list[0].lon)
                 }
+
+                //add all points except last one
+                //last one will be fired in onGPSData()
                 polyLine?.addPoints(list)
                 polyLine?.removeAt(polyLine?.size!! - 1)
 
