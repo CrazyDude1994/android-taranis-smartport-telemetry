@@ -12,11 +12,13 @@ Latest build is available in Releases: https://github.com/RomanLut/android-taran
 
 I am contributing most bugsfixes and enchancements to Crasydude's repository. But due to significant differences in UI structure, some features are not merged or merged with delay:
 - UVC video support, video recording (DVR)
+- sensors: Airspeed, Vertical speed, Altitude MSL, Throttle, Cell Voltage, Telemetry Rate, Distance to home, Travelled distance
+- CRSF link quality sensors 
 - RC Channels display (mavlink only, 8ch for Mavlink v1, 18ch for Mavlink v2)
-- Travelled distance display
-- persistent fullscreen state
-- stable ( no jittering ) sensors display
-- better Altitude and Distance to home icons
+- better support for CRSF and LTM telemetry
+- connection status voice messages
+- UI interface enchancements
+- improved stability
 
 
 
