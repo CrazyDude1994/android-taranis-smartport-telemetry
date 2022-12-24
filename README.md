@@ -1,3 +1,5 @@
+## You may want to check this https://github.com/RomanLut/android-taranis-smartport-telemetry fork for bugfixes and new features
+
 # Android Taranis SmartPort Telemetry Viewer
 
 [![Donate](https://img.shields.io/badge/Donate-Patreon-green.svg)](https://www.patreon.com/android_rc_telemetry)
