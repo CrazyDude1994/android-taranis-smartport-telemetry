@@ -298,7 +298,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         }
 
         followButton.setOnClickListener {
-            followMode = true
+            setFollowMode( true );
             marker?.let {
                 if (map?.initialized() ?: false) {
                     map?.moveCamera(it.position)
@@ -382,7 +382,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             initHeadingLine()
         }
         map?.setOnCameraMoveStartedListener {
-            followMode = false
+            setFollowMode( false );
         }
         polyLine = map?.addPolyline(preferenceManager.getRouteColor())
         val p = dataService?.points;
@@ -422,7 +422,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             if  (p != null )
                 polyLine?.addPoints(p)
             map?.setOnCameraMoveStartedListener {
-                followMode = false
+                setFollowMode( false );
             }
             map?.setPadding(0, topLayout.measuredHeight, 0, 0)
             initHeadingLine()
@@ -1698,7 +1698,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     }
 
     private fun switchToReplayMode() {
-        followMode = true;
+        setFollowMode( true );
         seekBar.setOnSeekBarChangeListener(null)
         seekBar.progress = 0
         directionsButton.show()
@@ -2136,5 +2136,15 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             }
         }
     }
+
+        fun setFollowMode( mode: Boolean ){
+            followMode = mode;
+            if ( mode ) {
+                this.followButton.imageAlpha = 255
+            }
+            else {
+                this.followButton.imageAlpha = 128
+            }
+        }
 
 }
