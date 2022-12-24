@@ -1614,13 +1614,14 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     }
 
     override fun onVBATOrCellData(voltage: Float) {
-        this.sensorTimeoutManager.onVBATOrCellData(voltage);
         runOnUiThread {
             val reportVoltage = preferenceManager.getReportVoltage()
             if ( reportVoltage == "Battery" ){
+                this.sensorTimeoutManager.onVBATData(voltage);
                 this.voltage.text = "${"%.2f".format(voltage)} V"
             }
             else {
+                this.sensorTimeoutManager.onCellVoltageData(voltage)
                 this.cell_voltage.text = "${"%.2f".format(voltage)} V"
                 this.lastCellVoltage = voltage;
             }
@@ -2056,15 +2057,6 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             }
             SensorTimeoutManager.SENSOR_CELL_VOLTAGE ->{
                 this.cell_voltage.setAlpha(alpha);
-            }
-            SensorTimeoutManager.SENSOR_VBAT_OR_CELL ->{
-                val reportVoltage = preferenceManager.getReportVoltage()
-                if ( reportVoltage == "Battery" ){
-                    this.voltage.setAlpha(alpha);
-                }
-                else {
-                    this.cell_voltage.setAlpha(alpha);
-                }
             }
             SensorTimeoutManager.SENSOR_CURRENT ->{
                 this.current.setAlpha(alpha);

@@ -273,7 +273,7 @@ class SensorTimeoutManager(protected val listener: SensorTimeoutManager.Listener
     }
 
     override fun onVBATOrCellData(voltage: Float) {
-        this.onSensorData(SensorTimeoutManager.SENSOR_VBAT_OR_CELL);
+        //VBAT OR cell_voltage are fired to SensorTimeoutManager
     }
 
     override fun onTelemetryByte(){
