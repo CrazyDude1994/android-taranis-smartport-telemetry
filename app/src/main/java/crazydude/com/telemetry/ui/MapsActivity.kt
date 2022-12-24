@@ -298,10 +298,12 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         }
 
         followButton.setOnClickListener {
-            setFollowMode( true );
-            marker?.let {
-                if (map?.initialized() ?: false) {
-                    map?.moveCamera(it.position)
+            setFollowMode( !followMode );
+            if ( followMode ) {
+                marker?.let {
+                    if (map?.initialized() ?: false) {
+                        map?.moveCamera(it.position)
+                    }
                 }
             }
         }
@@ -364,8 +366,11 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
 
     private fun initMap(simulateLifecycle: Boolean) {
 
+        headingPolyline?.remove();
         headingPolyline = null;
+        polyLine?.remove();
         polyLine = null;
+        marker?.remove();
         marker = null;
 
         if (mapType in GoogleMap.MAP_TYPE_NORMAL..GoogleMap.MAP_TYPE_HYBRID) {
@@ -1736,6 +1741,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         marker = null
         polyLine?.clear()
         headingPolyline?.remove()
+        headingPolyline = null;
         this.sensorTimeoutManager.enableTimeouts()
     }
 
