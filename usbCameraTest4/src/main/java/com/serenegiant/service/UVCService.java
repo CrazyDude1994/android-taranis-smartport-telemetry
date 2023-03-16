@@ -67,7 +67,6 @@ public class UVCService extends BaseService {
 			mUSBMonitor.register();
 		}
 		mNotificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
-		showNotification();
 	}
 
 	@Override
@@ -78,11 +77,22 @@ public class UVCService extends BaseService {
 			mUSBMonitor = null;
 		}
 		stopForeground(true/*removeNotification*/);
+		hideNotification();
+		mNotificationManager = null;
+		super.onDestroy();
+	}
+
+	@Override
+	public int onStartCommand(Intent intent, int flags, int startId) {
+		// We don't want this service to continue running if it is explicitly
+		// stopped, so return not sticky.
+		return START_NOT_STICKY;
+	}
+
+	private void hideNotification() {
 		if (mNotificationManager != null) {
 			mNotificationManager.cancel(NOTIFICATION);
-			mNotificationManager = null;
 		}
-		super.onDestroy();
 	}
 
 	@Override
@@ -109,6 +119,7 @@ public class UVCService extends BaseService {
 	public boolean onUnbind(final Intent intent) {
 		if (DEBUG) Log.d(TAG, "onUnbind:" + intent);
 		if (checkReleaseService()) {
+			hideNotification();
 			stopSelf();
 		}
 		if (DEBUG) Log.d(TAG, "onUnbind:finished");
@@ -129,7 +140,7 @@ public class UVCService extends BaseService {
 				channel = new NotificationChannel(
 						"telemetry_video",
 						"TelemetryViewer Video",
-						NotificationManager.IMPORTANCE_DEFAULT
+						NotificationManager.IMPORTANCE_LOW
 				);
 				mNotificationManager.createNotificationChannel(channel);
 			}
@@ -172,6 +183,7 @@ public class UVCService extends BaseService {
 							Log.w(TAG, "service already exist before connection");
 						}
 						sServiceSync.notifyAll();
+						showNotification();
 					}
 				}
 			}, 0);
@@ -212,6 +224,7 @@ public class UVCService extends BaseService {
 			sServiceSync.notifyAll();
 		}
 		if (checkReleaseService()) {
+			hideNotification();
 			stopSelf();
 		}
 	}
