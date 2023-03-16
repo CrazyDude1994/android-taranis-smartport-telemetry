@@ -469,7 +469,7 @@ class FrSkySportProtocol : Protocol {
                         )
                     }
                     else -> {
-                        Log.d(TAG, "Unknown packet Datatype 0x" + Integer.toHexString(dataType) +" " + buffer.contentToString())
+                        //Log.d(TAG, "Unknown packet Datatype 0x" + Integer.toHexString(dataType) +" " + buffer.contentToString())
                     }
                 }
             }
