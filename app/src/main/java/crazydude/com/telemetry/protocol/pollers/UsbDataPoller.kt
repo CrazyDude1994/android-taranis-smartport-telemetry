@@ -19,12 +19,14 @@ class UsbDataPoller(
     private var outputManager: SerialInputOutputManager? = null
     private var selectedProtocol: Protocol? = null
     private var connectedOnce = false
+    private var isDisconnected = true
 
     init {
         connectedOnce = false
         try {
             serialPort.open(connection)
             connectedOnce = true;
+            isDisconnected = false;
         } catch (e: IOException) {
             listener.onConnectionFailed()
             logFile?.close()
@@ -77,13 +79,17 @@ class UsbDataPoller(
         outputManager =
             SerialInputOutputManager(serialPort, object : SerialInputOutputManager.Listener {
                 override fun onRunError(e: Exception?) {
-                    if (connectedOnce)
+                    if ( isDisconnected == false )
                     {
-                        listener.onDisconnected()
-                    } else {
-                        listener.onConnectionFailed()
+                        isDisconnected == true;
+                        if (connectedOnce)
+                        {
+                            listener.onDisconnected()
+                        } else {
+                            listener.onConnectionFailed()
+                        }
+                        logFile?.close()
                     }
-                    logFile?.close()
                 }
 
                 override fun onNewData(data: ByteArray?) {
@@ -108,8 +114,12 @@ class UsbDataPoller(
 
 
     override fun disconnect() {
-        outputManager?.stop()
-        logFile?.close()
-        listener.onDisconnected()
+        if ( isDisconnected == false )
+        {
+            isDisconnected = true;
+            outputManager?.stop()
+            logFile?.close()
+            listener.onDisconnected()
+        }
     }
 }
