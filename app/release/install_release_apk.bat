@@ -1,0 +1,1 @@
+%LOCALAPPDATA%\Android\sdk\platform-tools\adb install -r android-telemetry-hx1.2.apk 
