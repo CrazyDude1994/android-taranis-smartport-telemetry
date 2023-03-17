@@ -152,14 +152,14 @@ class CrsfProtocol : Protocol {
                 }
                 LINK_STATS.toByte() -> {
                     if (inputData.size == LINK_STATS_PACKET_LEN) {
-                        val uplinkRSSIAnt1 = -1 * data.get().toUByte().toInt() // dBm
-                        val uplinkRSSIAnt2 = -1 * data.get().toUByte().toInt() // dBm
+                        val uplinkRSSIAnt1 = -1 * Math.abs( data.get().toByte().toInt()) // dBm
+                        val uplinkRSSIAnt2 = -1 * Math.abs( data.get().toByte().toInt()) // dBm
                         val uplinkLQ = data.get().toUByte().toInt()
                         val uplinkSNR = data.get().toInt()
                         val activeAntenna = data.get().toUByte().toInt()
                         val rfMode = data.get().toUByte().toInt()
                         val uplinkTxPwr = data.get().toUByte().toInt()
-                        val downlinkRSSI = -1 * data.get().toUByte().toInt() // dBm
+                        val downlinkRSSI = -1 * Math.abs( data.get().toByte().toInt() ) // dBm
                         val downlinkLQ = data.get().toUByte().toInt()
                         val downlinkSNR = data.get().toInt()
                         val rssi = (if (activeAntenna == 1) uplinkRSSIAnt2 else uplinkRSSIAnt1)
