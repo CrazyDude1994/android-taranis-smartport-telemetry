@@ -343,8 +343,8 @@ int UVCPreview::startPreview() {
 			mIsRunning = false;
 			pthread_mutex_lock(&preview_mutex);
 			{
-				pthread_cond_signal(&preview_sync);
-			}
+			pthread_cond_signal(&preview_sync);
+		}
 			pthread_mutex_unlock(&preview_mutex);
 		}
 	}
@@ -353,6 +353,8 @@ int UVCPreview::startPreview() {
 
 int UVCPreview::stopPreview() {
 	ENTER();
+    usleep(300);  //let startPreview() called just before to start preview and capture threads
+
 	bool b = isRunning();
 	if (LIKELY(b)) {
 		mIsRunning = false;
@@ -380,6 +382,9 @@ int UVCPreview::stopPreview() {
 		mCaptureWindow = NULL;
 	}
 	pthread_mutex_unlock(&capture_mutex);
+
+    usleep(100);
+
 	RETURN(0, int);
 }
 
