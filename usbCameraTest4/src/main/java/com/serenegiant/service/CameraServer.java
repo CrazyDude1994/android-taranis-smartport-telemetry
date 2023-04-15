@@ -501,14 +501,14 @@ public final class CameraServer extends Handler {
 				{
 					mUVCCamera = new UVCCamera();
 					mUVCCamera.open(mCtrlBlock);
-					if (DEBUG) Log.i(TAG, "supportedSize:" + mUVCCamera.getSupportedSize());
+					if (DEBUG) Log.i(TAG_THREAD, "supportedSize:" + mUVCCamera.getSupportedSize());
 				}
 				catch( final Exception e )
 				{
 					//well maybe connected device is not camera
 					mUVCCamera.destroy();
 					mUVCCamera = null;
-					if (DEBUG) Log.w(TAG, e);
+					if (DEBUG) Log.w(TAG_THREAD, e);
 					mSync.notifyAll();
 				}
 			}
