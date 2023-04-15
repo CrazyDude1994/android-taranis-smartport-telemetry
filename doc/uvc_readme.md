@@ -38,7 +38,7 @@ CameraClient binds to UVCService on creation.
 CameraClient talks to UVCService via thread, using messaging.
 Thread is implemented in CameraHander class.
 
-UVCService is manginf CameraServer class for each device (camera).
+UVCService is managing CameraServer class for each device (camera).
 Service allows to attach surfaces for preview (addSurface), start/stop video recording and still image capturing.
 
 CameraFragment unbinds service in onDestroy. But if recording is in progress, it will release but not disconnect CameraClient. So service will continue working and recording.
