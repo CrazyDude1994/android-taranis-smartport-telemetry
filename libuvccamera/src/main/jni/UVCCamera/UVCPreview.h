@@ -58,6 +58,7 @@ private:
 	uvc_device_handle_t *mDeviceHandle;
 	ANativeWindow *mPreviewWindow;
 	volatile bool mIsRunning;
+    volatile bool mCaptureThreadIsRunning;
 	int requestWidth, requestHeight, requestMode;
 	int requestMinFps, requestMaxFps;
 	float requestBandwidth;

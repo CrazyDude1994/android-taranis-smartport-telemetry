@@ -67,7 +67,8 @@ UVCPreview::UVCPreview(uvc_device_handle_t *devh)
 	captureQueu(NULL),
 	mFrameCallbackObj(NULL),
 	mFrameCallbackFunc(NULL),
-	callbackPixelBytes(2) {
+	callbackPixelBytes(2),
+    mCaptureThreadIsRunning(false) {
 
 	ENTER();
 	pthread_cond_init(&preview_sync, NULL);
@@ -343,8 +344,8 @@ int UVCPreview::startPreview() {
 			mIsRunning = false;
 			pthread_mutex_lock(&preview_mutex);
 			{
-			pthread_cond_signal(&preview_sync);
-		}
+			    pthread_cond_signal(&preview_sync);
+		    }
 			pthread_mutex_unlock(&preview_mutex);
 		}
 	}
@@ -353,13 +354,21 @@ int UVCPreview::startPreview() {
 
 int UVCPreview::stopPreview() {
 	ENTER();
-    usleep(300);  //let startPreview() called just before to start preview and capture threads
 
 	bool b = isRunning();
 	if (LIKELY(b)) {
+
+        while  (!LIKELY(mCaptureThreadIsRunning))
+        {
+            usleep(100);  //let startPreview() called just before to start preview and capture threads
+        }
+        usleep(100);
+
 		mIsRunning = false;
+
 		pthread_cond_signal(&preview_sync);
 		pthread_cond_signal(&capture_sync);
+
 		if (pthread_join(capture_thread, NULL) != EXIT_SUCCESS) {
 			LOGW("UVCPreview::terminate capture thread: pthread_join failed");
 		}
@@ -383,7 +392,8 @@ int UVCPreview::stopPreview() {
 	}
 	pthread_mutex_unlock(&capture_mutex);
 
-    usleep(100);
+    
+    mCaptureThreadIsRunning = false;
 
 	RETURN(0, int);
 }
@@ -779,6 +789,8 @@ void *UVCPreview::capture_thread_func(void *vptr_args) {
 void UVCPreview::do_capture(JNIEnv *env) {
 
 	ENTER();
+
+    mCaptureThreadIsRunning = true;
 
 	clearCaptureFrame();
 	callbackPixelFormatChanged();
