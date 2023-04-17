@@ -3,11 +3,18 @@
                   xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <SwitchPreference
-            android:title="Telemetry logging"
-            android:summary="Save telemetry data to sdcard. They are saved to TelemetryLog at external storage (sdcard)"
+            android:title="Telemetry logging RAW"
+            android:summary="Save telemetry RAW data to sdcard. They are saved to TelemetryLog at external storage (sdcard) and can be replayed in this application"
             android:text="Logging enabled"
             android:defaultValue="true"
             android:key="logging_enabled"/>
+
+    <SwitchPreference
+            android:title="Telemetry logging to CSV"
+            android:summary="Save telemetry data to sdcard in OpenTX CSV format."
+            android:text="Logging enabled"
+            android:defaultValue="true"
+            android:key="csv_logging_enabled"/>
 
     <com.jaredrummler.android.colorpicker.ColorPreferenceCompat
             android:defaultValue="@color/colorPlane"

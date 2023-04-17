@@ -157,7 +157,7 @@ class DataService : Service(), DataDecoder.Listener {
     }
 
     private fun createLogger() {
-        if (preferenceManager.isLoggingEnabled()
+        if (preferenceManager.isCSVLoggingEnabled()
             && ContextCompat.checkSelfPermission(
                 this,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE

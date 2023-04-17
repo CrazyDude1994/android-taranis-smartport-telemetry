@@ -47,6 +47,10 @@ class PreferenceManager(context: Context) {
         return sharedPreferences.getBoolean("logging_enabled", true)
     }
 
+    fun isCSVLoggingEnabled(): Boolean {
+        return sharedPreferences.getBoolean("csv_logging_enabled", true)
+    }
+
     fun isLoggingSet(): Boolean {
         return sharedPreferences.contains("logging_enabled")
     }

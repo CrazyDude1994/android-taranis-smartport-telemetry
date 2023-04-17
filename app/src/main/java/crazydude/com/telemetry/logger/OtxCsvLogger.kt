@@ -52,11 +52,6 @@ class OtxCsvLogger : DataDecoder.Listener {
         file = File(dir, "$name.csv")
         fileWriter = FileWriter(file)
         outputLine(header)
-        timer.scheduleAtFixedRate(object : TimerTask() {
-            override fun run() {
-                outputData()
-            }
-        },1000,200)
     }
 
     private var fuel: Int = 0
@@ -163,7 +158,7 @@ class OtxCsvLogger : DataDecoder.Listener {
     }
 
     override fun onConnectionFailed() {
-
+        fileWriter.close()
     }
 
     override fun onFuelData(fuel: Int) {
@@ -172,7 +167,11 @@ class OtxCsvLogger : DataDecoder.Listener {
     }
 
     override fun onConnected() {
-
+        timer.scheduleAtFixedRate(object : TimerTask() {
+            override fun run() {
+                outputData()
+            }
+        },1000,200)
     }
 
     override fun onGPSData(latitude: Double, longitude: Double) {
