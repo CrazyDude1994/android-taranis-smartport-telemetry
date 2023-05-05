@@ -69,15 +69,21 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         private const val REQUEST_WRITE_PERMISSION: Int = 2
         private const val REQUEST_READ_PERMISSION: Int = 3
         private const val ACTION_USB_DEVICE = "action_usb_device"
-        private val MAP_TYPE_ITEMS = arrayOf("Road Map (Google)", "Satellite (Google)", "Terrain (Google)", "Hybrid (Google)", "OpenStreetMap (can be cached)")
+        private val MAP_TYPE_ITEMS = arrayOf(
+            "Road Map (Google)",
+            "Satellite (Google)",
+            "Terrain (Google)",
+            "Hybrid (Google)",
+            "OpenStreetMap (can be cached)"
+        )
     }
 
     private var map: MapWrapper? = null
 
-    private var soundPool : SoundPool? = null
-    private var connectedSoundId : Int = 0
-    private var disconnectedSoundId : Int = 0
-    private var connectionFailedSoundId : Int = 0
+    private var soundPool: SoundPool? = null
+    private var connectedSoundId: Int = 0
+    private var disconnectedSoundId: Int = 0
+    private var connectionFailedSoundId: Int = 0
 
     private var marker: MapMarker? = null
     private var polyLine: MapLine? = null
@@ -116,7 +122,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     private lateinit var mapHolder: FrameLayout
     private lateinit var videoHolder: AspectFrameLayout
     private lateinit var mapViewHolder: FrameLayout
-    private lateinit var rc_widget : RCWidget
+    private lateinit var rc_widget: RCWidget
     private lateinit var dnSnr: TextView
     private lateinit var upSnr: TextView
     private lateinit var upLq: TextView
@@ -131,7 +137,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     private lateinit var throttle: TextView
     private lateinit var tlmRate: TextView
 
-    private lateinit var mCameraFragment : com.serenegiant.usbcameratest4.CameraFragment
+    private lateinit var mCameraFragment: com.serenegiant.usbcameratest4.CameraFragment
 
     private lateinit var sensorViewMap: HashMap<String, View>
     private lateinit var sensorsConverters: HashMap<String, Converter>
@@ -173,7 +179,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         }
     }
 
-    private val sensorTimeoutManager : SensorTimeoutManager = SensorTimeoutManager( this );
+    private val sensorTimeoutManager: SensorTimeoutManager = SensorTimeoutManager(this);
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -239,7 +245,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         throttle = findViewById(R.id.throttle)
         tlmRate = findViewById(R.id.tlm_rate)
 
-        videoHolder.setAspectRatio(640.0/480)
+        videoHolder.setAspectRatio(640.0 / 480)
 
         sensorViewMap = hashMapOf(
             Pair(PreferenceManager.sensors.elementAt(0).name, satellites),
@@ -290,17 +296,17 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
 
         videoHolder.setOnClickListener {
             var layout = preferenceManager.getMainLayout()
-            if ( layout == 2 ) setNextLayout()
+            if (layout == 2) setNextLayout()
         }
 
         rootLayout.setOnClickListener {
             var layout = preferenceManager.getMainLayout()
-            if ( layout == 2 ) setNextLayout()
+            if (layout == 2) setNextLayout()
         }
 
         followButton.setOnClickListener {
-            setFollowMode( !followMode );
-            if ( followMode ) {
+            setFollowMode(!followMode);
+            if (followMode) {
                 marker?.let {
                     if (map?.initialized() ?: false) {
                         map?.moveCamera(it.position)
@@ -339,7 +345,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         initMap(false)
         map?.onCreate(savedInstanceState)
 
-        mCameraFragment = getFragmentManager().findFragmentById(R.id.cameraFragment) as CameraFragment
+        mCameraFragment =
+            getFragmentManager().findFragmentById(R.id.cameraFragment) as CameraFragment
 
         updateWindowFullscreenDecoration()
 
@@ -361,7 +368,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     private fun updateFullscreenState() {
         //user may have brought system ui with a swipe. Update state
         this.fullscreenWindow = window.decorView.systemUiVisibility ==
-            (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
+                (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE)
     }
 
 
@@ -388,11 +395,11 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             initHeadingLine()
         }
         map?.setOnCameraMoveStartedListener {
-            setFollowMode( false );
+            setFollowMode(false);
         }
         polyLine = map?.addPolyline(preferenceManager.getRouteColor())
         val p = dataService?.points;
-        if (  p!= null ) {
+        if (p != null) {
             polyLine?.addPoints(p)
             limitRouteLinePoints()
         }
@@ -428,12 +435,12 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
 
             polyLine = map?.addPolyline(preferenceManager.getRouteColor())
             val p = dataService?.points;
-            if  (p != null ) {
+            if (p != null) {
                 polyLine?.addPoints(p)
                 limitRouteLinePoints()
             }
             map?.setOnCameraMoveStartedListener {
-                setFollowMode( false );
+                setFollowMode(false);
             }
             map?.setPadding(0, topLayout.measuredHeight, 0, 0)
             initHeadingLine()
@@ -493,7 +500,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         val delta = System.currentTimeMillis() - installTime
 
         if (delta / 1000 / 60 / 60 / 24 > 3 && !preferenceManager.isYoutubeChannelShown()) {
-            this.showDialog( AlertDialog.Builder(this)
+            this.showDialog(AlertDialog.Builder(this)
                 .setTitle("Thanks for using my application")
                 .setMessage(
                     "Thanks for using my application. As it's does not contain any ads and completely free, " +
@@ -509,7 +516,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                 }
                 .setNegativeButton("Cancel", null)
                 .setOnDismissListener { preferenceManager.setYoutubeShown() }
-                .create() );
+                .create());
         }
     }
 
@@ -537,19 +544,20 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                 val dir = Environment.getExternalStoragePublicDirectory("TelemetryLogs")
                 if (dir.exists()) {
                     val files =
-                        dir.listFiles { file -> file.extension == "log" && file.length() > 0 }.sorted()
+                        dir.listFiles { file -> file.extension == "log" && file.length() > 0 }
+                            .sorted()
                             .reversed()
-                    this.showDialog( AlertDialog.Builder(this)
+                    this.showDialog(AlertDialog.Builder(this)
                         .setAdapter(
                             ArrayAdapter(
                                 this,
                                 android.R.layout.simple_list_item_1,
-                                files.map { i -> "${i.nameWithoutExtension} (${ceil(i.length() / 102.4) /10} Kb)" })
+                                files.map { i -> "${i.nameWithoutExtension} (${ceil(i.length() / 102.4) / 10} Kb)" })
                         ) { _, i ->
-                                updateWindowFullscreenDecoration()
-                                startReplay(files[i])
+                            updateWindowFullscreenDecoration()
+                            startReplay(files[i])
                         }
-                        .create() );
+                        .create());
                 }
             }
         } else {
@@ -564,7 +572,10 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL)
             progressDialog.max = 100
 
-            progressDialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
+            progressDialog.getWindow().setFlags(
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+            );
             progressDialog.show();
             if (!this.fullscreenWindow) {
                 progressDialog.getWindow().decorView.systemUiVisibility = 0
@@ -618,7 +629,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                     gotHeading = false;
                     for (i in 0..seekBar.max - 1) {
                         logPlayer.seek(i)
-                        if (lastGPS.lat != 0.0 && lastGPS.lon != 0.0 && marker!= null && gotHeading) {
+                        if (lastGPS.lat != 0.0 && lastGPS.lon != 0.0 && marker != null && gotHeading) {
                             break;
                         }
                     }
@@ -736,7 +747,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                 mode.text = mode.text.toString() + " | Mission"
             }
             DataDecoder.Companion.FlyMode.QSTABILIZE -> {
-            mode.text = mode.text.toString() + " | QSTABILIZE"
+                mode.text = mode.text.toString() + " | QSTABILIZE"
             }
             DataDecoder.Companion.FlyMode.QHOVER -> {
                 mode.text = mode.text.toString() + " | QHOVER"
@@ -820,8 +831,14 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             .singleUse("replay_guide").build()
 
         if (showcaseView.hasFired()) {
-            this.showDialog( AlertDialog.Builder(this)
-                .setItems(arrayOf("Bluetooth", "Bluetooth LE", "USB Serial")) { dialogInterface, i ->
+            this.showDialog(AlertDialog.Builder(this)
+                .setItems(
+                    arrayOf(
+                        "Bluetooth",
+                        "Bluetooth LE",
+                        "USB Serial"
+                    )
+                ) { dialogInterface, i ->
                     when (i) {
                         0 -> connectBluetooth()
                         1 -> connectBluetoothLE()
@@ -912,10 +929,12 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     private fun connectBluetooth() {
         val adapter = BluetoothAdapter.getDefaultAdapter()
         if (adapter == null) {
-            this.showDialog( AlertDialog.Builder(this)
-                .setMessage("It seems like your phone does not have bluetooth, or it does not supported")
-                .setPositiveButton("OK", null)
-                .create())
+            this.showDialog(
+                AlertDialog.Builder(this)
+                    .setMessage("It seems like your phone does not have bluetooth, or it does not supported")
+                    .setPositiveButton("OK", null)
+                    .create()
+            )
             return
         }
 
@@ -958,7 +977,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             }
         }
 
-        this.showDialog( AlertDialog.Builder(this).setOnDismissListener {
+        this.showDialog(AlertDialog.Builder(this).setOnDismissListener {
         }.setAdapter(deviceAdapter) { _, i ->
             runOnUiThread {
                 connectToBluetoothDevice(devices[i], false)
@@ -977,10 +996,12 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         }
         val adapter = BluetoothAdapter.getDefaultAdapter()
         if (adapter == null) {
-            this.showDialog( AlertDialog.Builder(this)
-                .setMessage("It seems like your phone does not have bluetooth, or it does not supported")
-                .setPositiveButton("OK", null)
-                .create())
+            this.showDialog(
+                AlertDialog.Builder(this)
+                    .setMessage("It seems like your phone does not have bluetooth, or it does not supported")
+                    .setPositiveButton("OK", null)
+                    .create()
+            )
             return
         }
 
@@ -1027,7 +1048,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             adapter.startLeScan(callback)
         }
 
-        this.showDialog( AlertDialog.Builder(this).setOnDismissListener {
+        this.showDialog(AlertDialog.Builder(this).setOnDismissListener {
             if (bleCheck()) {
                 adapter.stopLeScan(callback)
             }
@@ -1044,7 +1065,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     private fun resetUI() {
         satellites.text = "0"
         rssi.text = "-"
-        this.setRSSIIcon( 100 )
+        this.setRSSIIcon(100)
         voltage.text = "-"
         phoneBattery.text = "-"
         current.text = "-"
@@ -1059,22 +1080,22 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         traveled_distance.text = "0 m"
         this.lastTraveledDistance = 0.0;
         mode.text = "Disconnected"
-        statustext.text="";
+        statustext.text = "";
         dnSnr.text = "-"
         upSnr.text = "-"
         dnLq.text = "-"
         elrsRate.text = "-"
-        this.setDNLQIcon( 100 )
+        this.setDNLQIcon(100)
         upLq.text = "-"
-        this.setUPLQIcon( 100 )
+        this.setUPLQIcon(100)
         ant.text = "-"
         power.text = "-"
         rssiDbm1.text = "-"
-        this.setRssiDbm1Icon( 0 )
+        this.setRssiDbm1Icon(0)
         rssiDbm2.text = "-"
-        this.setRssiDbm2Icon( 0 )
+        this.setRssiDbm2Icon(0)
         rssiDbmd.text = "-"
-        this.setRssiDbmdIcon( 0 )
+        this.setRssiDbmdIcon(0)
         horizonView.setPitch(0f)
         horizonView.setRoll(0f)
         cell_voltage.text = "-"
@@ -1119,7 +1140,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         if (!isChangingConfigurations) {
             dataService?.setDataListener(null)
         }
-        map=null;
+        map = null;
         this.unregisterReceiver(this.batInfoReceiver)
         unbindService(serviceConnection)
     }
@@ -1147,7 +1168,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                     map?.isMyLocationEnabled = true
                     checkSendDataDialogShown()
                 } else {
-                    this.showDialog( AlertDialog.Builder(this)
+                    this.showDialog(AlertDialog.Builder(this)
                         .setMessage("Location permission is needed in order to discover BLE devices and show your location on map")
                         .setOnDismissListener { checkSendDataDialogShown() }
                         .setPositiveButton("OK", null)
@@ -1157,19 +1178,23 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     connect()
                 } else {
-                    this.showDialog(AlertDialog.Builder(this)
-                        .setMessage("Write permission is required in order to log telemetry data. Disable logging or grant permission to continue")
-                        .setPositiveButton("OK", null)
-                        .create())
+                    this.showDialog(
+                        AlertDialog.Builder(this)
+                            .setMessage("Write permission is required in order to log telemetry data. Disable logging or grant permission to continue")
+                            .setPositiveButton("OK", null)
+                            .create()
+                    )
                 }
             } else if (requestCode == REQUEST_READ_PERMISSION) {
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     replay()
                 } else {
-                    this.showDialog( AlertDialog.Builder(this)
-                        .setMessage("Read permission is required in order to read and replay telemetry data")
-                        .setPositiveButton("OK", null)
-                        .create())
+                    this.showDialog(
+                        AlertDialog.Builder(this)
+                            .setMessage("Read permission is required in order to read and replay telemetry data")
+                            .setPositiveButton("OK", null)
+                            .create()
+                    )
                 }
             }
         }
@@ -1196,27 +1221,23 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         }
     }
 
-    private fun formatDistance( v : Float ) : String {
-        if ( v < 1000 ){
+    private fun formatDistance(v: Float): String {
+        if (v < 1000) {
             return "${"%.0f".format(v)} m"
-        }
-        else {
-            return "${"%.2f".format(v/ 1000)} km"
+        } else {
+            return "${"%.2f".format(v / 1000)} km"
         }
     }
 
-    private fun formatHeight( v : Float ) : String {
-        if ( v < 10 ){
+    private fun formatHeight(v: Float): String {
+        if (v < 10) {
             return "${"%.2f".format(v)} m"
-        }
-        else if ( v < 100 ){
+        } else if (v < 100) {
             return "${"%.1f".format(v)} m"
-        }
-        else if ( v < 1000 ){
+        } else if (v < 1000) {
             return "${"%.0f".format(v)} m"
-        }
-        else {
-            return "${"%.2f".format(v/ 1000)} km"
+        } else {
+            return "${"%.2f".format(v / 1000)} km"
         }
     }
 
@@ -1267,7 +1288,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         }
     }
 
-    override fun onRCChannels(rcChannels:IntArray) {
+    override fun onRCChannels(rcChannels: IntArray) {
         this.sensorTimeoutManager.onRCChannels(rcChannels)
         runOnUiThread {
             this.rc_widget.setChannels(rcChannels)
@@ -1290,10 +1311,10 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                     headingPolyline = createHeadingPolyline()
                     updateHeading()
                 }
-                marker = map?.addMarker(R.drawable.ic_plane, preferenceManager.getPlaneColor(), lastGPS)
+                marker =
+                    map?.addMarker(R.drawable.ic_plane, preferenceManager.getPlaneColor(), lastGPS)
                 marker?.rotation = lastHeading;
-                if ( map?.initialized() ?: false)
-                {
+                if (map?.initialized() ?: false) {
                     map?.moveCamera(lastGPS, 15f)
                 }
             }
@@ -1305,7 +1326,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         return map?.addPolyline(3f, preferenceManager.getHeadLineColor(), lastGPS, lastGPS)
     }
 
-    private fun setRSSIIcon( rssi : Int )  {
+    private fun setRSSIIcon(rssi: Int) {
         when (rssi) {
             in 81..100 -> R.drawable.ic_rssi_5
             in 61..80 -> R.drawable.ic_rssi_4
@@ -1333,7 +1354,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         }
     }
 
-    private fun setUPLQIcon(lq : Int )  {
+    private fun setUPLQIcon(lq: Int) {
         when (lq) {
             in 81..100 -> R.drawable.ic_up_lq_5
             in 61..80 -> R.drawable.ic_up_lq_4
@@ -1361,7 +1382,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         }
     }
 
-    private fun setDNLQIcon(lq : Int )  {
+    private fun setDNLQIcon(lq: Int) {
         when (lq) {
             in 81..100 -> R.drawable.ic_dn_lq_5
             in 61..80 -> R.drawable.ic_dn_lq_4
@@ -1389,7 +1410,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         }
     }
 
-    private fun setRssiDbm1Icon(rssi : Int )  {
+    private fun setRssiDbm1Icon(rssi: Int) {
         when (rssi) {
             in -31..0 -> R.drawable.ic_rssi_dbm1_5
             in -51..-30 -> R.drawable.ic_rssi_dbm1_4
@@ -1417,7 +1438,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         }
     }
 
-    private fun setRssiDbm2Icon(rssi : Int )  {
+    private fun setRssiDbm2Icon(rssi: Int) {
         when (rssi) {
             in -31..0 -> R.drawable.ic_rssi_dbm2_5
             in -51..-30 -> R.drawable.ic_rssi_dbm2_4
@@ -1445,7 +1466,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         }
     }
 
-    private fun setRssiDbmdIcon(rssi : Int )  {
+    private fun setRssiDbmdIcon(rssi: Int) {
         when (rssi) {
             in -31..0 -> R.drawable.ic_rssi_dbmd_5
             in -51..-30 -> R.drawable.ic_rssi_dbmd_4
@@ -1527,27 +1548,27 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         }
     }
 
-    override fun onElrsModeModeData(mode: Int){
+    override fun onElrsModeModeData(mode: Int) {
         this.sensorTimeoutManager.onElrsModeModeData(mode);
-            runOnUiThread {
-                when (mode) {
-                    13 -> this.elrsRate.text = "F1000"
-                    12 -> this.elrsRate.text = "F500"
-                    11 -> this.elrsRate.text = "D500"
-                    10 -> this.elrsRate.text = "D250"
-                    9 -> this.elrsRate.text = "L500"
-                    8 -> this.elrsRate.text = "L333c" //8ch
-                    7 -> this.elrsRate.text = "L250"
-                    6 -> this.elrsRate.text = "L200"
-                    5 -> this.elrsRate.text = "L150"
-                    4 -> this.elrsRate.text = "L100"
-                    3 -> this.elrsRate.text = "L100c"  //8ch
-                    2 -> this.elrsRate.text = "L50"
-                    1 -> this.elrsRate.text = "L25"
-                    0 -> this.elrsRate.text = "L4"
-                    else -> this.elrsRate.text = mode.toString();
-                }
+        runOnUiThread {
+            when (mode) {
+                13 -> this.elrsRate.text = "F1000"
+                12 -> this.elrsRate.text = "F500"
+                11 -> this.elrsRate.text = "D500"
+                10 -> this.elrsRate.text = "D250"
+                9 -> this.elrsRate.text = "L500"
+                8 -> this.elrsRate.text = "L333c" //8ch
+                7 -> this.elrsRate.text = "L250"
+                6 -> this.elrsRate.text = "L200"
+                5 -> this.elrsRate.text = "L150"
+                4 -> this.elrsRate.text = "L100"
+                3 -> this.elrsRate.text = "L100c"  //8ch
+                2 -> this.elrsRate.text = "L50"
+                1 -> this.elrsRate.text = "L25"
+                0 -> this.elrsRate.text = "L4"
+                else -> this.elrsRate.text = mode.toString();
             }
+        }
     }
 
 
@@ -1622,11 +1643,10 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     override fun onVBATOrCellData(voltage: Float) {
         runOnUiThread {
             val reportVoltage = preferenceManager.getReportVoltage()
-            if ( reportVoltage == "Battery" ){
+            if (reportVoltage == "Battery") {
                 this.sensorTimeoutManager.onVBATData(voltage);
                 this.voltage.text = "${"%.2f".format(voltage)} V"
-            }
-            else {
+            } else {
                 this.sensorTimeoutManager.onCellVoltageData(voltage)
                 this.cell_voltage.text = "${"%.2f".format(voltage)} V"
                 this.lastCellVoltage = voltage;
@@ -1658,7 +1678,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     override fun onAntData(activeAntena: Int) {
         this.sensorTimeoutManager.onAntData(activeAntena);
         runOnUiThread {
-            this.ant.text = (activeAntena+1).toString();
+            this.ant.text = (activeAntena + 1).toString();
         }
     }
 
@@ -1692,7 +1712,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         if (lastGPS.lat != 0.0 && lastGPS.lon != 0.0) {
             headingPolyline?.let { headingLine ->
                 headingLine.setPoint(0, lastGPS)
-                val computeOffset = SphericalUtil.computeOffset(lastGPS.toLatLng(), 1000.0, lastHeading.toDouble())
+                val computeOffset =
+                    SphericalUtil.computeOffset(lastGPS.toLatLng(), 1000.0, lastHeading.toDouble())
                 headingLine.setPoint(1, Position(computeOffset.latitude, computeOffset.longitude))
             }
         }
@@ -1710,7 +1731,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     }
 
     private fun switchToReplayMode() {
-        setFollowMode( true );
+        setFollowMode(true);
         seekBar.setOnSeekBarChangeListener(null)
         seekBar.progress = 0
         directionsButton.show()
@@ -1773,7 +1794,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             connectButton.setOnClickListener {
                 connect()
             }
-            if ( preferenceManager.getConnectionVoiceMessagesEnabled()) {
+            if (preferenceManager.getConnectionVoiceMessagesEnabled()) {
                 soundPool!!.play(connectionFailedSoundId, 1f, 1f, 0, 0, 1f)
             }
 
@@ -1809,16 +1830,14 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         }
     }
 
-    private fun formatPower( v : Int, suffix : String ) : String {
-        if ( v < 1000 ){
+    private fun formatPower(v: Int, suffix: String): String {
+        if (v < 1000) {
             return "$v $suffix"
-        }
-        else {
-            if ( suffix == "mAh" ) {
-                return "${"%.2f".format(v/ 1000f)} Ah"
-            }
-            else {
-                return "${"%.2f".format(v/ 1000f)} Wh"
+        } else {
+            if (suffix == "mAh") {
+                return "${"%.2f".format(v / 1000f)} Ah"
+            } else {
+                return "${"%.2f".format(v / 1000f)} Wh"
             }
         }
     }
@@ -1831,12 +1850,11 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
 
             when (batteryUnits) {
                 "mAh", "mWh" -> {
-                    this.fuel.text = this.formatPower( fuel, batteryUnits )
+                    this.fuel.text = this.formatPower(fuel, batteryUnits)
                     //for icon, calculate percentage from cell voltage if available
-                    if ( (lastCellVoltage > 0) && (lastCellVoltage <= 4.4)) {
+                    if ((lastCellVoltage > 0) && (lastCellVoltage <= 4.4)) {
                         percentage = ((1 - (4.2f - lastCellVoltage)).coerceIn(0f, 1f) * 100).toInt()
-                    }
-                    else {
+                    } else {
                         percentage = -1;  //unknnow icon
                     }
                 }
@@ -1845,7 +1863,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                 }
             }
 
-            this.setFuelIcon( percentage );
+            this.setFuelIcon(percentage);
         }
     }
 
@@ -1874,18 +1892,18 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                 polyLine?.removeAt(polyLine?.size!! - 1)
                 limitRouteLinePoints();
 
-                if ( list.size >= 2 && this.lastGPS.lat != 0.0 && this.lastGPS.lon != 0.0) {
+                if (list.size >= 2 && this.lastGPS.lat != 0.0 && this.lastGPS.lon != 0.0) {
                     this.lastTraveledDistance += SphericalUtil.computeDistanceBetween(
-                        this.lastGPS.toLatLng(), LatLng( list[0].lat, list[0].lon)
+                        this.lastGPS.toLatLng(), LatLng(list[0].lat, list[0].lon)
                     )
                     lastGPS = Position(list[0].lat, list[0].lon)
                 }
-                for ( i in 1..list.size - 2) {
+                for (i in 1..list.size - 2) {
                     this.lastTraveledDistance += SphericalUtil.computeDistanceBetween(
-                        LatLng( list[i-1].lat, list[i-1].lon), LatLng(list[i].lat, list[i].lon)
+                        LatLng(list[i - 1].lat, list[i - 1].lon), LatLng(list[i].lat, list[i].lon)
                     )
                 }
-                if ( list.size >= 3){
+                if (list.size >= 3) {
                     lastGPS = Position(list[list.size - 2].lat, list[list.size - 2].lon)
                 }
 
@@ -1895,12 +1913,15 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     }
 
     override fun onGPSData(latitude: Double, longitude: Double) {
-        this.sensorTimeoutManager.onGPSData(latitude,longitude);
+        this.sensorTimeoutManager.onGPSData(latitude, longitude);
         runOnUiThread {
             if (Position(latitude, longitude) != lastGPS) {
                 var d = 0.0;
-                if ( this.lastGPS.lat != 0.0 && this.lastGPS.lon != 0.0 ) {
-                    d = SphericalUtil.computeDistanceBetween( this.lastGPS.toLatLng(), LatLng(latitude, longitude) )
+                if (this.lastGPS.lat != 0.0 && this.lastGPS.lon != 0.0) {
+                    d = SphericalUtil.computeDistanceBetween(
+                        this.lastGPS.toLatLng(),
+                        LatLng(latitude, longitude)
+                    )
                 }
                 lastGPS = Position(latitude, longitude)
                 marker?.let { it.position = lastGPS }
@@ -1914,7 +1935,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                     polyLine?.addPoints(listOf(lastGPS))
                     limitRouteLinePoints();
                     this.lastTraveledDistance += d
-                    this.traveled_distance.text = this.formatDistance( this.lastTraveledDistance.toFloat() );
+                    this.traveled_distance.text =
+                        this.formatDistance(this.lastTraveledDistance.toFloat());
                 }
 
                 if (!followMode) {
@@ -1931,7 +1953,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             this.lastTraveledDistance = 0.0;
             this.traveled_distance.text = "-"
 
-            if ( preferenceManager.getConnectionVoiceMessagesEnabled()) {
+            if (preferenceManager.getConnectionVoiceMessagesEnabled()) {
                 soundPool!!.play(connectedSoundId, 1f, 1f, 0, 0, 1f)
             }
         }
@@ -1940,7 +1962,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     private fun setNextLayout() {
         var layout = preferenceManager.getMainLayout();
         layout++;
-        if ( layout > 2) layout = 0;
+        if (layout > 2) layout = 0;
         preferenceManager.setMainLayout(layout)
         updateLayout();
         updateHorizonViewSize();
@@ -1948,19 +1970,19 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
 
     private fun updateLayout() {
         var layout = preferenceManager.getMainLayout()
-        if ( layout == 0 ) {
+        if (layout == 0) {
             mapViewHolder.visibility = View.VISIBLE;
             videoHolder.visibility = View.GONE
             topLayout.visibility = View.VISIBLE;
             bottomLayout.visibility = View.VISIBLE;
             mCameraFragment.onContainerVisibilityChange(false)
-        } else if (layout == 1 ){
+        } else if (layout == 1) {
             mapViewHolder.visibility = View.VISIBLE;
             videoHolder.visibility = View.VISIBLE
             topLayout.visibility = View.VISIBLE;
             bottomLayout.visibility = View.VISIBLE;
             mCameraFragment.onContainerVisibilityChange(true)
-        }else if (layout == 2 ){
+        } else if (layout == 2) {
             mapViewHolder.visibility = View.GONE;
             videoHolder.visibility = View.VISIBLE
             topLayout.visibility = View.GONE;
@@ -2004,8 +2026,11 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         this.phoneBattery.text = "$lastPhoneBattery%"
     }
 
-    private fun showDialog( dialog: AlertDialog ) {
-        dialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
+    private fun showDialog(dialog: AlertDialog) {
+        dialog.getWindow().setFlags(
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+        );
         dialog.show();
         if (!this.fullscreenWindow) {
             dialog.getWindow().decorView.systemUiVisibility = 0
@@ -2017,26 +2042,24 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     }
 
     protected fun updateScreenOrientation() {
-        val screenRotation : String = preferenceManager.getScreenOrientationLock()
+        val screenRotation: String = preferenceManager.getScreenOrientationLock()
         try {
             requestedOrientation = when (screenRotation) {
                 "Portrait" -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
                 "Landscape" -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
                 else -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
             }
-        }
-        catch( e : Exception){
+        } catch (e: Exception) {
         }
     }
 
     protected fun updateCompressionQuality() {
-        val compressionQuality : String = preferenceManager.getCompressionQuality()
-        this.mCameraFragment.setCompressionQuality( if (compressionQuality == "High" ) 2  else if (compressionQuality == "Normal" ) 1 else 0 );
+        val compressionQuality: String = preferenceManager.getCompressionQuality()
+        this.mCameraFragment.setCompressionQuality(if (compressionQuality == "High") 2 else if (compressionQuality == "Normal") 1 else 0);
     }
 
     //SensorTimeoutListener
-    private fun updateSetSensorGrayed( sensorId : Int )
-    {
+    private fun updateSetSensorGrayed(sensorId: Int) {
         var alpha = 1f;
         if (this.sensorTimeoutManager.getSensorTimeout(sensorId)) alpha = 0.5f;
         when (sensorId) {
@@ -2044,128 +2067,123 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                 this.satellites.setAlpha(alpha);
                 this.traveled_distance.setAlpha(alpha);
             }
-            SensorTimeoutManager.SENSOR_DISTANCE ->{
+            SensorTimeoutManager.SENSOR_DISTANCE -> {
                 this.distance.setAlpha(alpha);
             }
-            SensorTimeoutManager.SENSOR_ALTITUDE ->{
+            SensorTimeoutManager.SENSOR_ALTITUDE -> {
                 this.altitude.setAlpha(alpha);
             }
-            SensorTimeoutManager.SENSOR_GPS_ALTITUDE ->{
+            SensorTimeoutManager.SENSOR_GPS_ALTITUDE -> {
                 this.altitude_msl.setAlpha(alpha);
             }
-            SensorTimeoutManager.SENSOR_RSSI ->{
+            SensorTimeoutManager.SENSOR_RSSI -> {
                 this.rssi.setAlpha(alpha);
             }
-            SensorTimeoutManager.SENSOR_UP_LQ ->{
+            SensorTimeoutManager.SENSOR_UP_LQ -> {
                 this.upLq.setAlpha(alpha);
             }
-            SensorTimeoutManager.SENSOR_DN_LQ ->{
+            SensorTimeoutManager.SENSOR_DN_LQ -> {
                 this.dnLq.setAlpha(alpha);
             }
-            SensorTimeoutManager.SENSOR_ELRS_MODE ->{
+            SensorTimeoutManager.SENSOR_ELRS_MODE -> {
                 this.elrsRate.setAlpha(alpha);
             }
-            SensorTimeoutManager.SENSOR_VOLTAGE ->{
+            SensorTimeoutManager.SENSOR_VOLTAGE -> {
                 this.voltage.setAlpha(alpha);
             }
-            SensorTimeoutManager.SENSOR_CELL_VOLTAGE ->{
+            SensorTimeoutManager.SENSOR_CELL_VOLTAGE -> {
                 this.cell_voltage.setAlpha(alpha);
             }
-            SensorTimeoutManager.SENSOR_CURRENT ->{
+            SensorTimeoutManager.SENSOR_CURRENT -> {
                 this.current.setAlpha(alpha);
             }
-            SensorTimeoutManager.SENSOR_SPEED ->{
+            SensorTimeoutManager.SENSOR_SPEED -> {
                 this.speed.setAlpha(alpha);
             }
-            SensorTimeoutManager.SENSOR_AIRSPEED ->{
+            SensorTimeoutManager.SENSOR_AIRSPEED -> {
                 this.airspeed.setAlpha(alpha);
             }
-            SensorTimeoutManager.SENSOR_VSPEED ->{
+            SensorTimeoutManager.SENSOR_VSPEED -> {
                 this.vspeed.setAlpha(alpha);
             }
-            SensorTimeoutManager.SENSOR_THROTTLE ->{
+            SensorTimeoutManager.SENSOR_THROTTLE -> {
                 this.throttle.setAlpha(alpha);
             }
-            SensorTimeoutManager.SENSOR_FUEL ->{
+            SensorTimeoutManager.SENSOR_FUEL -> {
                 this.fuel.setAlpha(alpha);
             }
-            SensorTimeoutManager.SENSOR_RC_CHANNELS ->{
+            SensorTimeoutManager.SENSOR_RC_CHANNELS -> {
                 this.rc_widget.setAlpha(alpha);
             }
-            SensorTimeoutManager.SENSOR_STATUSTEXT ->{
-                if ( this.sensorTimeoutManager.getSensorTimeout(sensorId) ){
+            SensorTimeoutManager.SENSOR_STATUSTEXT -> {
+                if (this.sensorTimeoutManager.getSensorTimeout(sensorId)) {
                     this.statustext.text = "";
                 }
             }
-            SensorTimeoutManager.SENSOR_DN_SNR ->{
+            SensorTimeoutManager.SENSOR_DN_SNR -> {
                 this.dnSnr.setAlpha(alpha);
             }
-            SensorTimeoutManager.SENSOR_UP_SNR ->{
+            SensorTimeoutManager.SENSOR_UP_SNR -> {
                 this.upSnr.setAlpha(alpha);
             }
-            SensorTimeoutManager.SENSOR_ANT ->{
+            SensorTimeoutManager.SENSOR_ANT -> {
                 this.ant.setAlpha(alpha);
             }
-            SensorTimeoutManager.SENSOR_POWER ->{
+            SensorTimeoutManager.SENSOR_POWER -> {
                 this.power.setAlpha(alpha);
             }
-            SensorTimeoutManager.SENSOR_RSSI_DBM_1 ->{
+            SensorTimeoutManager.SENSOR_RSSI_DBM_1 -> {
                 this.rssiDbm1.setAlpha(alpha);
             }
-            SensorTimeoutManager.SENSOR_RSSI_DBM_2 ->{
+            SensorTimeoutManager.SENSOR_RSSI_DBM_2 -> {
                 this.rssiDbm2.setAlpha(alpha);
             }
-            SensorTimeoutManager.SENSOR_RSSI_DBM_D ->{
+            SensorTimeoutManager.SENSOR_RSSI_DBM_D -> {
                 this.rssiDbmd.setAlpha(alpha);
             }
         }
     }
 
     //SensorTimeoutListener
-    override fun onSensorTimeout( sensorId : Int )
-    {
+    override fun onSensorTimeout(sensorId: Int) {
         runOnUiThread {
-            this.updateSetSensorGrayed( sensorId );
+            this.updateSetSensorGrayed(sensorId);
         }
     }
 
     //SensorTimeoutListener
-    override fun onSensorData( sensorId : Int )
-    {
+    override fun onSensorData(sensorId: Int) {
         runOnUiThread {
-            this.updateSetSensorGrayed( sensorId );
+            this.updateSetSensorGrayed(sensorId);
         }
     }
 
     override fun onTelemetryRate(rate: Int) {
         runOnUiThread {
-            if ( rate< 1000 ) {
+            if (rate < 1000) {
                 this.tlm_rate.text = "${rate} b/s"
-            }
-            else {
-                this.tlm_rate.text = "${"%.1f".format(rate/ 1000f)} kb/s"
+            } else {
+                this.tlm_rate.text = "${"%.1f".format(rate / 1000f)} kb/s"
             }
         }
     }
 
-        fun setFollowMode( mode: Boolean ){
-            followMode = mode;
-            if ( mode ) {
-                this.followButton.imageAlpha = 255
-            }
-            else {
-                this.followButton.imageAlpha = 128
-            }
+    fun setFollowMode(mode: Boolean) {
+        followMode = mode;
+        if (mode) {
+            this.followButton.imageAlpha = 255
+        } else {
+            this.followButton.imageAlpha = 128
         }
+    }
 
     fun limitRouteLinePoints() {
         val maxCount = preferenceManager.getMaxRoutePoints()
 
-        if ( maxCount > 0) {
+        if (maxCount > 0) {
             while (polyLine?.size ?: 0 > maxCount) {
                 polyLine?.removeAt(0)
             }
         }
     }
-
-
+}
