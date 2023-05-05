@@ -1318,7 +1318,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                     map?.moveCamera(lastGPS, 15f)
                 }
             }
-            this.satellites.text = satellites.toString()
+            this.satellites.text = if (satellites == 99) "ES" else satellites.toString()
         }
     }
 
