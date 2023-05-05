@@ -2162,10 +2162,10 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         val maxCount = preferenceManager.getMaxRoutePoints()
 
         if ( maxCount > 0) {
-            while (polyLine?.size!! > maxCount) {
+            while (polyLine?.size ?: 0 > maxCount) {
                 polyLine?.removeAt(0)
-}
+            }
         }
     }
 
-}
+
