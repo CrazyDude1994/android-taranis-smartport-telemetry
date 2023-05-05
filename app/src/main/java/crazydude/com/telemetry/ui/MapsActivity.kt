@@ -1280,12 +1280,12 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         runOnUiThread {
             this.hasGPSFix = gpsFix
             if (gpsFix && marker == null && (map?.initialized() ?: false)) {
-                marker = map?.addMarker(R.drawable.ic_plane, preferenceManager.getPlaneColor(), lastGPS)
-                marker?.rotation = lastHeading;
                 if (headingPolyline == null && preferenceManager.isHeadingLineEnabled()) {
                     headingPolyline = createHeadingPolyline()
                     updateHeading()
                 }
+                marker = map?.addMarker(R.drawable.ic_plane, preferenceManager.getPlaneColor(), lastGPS)
+                marker?.rotation = lastHeading;
                 if ( map?.initialized() ?: false)
                 {
                     map?.moveCamera(lastGPS, 15f)
