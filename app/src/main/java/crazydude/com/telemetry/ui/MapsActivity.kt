@@ -1916,6 +1916,10 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                     this.lastTraveledDistance += d
                     this.traveled_distance.text = this.formatDistance( this.lastTraveledDistance.toFloat() );
                 }
+
+                if (!followMode) {
+                    this.map?.invalidate()
+                }
             }
         }
     }

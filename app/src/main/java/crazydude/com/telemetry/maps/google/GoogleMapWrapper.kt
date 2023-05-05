@@ -159,4 +159,8 @@ class GoogleMapWrapper(val context: Context, val mapView: MapView, private val c
     override fun onSaveInstanceState(outState: Bundle?) {
         mapView.onSaveInstanceState(outState)
     }
+
+    override fun invalidate() {
+        this.mapView.invalidate()
+    }
 }

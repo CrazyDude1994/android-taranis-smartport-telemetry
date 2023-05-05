@@ -112,4 +112,9 @@ class OsmMapWrapper(private val context: Context, private val mapView: MapView, 
 
     override fun setPadding(left: Int, top: Int, right: Int, bottom: Int) {
     }
+
+    override fun invalidate() {
+        this.mapView.invalidate()
+    }
+
 }
