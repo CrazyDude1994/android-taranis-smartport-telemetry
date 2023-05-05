@@ -2143,7 +2143,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                 this.tlm_rate.text = "${rate} b/s"
             }
             else {
-                this.tlm_rate.text = "${"%.1f".format(rate/ 100f)} kb/s"
+                this.tlm_rate.text = "${"%.1f".format(rate/ 1000f)} kb/s"
             }
         }
     }
