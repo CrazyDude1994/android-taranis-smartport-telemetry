@@ -71,6 +71,14 @@
                 android:summary="Color of the route line on the map"
                 android:title="Route line color"/>
 
+        <ListPreference
+                android:title="Limit number of points"
+                android:summary="%s"
+                android:entries="@array/RouteLinePoints"
+                android:entryValues="@array/RouteLinePointsValue"
+                android:defaultValue="-1"
+                android:key="route_max_points"/>
+
     </PreferenceCategory>
 
     <PreferenceCategory android:title="USB Serial">

@@ -167,6 +167,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                 if (it.isConnected()) {
                     switchToConnectedState()
                     polyLine?.addPoints(it.points)
+                    limitRouteLinePoints();
                 }
             }
         }
@@ -391,8 +392,10 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         }
         polyLine = map?.addPolyline(preferenceManager.getRouteColor())
         val p = dataService?.points;
-        if (  p!= null )
+        if (  p!= null ) {
             polyLine?.addPoints(p)
+            limitRouteLinePoints()
+        }
         showMyLocation()
     }
 
@@ -422,10 +425,13 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                 RelativeLayout.LayoutParams.MATCH_PARENT,
                 RelativeLayout.LayoutParams.WRAP_CONTENT
             )
+
             polyLine = map?.addPolyline(preferenceManager.getRouteColor())
             val p = dataService?.points;
-            if  (p != null )
+            if  (p != null ) {
                 polyLine?.addPoints(p)
+                limitRouteLinePoints()
+            }
             map?.setOnCameraMoveStartedListener {
                 setFollowMode( false );
             }
@@ -1843,6 +1849,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         }
     }
 
+
     override fun onTelemetryByte() {
         this.sensorTimeoutManager.onTelemetryByte()
     }
@@ -1865,6 +1872,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                 //last one will be fired in onGPSData()
                 polyLine?.addPoints(list)
                 polyLine?.removeAt(polyLine?.size!! - 1)
+                limitRouteLinePoints();
 
                 if ( list.size >= 2 && this.lastGPS.lat != 0.0 && this.lastGPS.lon != 0.0) {
                     this.lastTraveledDistance += SphericalUtil.computeDistanceBetween(
@@ -1904,6 +1912,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                 }
                 if (hasGPSFix) {
                     polyLine?.addPoints(listOf(lastGPS))
+                    limitRouteLinePoints();
                     this.lastTraveledDistance += d
                     this.traveled_distance.text = this.formatDistance( this.lastTraveledDistance.toFloat() );
                 }
@@ -2144,5 +2153,15 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                 this.followButton.imageAlpha = 128
             }
         }
+
+    fun limitRouteLinePoints() {
+        val maxCount = preferenceManager.getMaxRoutePoints()
+
+        if ( maxCount > 0) {
+            while (polyLine?.size!! > maxCount) {
+                polyLine?.removeAt(0)
+}
+        }
+    }
 
 }
