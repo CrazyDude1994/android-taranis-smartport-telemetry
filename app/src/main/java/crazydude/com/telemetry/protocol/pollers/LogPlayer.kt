@@ -27,6 +27,8 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
     private var decodedSpeed : Float = 0f;
     private var decodedHeading : Float = 0f;
 
+    private var statusTextExpire : Int = 0;
+
     //async task used to load file, detect protocol and decode packets into arrayList
     private val task = @SuppressLint("StaticFieldLeak") object :
         AsyncTask<File, Long, ArrayList<Protocol.Companion.TelemetryData>>() {
@@ -157,7 +159,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
         //seek backward: fire all packets from the start to the new position
 
         //in the range of processed packets during the seek,
-        //packets which produce onGPSData: all fired (are requred to build correct track without cut corners)
+        //packets which produce onGPSData: all fired (are required to build correct track without cut corners)
         //other packets: only last one is fired (there is no need to fire data which will be replaced by last packet)
         uniqueData.clear()
         uniqueDataIndex.clear()
@@ -210,6 +212,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
             if (uids != null) {
                 if (outDecodedCoordinates.size > 0) {
                     originalListener.onGPSData(outDecodedCoordinates, addToEnd)
+                    this.expireStatusText(outDecodedCoordinates.size)
                     addToEnd = true;
                     outDecodedCoordinates.clear();
                 }
@@ -228,6 +231,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
 
         if ( outDecodedCoordinates.size > 0 ) {
             originalListener.onGPSData(outDecodedCoordinates, addToEnd)
+            this.expireStatusText(outDecodedCoordinates.size)
         }
     }
 
@@ -342,7 +346,19 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
     }
 
     override fun onStatusText(message : String) {
+        this.statusTextExpire = 10;
         originalListener.onStatusText(message)
+    }
+
+
+    fun expireStatusText(cycles: Int) {
+        if (this.statusTextExpire > 0) {
+            this.statusTextExpire -= cycles;
+            if (this.statusTextExpire <= 0) {
+                this.statusTextExpire = 0;
+                originalListener.onStatusText("")
+            }
+        }
     }
 
     override fun onDNSNRData(snr: Int) {
