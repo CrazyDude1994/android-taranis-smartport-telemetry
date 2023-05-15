@@ -1876,35 +1876,36 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         this.sensorTimeoutManager.onSuccessDecode()
     }
 
+    override fun onDecoderRestart() {
+        this.lastGPS = Position(0.0,0.0);
+        this.hasGPSFix = false;
+        this.lastTraveledDistance = 0.0
+    }
+
     override fun onGPSData(list: List<Position>, addToEnd: Boolean) {
         this.sensorTimeoutManager.onGPSData(list, addToEnd);
         runOnUiThread {
+            if (!addToEnd) {
+                polyLine?.clear()
+                this.lastTraveledDistance = 0.0;
+                lastGPS = Position(0.0,0.0)
+            }
             if (hasGPSFix && list.isNotEmpty()) {
-                if (!addToEnd) {
-                    polyLine?.clear()
-                    this.lastTraveledDistance = 0.0;
-                    lastGPS = Position(list[0].lat, list[0].lon)
-                }
-
                 //add all points except last one
                 //last one will be fired in onGPSData()
-                polyLine?.addPoints(list)
-                polyLine?.removeAt(polyLine?.size!! - 1)
-                limitRouteLinePoints();
+                if ( list.size>=2) {
+                    polyLine?.addPoints(list)
+                    polyLine?.removeAt(polyLine?.size!! - 1)
+                    limitRouteLinePoints();
+                }
 
-                if (list.size >= 2 && this.lastGPS.lat != 0.0 && this.lastGPS.lon != 0.0) {
-                    this.lastTraveledDistance += SphericalUtil.computeDistanceBetween(
-                        this.lastGPS.toLatLng(), LatLng(list[0].lat, list[0].lon)
-                    )
-                    lastGPS = Position(list[0].lat, list[0].lon)
-                }
-                for (i in 1..list.size - 2) {
-                    this.lastTraveledDistance += SphericalUtil.computeDistanceBetween(
-                        LatLng(list[i - 1].lat, list[i - 1].lon), LatLng(list[i].lat, list[i].lon)
-                    )
-                }
-                if (list.size >= 3) {
-                    lastGPS = Position(list[list.size - 2].lat, list[list.size - 2].lon)
+                for (i in 0..list.size - 2) {
+                    if (this.lastGPS.lat != 0.0 && this.lastGPS.lon != 0.0) {
+                        this.lastTraveledDistance += SphericalUtil.computeDistanceBetween(
+                            this.lastGPS.toLatLng(), LatLng(list[i].lat, list[i].lon)
+                        )
+                    }
+                    lastGPS = Position(list[i].lat, list[i].lon)
                 }
 
                 onGPSData(list[list.size - 1].lat, list[list.size - 1].lon)
@@ -1952,6 +1953,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             switchToConnectedState()
             this.lastTraveledDistance = 0.0;
             this.traveled_distance.text = "-"
+            this.lastGPS = Position(0.0, 0.0);
+            this.hasGPSFix = false;
 
             if (preferenceManager.getConnectionVoiceMessagesEnabled()) {
                 soundPool!!.play(connectedSoundId, 1f, 1f, 0, 0, 1f)

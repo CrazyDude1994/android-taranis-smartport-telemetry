@@ -284,4 +284,8 @@ class SensorTimeoutManager(protected val listener: SensorTimeoutManager.Listener
 
     }
 
+    override fun onDecoderRestart(){
+
+    }
+
 }

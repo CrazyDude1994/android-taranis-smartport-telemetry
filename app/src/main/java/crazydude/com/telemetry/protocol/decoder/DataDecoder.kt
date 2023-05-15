@@ -133,12 +133,16 @@ abstract class DataDecoder(protected val listener: Listener) {
 
             override fun onSuccessDecode() {
             }
+
+            override fun onDecoderRestart() {
+            }
+
         }
 
     }
 
     open fun restart() {
-
+        this.listener.onDecoderRestart()
     }
 
     abstract fun decodeData(data: Protocol.Companion.TelemetryData)
@@ -191,10 +195,13 @@ abstract class DataDecoder(protected val listener: Listener) {
         fun onVBATOrCellData(voltage: Float)
         fun onTelemetryByte()
         fun onSuccessDecode()
+        fun onDecoderRestart()
     }
 
     fun isGPSData( telemetryType : Int ) : Boolean {
         return telemetryType == Protocol.GPS ||
+            telemetryType == Protocol.GPS_STATE ||
+            telemetryType == Protocol.GPS_STATE_ARDU ||
             telemetryType == Protocol.GPS_LATITUDE ||
             telemetryType == Protocol.GPS_LONGITUDE ||
             telemetryType == Protocol.GPS_ORIGIN_LATITUDE ||

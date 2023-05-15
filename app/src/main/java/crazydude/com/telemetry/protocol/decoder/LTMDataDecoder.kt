@@ -53,6 +53,7 @@ class LTMDataDecoder(listener: Listener) : DataDecoder(listener) {
         this.longitude = 0.0
         this.homeLatitude = 0.0
         this.homeLongitude = 0.0
+        this.listener.onDecoderRestart()
     }
 
     override fun decodeData(data: Protocol.Companion.TelemetryData) {

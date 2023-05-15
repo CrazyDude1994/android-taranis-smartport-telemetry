@@ -333,6 +333,11 @@ class DataService : Service(), DataDecoder.Listener {
         logListener?.onSuccessDecode()
     }
 
+    override fun onDecoderRestart() {
+        dataListener?.onDecoderRestart()
+        logListener?.onDecoderRestart()
+    }
+
     override fun onRSSIData(rssi: Int) {
         dataListener?.onRSSIData(rssi)
         logListener?.onRSSIData(rssi)

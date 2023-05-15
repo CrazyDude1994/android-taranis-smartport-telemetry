@@ -37,6 +37,7 @@ class CrsfDataDecoder(listener: Listener) : DataDecoder(listener) {
         this.armed = false;
         this.armedOnce = false;
         this.rcChannels = IntArray(16) { 1500 };
+        this.listener.onDecoderRestart()
     }
 
     override fun decodeData(data: Protocol.Companion.TelemetryData) {

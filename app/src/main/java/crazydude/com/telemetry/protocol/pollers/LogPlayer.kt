@@ -17,6 +17,8 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
 
     private var cachedData = ArrayList<Protocol.Companion.TelemetryData>()
     private var decodedCoordinates = ArrayList<Position>()
+    private var hasGPSFix = false
+    private var satellites = 0;
     private var dataReadyListener: DataReadyListener? = null
     private var currentPosition: Int = 0
     private var uniqueData = HashMap<Int, Int>()
@@ -28,6 +30,8 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
     private var decodedHeading : Float = 0f;
 
     private var statusTextExpire : Int = 0;
+
+    private var fireGPSState = false;
 
     //async task used to load file, detect protocol and decode packets into arrayList
     private val task = @SuppressLint("StaticFieldLeak") object :
@@ -164,11 +168,26 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
         uniqueData.clear()
         uniqueDataIndex.clear()
         decodedCoordinates.clear()
+
+        //when decodedCoordinates.size=key, cachedData[value]
+        var outUniqueData: HashMap<Int, ArrayList<Int>> = HashMap<Int, ArrayList<Int>>();
+
+        this.fireGPSState = false;
+
         var addToEnd: Boolean = false;
         if (position > currentPosition) {
             for (i in currentPosition until position) {
+                var prevFix = this.hasGPSFix
                 if ( protocol.dataDecoder.isGPSData( cachedData[i].telemetryType )) {
                     protocol.dataDecoder.decodeData(cachedData[i])
+                    if ( prevFix != this.hasGPSFix)
+                    {
+                        var index = decodedCoordinates.size;
+                        if ( outUniqueData[index] == null) {
+                            outUniqueData[index] = ArrayList<Int>();
+                        }
+                        outUniqueData[index]?.add(i);
+                    }
                 } else {
                     uniqueData[cachedData[i].telemetryType] = i
                     uniqueDataIndex[cachedData[i].telemetryType] = decodedCoordinates.size;
@@ -178,9 +197,20 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
             currentPosition = position
         } else if (position < currentPosition) {
             protocol.dataDecoder.restart()
+            this.hasGPSFix = false;
+            this.satellites = 0;
             for (i in 0 until position) {
+                var prevFix = this.hasGPSFix
                 if ( protocol.dataDecoder.isGPSData( cachedData[i].telemetryType )) {
                     protocol.dataDecoder.decodeData(cachedData[i])
+                    if ( prevFix != this.hasGPSFix)
+                    {
+                        var index = decodedCoordinates.size;
+                        if ( outUniqueData[index] == null) {
+                            outUniqueData[index] = ArrayList<Int>();
+                        }
+                        outUniqueData[index]?.add(i);
+                    }
                 } else {
                     uniqueData[cachedData[i].telemetryType] = i
                     uniqueDataIndex[cachedData[i].telemetryType] = decodedCoordinates.size;
@@ -190,22 +220,19 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
             addToEnd = false
         }
 
-        //we can fire only last packet for unique data,
-        //but it has to be correctly fired between gps coords
-        var outDecodedCoordinates = ArrayList<Position>()
-
-        //when decodedCoordinates.size, fire packets with [ids]
-        var outUniqueData: HashMap<Int, ArrayList<Int>> = HashMap<Int, ArrayList<Int>>();
-
         uniqueDataIndex.forEach {
-            //telemetry packet of 'type' should be fired after decodedCoordinates[index]
             var type = it.key;
             var index = it.value;
             if ( outUniqueData[index] == null) {
                 outUniqueData[index] = ArrayList<Int>();
             }
-            outUniqueData[index]?.add(type);
+            outUniqueData[index]?.add(uniqueData[type]!!);
         }
+
+        //we can fire only last packet for unique data,
+        //but it has to be correctly fired between gps coords
+        var outDecodedCoordinates = ArrayList<Position>()
+        this.fireGPSState = true;
 
         for ( index in 0..decodedCoordinates.size) {
             var uids: ArrayList<Int>? = outUniqueData[index];
@@ -217,10 +244,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
                     outDecodedCoordinates.clear();
                 }
                 uids.forEach({
-                    var ci : Int? = uniqueData[it];
-                    if ( ci != null) {
-                        protocol.dataDecoder.decodeData(cachedData[ci])
-                    }
+                    protocol.dataDecoder.decodeData(cachedData[it])
                 })
             }
             if ( index < decodedCoordinates.size )
@@ -300,7 +324,11 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
     }
 
     override fun onGPSState(satellites: Int, gpsFix: Boolean) {
-        originalListener.onGPSState(satellites, gpsFix)
+        this.hasGPSFix = gpsFix
+        this.satellites = satellites
+        if ( fireGPSState) {
+            originalListener.onGPSState(satellites, gpsFix)
+        }
     }
 
     override fun onVSpeedData(vspeed: Float) {
@@ -391,6 +419,10 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
 
     override fun onSuccessDecode() {
         originalListener.onSuccessDecode()
+    }
+
+    override fun onDecoderRestart() {
+        originalListener.onDecoderRestart()
     }
 
     override fun onFlyModeData(
