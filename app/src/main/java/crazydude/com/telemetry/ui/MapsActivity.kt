@@ -19,6 +19,7 @@ import android.net.Uri
 import android.os.*
 import android.text.Html
 import android.text.method.LinkMovementMethod
+import android.util.Log
 import android.util.TypedValue
 import android.view.View
 import android.view.WindowManager
@@ -92,6 +93,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     private lateinit var connectButton: Button
     private lateinit var replayButton: ImageView
     private lateinit var seekBar: SeekBar
+    private lateinit var playButton: FloatingActionButton
     private lateinit var fuel: TextView
     private lateinit var rssi: TextView
     private lateinit var satellites: TextView
@@ -161,6 +163,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
 
     private var gotHeading = false;
 
+    private var logPlayer : LogPlayer? = null;
+
     private val serviceConnection: ServiceConnection = object : ServiceConnection {
         override fun onServiceDisconnected(p0: ComponentName?) {
             onDisconnected()
@@ -221,6 +225,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         settingsButton = findViewById(R.id.settings_button)
         replayButton = findViewById(R.id.replay_button)
         seekBar = findViewById(R.id.seekbar)
+        playButton = findViewById(R.id.play_button)
         horizonView = findViewById(R.id.horizon_view)
         fullscreenButton = findViewById(R.id.fullscreen_button)
         layoutButton = findViewById(R.id.layout_button)
@@ -326,6 +331,16 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         directionsButton.setOnLongClickListener {
             showAndCopyCurrentGPSLocation()
             true
+        }
+
+        playButton.setOnClickListener {
+            if ( this.logPlayer != null) {
+                if ( this.logPlayer?.isPlaying() == true) {
+                    this.logPlayer?.stop()
+                } else {
+                    this.logPlayer?.startPlayback()
+                }
+            }
         }
 
         if (isInReplayMode()) {
@@ -596,9 +611,11 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             ) {
             }
 
-            val logPlayer = LogPlayer(this)
+            this.logPlayer = LogPlayer(this)
 
-            logPlayer.load(file, object : LogPlayer.DataReadyListener {
+            val context = this;
+
+            this.logPlayer?.load(file, object : LogPlayer.DataReadyListener {
                 override fun onUpdate(percent: Int) {
                     progressDialog.progress = percent
                 }
@@ -607,13 +624,24 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                     progressDialog.dismiss()
                     seekBar.max = size
                     seekBar.visibility = View.VISIBLE
+                    playButton.visibility = View.VISIBLE
                     seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                         override fun onProgressChanged(
                             seekbar: SeekBar,
                             position: Int,
-                            p2: Boolean
+                            fromUser: Boolean
                         ) {
-                            logPlayer.seek(position)
+                            var restartPlayback = false;
+                            if ( fromUser) {
+                                if ( logPlayer?.isPlaying() == true) {
+                                    logPlayer?.stop()
+                                    restartPlayback = true;
+                                }
+                            }
+                            logPlayer?.seek(position)
+                            if ( restartPlayback) {
+                                logPlayer?.startPlayback()
+                            }
                         }
 
                         override fun onStartTrackingTouch(p0: SeekBar?) {
@@ -628,15 +656,41 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                     lastGPS = Position(0.0, 0.0);
                     gotHeading = false;
                     for (i in 0..seekBar.max - 1) {
-                        logPlayer.seek(i)
+                        logPlayer?.seek(i)
                         if (lastGPS.lat != 0.0 && lastGPS.lon != 0.0 && marker != null && gotHeading) {
                             break;
                         }
                     }
 
-                    polyLine?.clear()
-                    logPlayer.seek(0);
+                    logPlayer?.seek(0);
                 }
+
+                override fun onPlaybackPositionChange(currentPosition: Int) {
+                    runOnUiThread {
+                        seekbar.progress = currentPosition;
+                    }
+                }
+
+                override fun onPlaybackStateChange( isPlaying : Boolean){
+                    runOnUiThread {
+                        if ( isPlaying) {
+                            playButton.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_pause));
+                        } else {
+                            playButton.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_play));
+                        }
+                    }
+                }
+
+                override fun getTotalPlaybackDurationSec() : Int
+                {
+                    return preferenceManager.getPlaybackDuration()
+                }
+
+                override fun getPlaybackAutostart() : Boolean
+                {
+                    return preferenceManager.getPlaybackAutostart()
+                }
+
             })
         }
     }
@@ -917,12 +971,14 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         super.onPause()
         map?.onPause()
         this.sensorTimeoutManager.pause();
+        this.logPlayer?.stop();
         updateFullscreenState()//check if user has brought system ui with swipe
     }
 
     override fun onStop() {
         super.onStop()
         map?.onStop()
+        this.logPlayer?.stop();
         this.sensorTimeoutManager.pause();
     }
 
@@ -1751,9 +1807,11 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     }
 
     private fun switchToIdleState() {
+        this.logPlayer?.stop();
         resetUI()
         directionsButton.hide()
         seekBar.visibility = View.GONE
+        playButton.visibility = View.GONE
         connectButton.visibility = View.VISIBLE
         connectButton.text = getString(R.string.connect)
         replayButton.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_replay))
@@ -1880,6 +1938,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         this.lastGPS = Position(0.0,0.0);
         this.hasGPSFix = false;
         this.lastTraveledDistance = 0.0
+        this.polyLine?.clear()
     }
 
     override fun onGPSData(list: List<Position>, addToEnd: Boolean) {

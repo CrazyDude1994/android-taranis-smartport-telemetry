@@ -16,15 +16,6 @@
             android:defaultValue="true"
             android:key="csv_logging_enabled"/>
 
-    <com.jaredrummler.android.colorpicker.ColorPreferenceCompat
-            android:defaultValue="@color/colorPlane"
-            android:key="plane_color"
-            app:cpv_showAlphaSlider="false"
-            app:cpv_allowPresets="false"
-            app:cpv_allowCustom="true"
-            android:summary="Color of the plane icon on the map"
-            android:title="Plane color"/>
-
     <ListPreference
             android:title="Lock screen orientation"
             android:summary="%s"
@@ -41,7 +32,16 @@
             android:defaultValue="Normal"
             android:key="compression_quality"/>
 
-    <PreferenceCategory android:title="Heading line">
+    <PreferenceCategory android:title="Map markers">
+
+        <com.jaredrummler.android.colorpicker.ColorPreferenceCompat
+                android:defaultValue="@color/colorPlane"
+                android:key="plane_color"
+                app:cpv_showAlphaSlider="false"
+                app:cpv_allowPresets="false"
+                app:cpv_allowCustom="true"
+                android:summary="Color of the plane icon on the map"
+                android:title="Plane color"/>
 
         <SwitchPreference
                 android:title="Show heading line"
@@ -85,18 +85,38 @@
         <ListPreference
             android:title="Baudrate"
             android:key="usb_serial_baudrate"
-            android:summary="Adjust baudrate"
+            android:summary="%s"
             android:entries="@array/baudrates"
             android:entryValues="@array/baudrates"
             android:defaultValue="57600"
             />
     </PreferenceCategory>
 
+    <PreferenceCategory android:title="Playback">
+
+        <SwitchPreference
+                android:title="Automatic playback start"
+                android:summary="Start playback after loading log file"
+                android:defaultValue="true"
+                android:key="playback_autostart"/>
+
+        <ListPreference
+                android:title="Playback duration"
+                android:key="playback_duration"
+                android:summary="Total duration of log playback\n%s"
+                android:entries="@array/playback_durations"
+                android:entryValues="@array/playback_durations_values"
+                android:defaultValue="30"
+                />
+
+    </PreferenceCategory>
+
+
     <PreferenceCategory android:title="Sensors">
 
         <Preference
                 android:title="Sensor display settings"
-                android:summary="Changes which data is shown and changes data format">
+                android:summary="Click to edit sensor widgets placement on the main screen">
             <intent android:targetClass="crazydude.com.telemetry.ui.SensorsActivity"
                     android:targetPackage="crazydude.com.telemetry"
                     android:action="android.intent.action.VIEW"/>

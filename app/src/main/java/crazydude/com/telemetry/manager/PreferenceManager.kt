@@ -191,4 +191,13 @@ class PreferenceManager(context: Context) {
         return sharedPreferences.getString("route_max_points", "-1")?.toInt() ?: -1
     }
 
+    fun getPlaybackAutostart() : Boolean {
+        return sharedPreferences.getBoolean("playback_autostart", true)
+    }
+
+    fun getPlaybackDuration() : Int {
+        return sharedPreferences.getString("playback_duration", "30")?.toInt() ?: 30
+    }
+
+
 }

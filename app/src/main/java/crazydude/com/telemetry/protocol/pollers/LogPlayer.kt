@@ -33,6 +33,10 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
 
     private var fireGPSState = false;
 
+    private var mTimer: Timer? = null
+
+    private var totalPlaybackDurationMS : Int = 30000;
+
     //async task used to load file, detect protocol and decode packets into arrayList
     private val task = @SuppressLint("StaticFieldLeak") object :
         AsyncTask<File, Long, ArrayList<Protocol.Companion.TelemetryData>>() {
@@ -107,7 +111,8 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
 
             val buffer = ByteArray(1024)
 
-            //feed protocolDetector until protocol is detected and tempProtocol, protocol are assigned correct protocol decoder
+            //feed protocolDetector until protocol is detected and
+            //tempProtocol and protocol are assigned correct protocol decoder
             while (logFile.read(buffer) == buffer.size && tempProtocol == null) {
                 for (byte in buffer) {
                     if (tempProtocol == null) {
@@ -149,8 +154,11 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
             cachedData = result
             dataReadyListener?.onDataReady(result.size)
             //exportGPX();
-        }
 
+            if (dataReadyListener?.getPlaybackAutostart() == true ){
+                startPlayback();
+            }
+        }
     }
 
     fun load(file: File, dataReadyListener: DataReadyListener) {
@@ -175,6 +183,13 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
         this.fireGPSState = false;
 
         var addToEnd: Boolean = false;
+
+        if ( position == 0) {
+            //clear router line and message
+            protocol.dataDecoder.restart()
+            this.expireStatusText(10000)
+        }
+
         if (position > currentPosition) {
             for (i in currentPosition until position) {
                 var prevFix = this.hasGPSFix
@@ -258,6 +273,46 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
             this.expireStatusText(outDecodedCoordinates.size)
         }
     }
+
+    fun stop() {
+        if ( mTimer != null ) {
+            this.mTimer?.cancel();
+            this.mTimer = null;
+            this.dataReadyListener?.onPlaybackStateChange(false)
+        }
+    }
+
+    fun startPlayback() {
+        if ( this.mTimer == null ) {
+            this.mTimer = Timer();
+
+            if ( currentPosition == cachedData.size) {
+                seek(0)
+            }
+
+            totalPlaybackDurationMS = dataReadyListener!!.getTotalPlaybackDurationSec() * 1000
+
+            val step = Math.max(1, Math.min( 1000, cachedData.size / (totalPlaybackDurationMS / 50)))
+
+            this.mTimer?.scheduleAtFixedRate(object : TimerTask() {
+                override fun run() {
+                    if ( currentPosition == cachedData.size ) {
+                        stop();
+                    } else {
+                        var nextPosition = Math.min(currentPosition + step, cachedData.size)
+                        dataReadyListener?.onPlaybackPositionChange( nextPosition );
+                    }
+                }
+            }, 100, 50)
+            this.dataReadyListener?.onPlaybackStateChange(true)
+        }
+
+    }
+
+    public fun isPlaying() : Boolean {
+        return this.mTimer != null;
+    }
+
 
     override fun onConnectionFailed() {
     }
@@ -519,5 +574,9 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
     interface DataReadyListener {
         fun onUpdate(percent: Int)
         fun onDataReady(size: Int)
+        fun onPlaybackPositionChange(currentPosition: Int)
+        fun onPlaybackStateChange( isPlaying : Boolean)
+        fun getTotalPlaybackDurationSec() : Int
+        fun getPlaybackAutostart() : Boolean
     }
 }
