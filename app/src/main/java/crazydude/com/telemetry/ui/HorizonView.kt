@@ -25,6 +25,11 @@ class HorizonView @JvmOverloads constructor(
             style = Paint.Style.STROKE
         }
 
+    private val textPaint = Paint().apply {
+        color = Color.WHITE
+        textSize = 32f
+    }
+
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
 
@@ -84,7 +89,30 @@ class HorizonView @JvmOverloads constructor(
             it.restore()
             it.drawPath(leftLinePath, planeLinePaint)
             it.drawPath(rightLinePath, planeLinePaint)
+
+            drawRP( canvas, 0.16f, "Roll", this.roll)
+            drawRP( canvas, 0.82f, "Pitch", this.pitch)
         }
+    }
+
+    private fun drawRP( canvas: Canvas, pos: Float, label: String, value: Float) {
+        val textBounds = Rect()
+
+        textPaint.setTextSize(this.width/244f * 20f)
+
+        textPaint.getTextBounds(label, 0, label.length, textBounds)
+        var x = width * pos - textBounds.width() /2.0f
+        var y = center * 0.92f
+        canvas.drawText(label, x, y, textPaint)
+
+        textPaint.setTextSize(this.width/244f * 30f)
+
+        val ps = String.format("%.1f", value);
+        textPaint.getTextBounds(ps, 0, ps.length, textBounds)
+        x = width * pos - textBounds.width() / 2.0f
+        y = center * 1.01f  + textBounds.height()
+
+        canvas.drawText(ps, x, y, textPaint)
     }
 
     fun setRoll(roll: Float) {
