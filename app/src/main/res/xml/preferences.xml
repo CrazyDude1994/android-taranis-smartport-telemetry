@@ -32,6 +32,12 @@
             android:defaultValue="Normal"
             android:key="compression_quality"/>
 
+    <SwitchPreference
+            android:title="Voice messages on conection status changes"
+            android:summary="Play voice messages when connection status chages."
+            android:defaultValue="true"
+            android:key="connection_voice_messages"/>
+
     <PreferenceCategory android:title="Map markers">
 
         <com.jaredrummler.android.colorpicker.ColorPreferenceCompat
@@ -143,12 +149,6 @@
                 android:summary="Shows attitude. Please set frsky_pitch_roll = ON in CLI for Inav 2.0.+."
                 android:defaultValue="true"
                 android:key="show_artificial_horizon"/>
-
-        <SwitchPreference
-                android:title="Voice messages on conection status changes"
-                android:summary="Play voice messages when connection status chages."
-                android:defaultValue="true"
-                android:key="connection_voice_messages"/>
 
     </PreferenceCategory>
 
