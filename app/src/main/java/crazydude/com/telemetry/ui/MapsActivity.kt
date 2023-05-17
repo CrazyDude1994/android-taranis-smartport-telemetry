@@ -1936,10 +1936,12 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     }
 
     override fun onDecoderRestart() {
-        this.lastGPS = Position(0.0,0.0);
-        this.hasGPSFix = false;
-        this.lastTraveledDistance = 0.0
-        this.polyLine?.clear()
+        runOnUiThread {
+            this.lastGPS = Position(0.0, 0.0);
+            this.hasGPSFix = false;
+            this.lastTraveledDistance = 0.0
+            this.polyLine?.clear()
+        }
     }
 
     override fun onGPSData(list: List<Position>, addToEnd: Boolean) {
