@@ -878,6 +878,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
 
     private fun connect() {
         val showcaseView = MaterialShowcaseView.Builder(this)
+            .renderOverNavigationBar()
             .setTarget(replayButton)
             .setMaskColour(Color.argb(230, 0, 0, 0))
             .setDismissText("GOT IT")
