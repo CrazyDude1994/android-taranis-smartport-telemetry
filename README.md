@@ -18,10 +18,22 @@ I am contributing most bugsfixes and enchancements to Crasydude's repository. Bu
 - better support for CRSF and LTM telemetry
 - connection status voice messages
 - UI interface enchancements
-- improved stability
+- improved stability and bug fixes
 
 
 <sup>1</sup> *Channels are displayed with CRSF protocol if they are sent with telemetry. It works with this PR which allows to connect directly to Express LRS TX module:* https://github.com/ExpressLRS/ExpressLRS/pull/2018
+
+# Routing telemetry to the application
+
+Multiple possibilities exits.
+
+- route telemetry to the bluetooth module in the radios which have bluetooth installed
+- install bluetooth module in the radio yourself
+- use Crossfire TX with bluetooth module
+- sniff telemetry from S.PORT pin and route to HC-06 / HM-10 module ( see instructions below )
+- since version 1.2: route telemetry to USB-C port of the radio ( System->USB-VCP->Telemetry Mirror ) and connect to the phone using OTG cable. Note that USB-C<->USB-C cable may not work; I had to use OTG adapter + cable.
+- install ELRS build with BLE telemetry output: https://github.com/ExpressLRS/ExpressLRS/pull/2018 
+- install ELRS build with Bluetooth telemetry output: https://github.com/ExpressLRS/ExpressLRS/pull/2101
 
 
 Below is original Readme.md:
