@@ -225,6 +225,8 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
                             outUniqueData[index] = ArrayList<Int>();
                         }
                         outUniqueData[index]?.add(i);
+                        uniqueData.remove(cachedData[i].telemetryType)
+                        uniqueDataIndex.remove(cachedData[i].telemetryType)
                     }
                 } else {
                     uniqueData[cachedData[i].telemetryType] = i
@@ -238,7 +240,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
         uniqueDataIndex.forEach {
             var type = it.key;
             var index = it.value;
-            if ( outUniqueData[index] == null) {
+            if (outUniqueData[index] == null) {
                 outUniqueData[index] = ArrayList<Int>();
             }
             outUniqueData[index]?.add(uniqueData[type]!!);
