@@ -326,19 +326,23 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         }
 
         replayMenuButton.setOnClickListener {
+            val option0 = "Copy plane location to clipboard";
             val option1 = "Show route to plane";
             val option2 = "Rename Log";
             val option3 = "Delete Log";
             val option4 = "Export GPX file...";
             val option5 = "Export KML file...";
             val option6 = "Set playback duration..."
-            val options = arrayOf(option1, option2, option3, option4, option5, option6)
+            val options = arrayOf(option0, option1, option2, option3, option4, option5, option6)
 
             val builder = AlertDialog.Builder(this)
             builder.setTitle("Select an action")
             builder.setItems(options) { dialog: DialogInterface, which: Int ->
                 val selectedOption = options[which]
                 when (selectedOption) {
+                    option0 -> {
+                        showAndCopyCurrentGPSLocation()
+                    }
                     option1 -> {
                         showDirectionsToCurrentLocation()
                     }
@@ -363,11 +367,6 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
 
             val dialog = builder.create()
             dialog.show()
-        }
-
-        replayMenuButton.setOnLongClickListener {
-            showAndCopyCurrentGPSLocation()
-            true
         }
 
         playButton.setOnClickListener {
