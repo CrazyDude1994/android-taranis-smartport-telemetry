@@ -199,5 +199,9 @@ class PreferenceManager(context: Context) {
         return sharedPreferences.getString("playback_duration", "30")?.toInt() ?: 30
     }
 
+    fun setPlaybackDuration( v : Int)  {
+        sharedPreferences.edit().putString("playback_duration", v.toString()).apply();
+    }
+
 
 }

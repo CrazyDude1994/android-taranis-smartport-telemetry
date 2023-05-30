@@ -37,6 +37,8 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
 
     private var totalPlaybackDurationMS : Int = 30000;
 
+    public var launchPointMSLAltitude = 0;
+
     //async task used to load file, detect protocol and decode packets into arrayList
     private val task = @SuppressLint("StaticFieldLeak") object :
         AsyncTask<File, Long, ArrayList<Protocol.Companion.TelemetryData>>() {
@@ -403,6 +405,9 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
 
     override fun onGPSAltitudeData(altitude: Float) {
         originalListener.onGPSAltitudeData(altitude)
+        if ( launchPointMSLAltitude == 0 && altitude != 0.0f) {
+            launchPointMSLAltitude = Math.ceil(altitude.toDouble()).toInt();
+        }
     }
 
     override fun onDistanceData(distance: Int) {
@@ -491,7 +496,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
         originalListener.onFlyModeData(armed, heading, firstFlightMode, secondFlightMode)
     }
 
-    fun addHeader(fileWriter : PrintWriter )
+    fun addGPXHeader(fileWriter : PrintWriter )
     {
         fileWriter.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<gpx\n" +
@@ -504,7 +509,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
                 "<trkseg>")
     }
 
-    fun addFooter(fileWriter : PrintWriter )
+    fun addGPXFooter(fileWriter : PrintWriter )
     {
         fileWriter.write("</trkseg>\n" +
                 "</trk>\n" +
@@ -512,14 +517,14 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
     }
 
     //https://github.com/Parrot-Developers/mavlink/blob/master/pymavlink/tools/mavtogpx.py
-    fun exportGPX()
+    fun exportGPX(fileName: String, homePointAltitudeMSL: Float)
     {
         val dir = Environment.getExternalStoragePublicDirectory("TelemetryLogs")
         dir.mkdirs()
-        val file = File(dir, "replay.gpx")
+        val file = File(dir, fileName)
 
         var fileWriter = file.printWriter()
-        addHeader( fileWriter );
+        addGPXHeader( fileWriter );
 
         seek(0);
 
@@ -556,7 +561,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
                 {
                     var t = startTime + i * 1800000L / cachedData.size;
                     var s = "<trkpt lat=\"" + lastLat.toString() + "\" lon=\"" + lastLon.toString()  + "\">\n" +
-                            "  <ele>" +  ((decodedAltitude + 127) ).toString()  + "</ele>\n" +
+                            "  <ele>" +  ((decodedAltitude + homePointAltitudeMSL) ).toString()  + "</ele>\n" +
                             //"  <time>%s</time>\n" +
                             "  <course>" + decodedHeading.toString()  + "</course>\n" +
                             "  <speed>" + decodedSpeed.toString()  + "</speed>\n" +
@@ -567,7 +572,137 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
                 }
         }
 
-        addFooter(fileWriter);
+        addGPXFooter(fileWriter);
+
+        fileWriter.flush();
+        fileWriter.close()
+    }
+
+    fun addKMLHeader(fileWriter : PrintWriter, altitudeMode: String )
+    {
+        val s = """<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2"  xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2"    
+     xmlns:atom="http://www.w3.org/2005/Atom">
+    <Document>
+        <visibility>1</visibility>
+        <open>1</open>
+        <Style id="red">
+            <LineStyle>
+            <color>C81400FF</color>
+            <width>4</width>
+            </LineStyle>
+        </Style>
+        <Folder>
+            <name>Tracks</name>
+            <description>Track 1</description>
+            <visibility>1</visibility>            
+            <open>0</open>
+                                                            
+                <Placemark>
+                    <visibility>1</visibility>            
+                    <open>0</open> 
+                    <styleUrl>#red</styleUrl>
+                    <name>Track no. 1</name>
+                    <description>No info available</description>
+                    <LineString>
+                        <extrude>true</extrude>
+                        <tessellate>true</tessellate>
+                        <altitudeMode>$altitudeMode</altitudeMode> 
+                        <coordinates>
+"""
+        fileWriter.write(s)
+    }
+
+    fun addKMLFooter(fileWriter : PrintWriter, altitudeMode: String, lookAtLon : Double, lookAtLat: Double, lookAtAlt: Float, homePointAltitudeMSL: Float )
+    {
+        val lon = lookAtLon.toString()
+        val lat = lookAtLat.toString()
+        val alt = (lookAtAlt + homePointAltitudeMSL)
+        val s = """                        </coordinates>
+                    </LineString>
+                </Placemark>
+                                        
+        </Folder>
+                
+        <LookAt>
+            <longitude>$lon</longitude>            
+            <latitude>$lat</latitude>             
+            <altitude>$alt</altitude>               
+            <heading>0</heading>               
+            <tilt>45</tilt>
+            <range>226</range>                    
+            <altitudeMode>$altitudeMode</altitudeMode> 
+        </LookAt>
+    </Document>
+</kml>
+"""
+        fileWriter.write(s)
+    }
+
+    fun exportKML(fileName: String, homePointAltitudeMSL: Float, altitudeMode: String)
+    {
+        val dir = Environment.getExternalStoragePublicDirectory("TelemetryLogs")
+        dir.mkdirs()
+        val file = File(dir, fileName)
+
+        var fileWriter = file.printWriter()
+        addKMLHeader( fileWriter, altitudeMode );
+
+        seek(0);
+
+        decodedAltitude = -10000f;
+        decodedSpeed = 0f;
+        decodedHeading = 0f;
+
+        var lastLon : Double = 0.0;
+        var lastLat : Double = 0.0;
+
+        var firstLon : Double = 0.0;
+        var firstLat : Double = 0.0;
+        var firstAlt : Float = 0.0f;
+
+        var s = "                            ";
+
+        for (i in 0 until cachedData.size) {
+            protocol.dataDecoder.decodeData(cachedData[i])
+
+            var output = false;
+            if (decodedCoordinates.size > 0)
+            {
+                if ( decodedCoordinates[0].lon != lastLon)
+                {
+                    lastLon = decodedCoordinates[0].lon;
+                    output= true;
+                }
+                if ( decodedCoordinates[0].lat != lastLat)
+                {
+                    lastLat = decodedCoordinates[0].lat;
+                    output= true;
+                }
+
+                if ( firstLon == 0.0 ) {
+                    firstLon = decodedCoordinates[0].lon
+                }
+                if ( firstLat == 0.0 ) {
+                    firstLat = decodedCoordinates[0].lat
+                }
+                if ( (firstAlt == 0.0f) && (decodedAltitude != - 10000f) ) {
+                    firstAlt = decodedAltitude.toFloat()
+                }
+
+                decodedCoordinates.clear();
+            }
+
+            if ( output && (decodedAltitude != - 10000f) )
+            {
+                s += lastLon.toString() + "," + lastLat.toString() + "," + ((decodedAltitude + homePointAltitudeMSL) ).toString() + " "
+            }
+        }
+
+        fileWriter.write(s)
+        fileWriter.write("\n")
+
+        addKMLFooter(fileWriter, altitudeMode, firstLon, firstLat, firstAlt, homePointAltitudeMSL)
 
         fileWriter.flush();
         fileWriter.close()

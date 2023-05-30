@@ -114,11 +114,11 @@
                     app:fabSize="mini" />
 
             <com.google.android.material.floatingactionbutton.FloatingActionButton
-                    android:id="@+id/directions_button"
+                    android:id="@+id/replay_menu_button"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_margin="8dp"
-                    android:src="@drawable/ic_directions"
+                    android:src="@drawable/ic_menu"
                     android:visibility="gone"
                     app:fabSize="mini"
                     tools:visibility="visible" />

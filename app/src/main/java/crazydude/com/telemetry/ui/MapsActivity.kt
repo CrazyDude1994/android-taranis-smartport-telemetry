@@ -18,8 +18,9 @@ import android.media.SoundPool
 import android.net.Uri
 import android.os.*
 import android.text.Html
+import android.text.InputFilter
+import android.text.InputType
 import android.text.method.LinkMovementMethod
-import android.util.Log
 import android.util.TypedValue
 import android.view.View
 import android.view.WindowManager
@@ -113,7 +114,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     private lateinit var mapTypeButton: FloatingActionButton
     private lateinit var fullscreenButton: ImageView
     private lateinit var layoutButton: ImageView
-    private lateinit var directionsButton: FloatingActionButton
+    private lateinit var replayMenuButton: FloatingActionButton
     private lateinit var settingsButton: ImageView
     private lateinit var topLayout: RelativeLayout
     private lateinit var bottomLayout: RelativeLayout
@@ -229,7 +230,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         horizonView = findViewById(R.id.horizon_view)
         fullscreenButton = findViewById(R.id.fullscreen_button)
         layoutButton = findViewById(R.id.layout_button)
-        directionsButton = findViewById(R.id.directions_button)
+        replayMenuButton = findViewById(R.id.replay_menu_button)
         topList = findViewById(R.id.top_list)
         bottomList = findViewById(R.id.bottom_list)
         mapHolder = findViewById(R.id.map_holder)
@@ -324,11 +325,47 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             showMapTypeSelectorDialog()
         }
 
-        directionsButton.setOnClickListener {
-            showDirectionsToCurrentLocation()
+        replayMenuButton.setOnClickListener {
+            val option1 = "Show route to plane";
+            val option2 = "Rename Log";
+            val option3 = "Delete Log";
+            val option4 = "Export GPX file...";
+            val option5 = "Export KML file...";
+            val option6 = "Set playback duration..."
+            val options = arrayOf(option1, option2, option3, option4, option5, option6)
+
+            val builder = AlertDialog.Builder(this)
+            builder.setTitle("Select an action")
+            builder.setItems(options) { dialog: DialogInterface, which: Int ->
+                val selectedOption = options[which]
+                when (selectedOption) {
+                    option1 -> {
+                        showDirectionsToCurrentLocation()
+                    }
+                    option2 -> {
+                        showRenameLogDialog()
+                    }
+                    option3 -> {
+                        showDeleteLogDialog()
+                    }
+                    option4 -> {
+                        showExportGPXDialog()
+                    }
+                    option5 -> {
+                        showExportKMLDialog1()
+                    }
+                    option6 -> {
+                        showSetPlaybackDurationDialog()
+                    }
+                }
+                dialog.dismiss()
+            }
+
+            val dialog = builder.create()
+            dialog.show()
         }
 
-        directionsButton.setOnLongClickListener {
+        replayMenuButton.setOnLongClickListener {
             showAndCopyCurrentGPSLocation()
             true
         }
@@ -1789,7 +1826,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         setFollowMode(true);
         seekBar.setOnSeekBarChangeListener(null)
         seekBar.progress = 0
-        directionsButton.show()
+        replayMenuButton.show()
         connectButton.visibility = View.GONE
         replayButton.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_close))
         replayButton.setOnClickListener {
@@ -1808,7 +1845,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     private fun switchToIdleState() {
         this.logPlayer?.stop();
         resetUI()
-        directionsButton.hide()
+        replayMenuButton.hide()
         seekBar.visibility = View.GONE
         playButton.visibility = View.GONE
         connectButton.visibility = View.VISIBLE
@@ -2250,4 +2287,197 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             }
         }
     }
+
+    fun showRenameLogDialog() {
+        val currentFileName = replayFileString ?: "";
+        val editText = EditText(this)
+        editText.setText(currentFileName)
+
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Rename Log")
+        builder.setView(editText)
+        builder.setPositiveButton("Rename") { dialog: DialogInterface, which: Int ->
+            val newFileName = editText.text.toString()
+            renameLog(currentFileName, newFileName)
+            dialog.dismiss()
+        }
+        builder.setNegativeButton("Cancel") { dialog: DialogInterface, which: Int ->
+            dialog.dismiss()
+        }
+
+        val dialog = builder.create()
+        dialog.show()
+    }
+
+    private fun renameLog(currentFileName: String, newFileName: String) {
+        val currentFile = File(Environment.getExternalStoragePublicDirectory("TelemetryLogs"), currentFileName)
+        val newFile = File(Environment.getExternalStoragePublicDirectory("TelemetryLogs"), newFileName)
+
+        if (currentFile.renameTo(newFile)) {
+            Toast.makeText(this, "Log renamed successfully.", Toast.LENGTH_SHORT).show()
+
+            val csvCurrentFileName = replaceExtension( currentFileName, ".csv")
+            val csvNewFileName = replaceExtension( newFileName, ".csv")
+            val csvCurrentFile = File(Environment.getExternalStoragePublicDirectory("TelemetryLogs"), csvCurrentFileName)
+            val csvNewFile = File(Environment.getExternalStoragePublicDirectory("TelemetryLogs"), csvNewFileName)
+            csvCurrentFile.renameTo(csvNewFile)
+
+            replayFileString = newFileName;
+        } else {
+            Toast.makeText(this, "Failed to rename log.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+
+    fun showDeleteLogDialog() {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Delete Log")
+        builder.setMessage("Are you sure you want to delete this log?")
+        builder.setPositiveButton("Delete") { dialog: DialogInterface, which: Int ->
+            deleteLog(replayFileString ?: "")
+            dialog.dismiss()
+        }
+        builder.setNegativeButton("Cancel") { dialog: DialogInterface, which: Int ->
+            dialog.dismiss()
+        }
+
+        val dialog = builder.create()
+        dialog.show()
+    }
+
+    fun deleteLog(fileName: String)
+    {
+        val currentFile = File(Environment.getExternalStoragePublicDirectory("TelemetryLogs"), fileName)
+
+        if (currentFile.delete()) {
+            Toast.makeText(this, "Log renamed successfully.", Toast.LENGTH_SHORT).show()
+
+            val csvFileName = replaceExtension( fileName, ".csv")
+            val currentFileCSV = File(Environment.getExternalStoragePublicDirectory("TelemetryLogs"), csvFileName)
+            currentFileCSV.delete();
+
+            switchToIdleState()
+            replayFileString = null
+        } else {
+            Toast.makeText(this, "Failed to rename log.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun replaceExtension(fileName: String, newExtension : String): String {
+        val extensionSeparatorIndex = fileName.lastIndexOf(".")
+        if (extensionSeparatorIndex != -1) {
+            val nameWithoutExtension = fileName.substring(0, extensionSeparatorIndex)
+            return nameWithoutExtension + newExtension
+        }
+        return fileName
+    }
+
+    fun showExportGPXDialog() {
+        val editText = EditText(this)
+        editText.setText(this.logPlayer?.launchPointMSLAltitude.toString())
+        editText.inputType = InputType.TYPE_CLASS_NUMBER
+        editText.filters = arrayOf(InputFilter.LengthFilter(10)) // Set maximum input length, if needed
+        editText.setSelection(editText.text.length)
+
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Enter launch point MSL altitude, m:")
+        builder.setView(editText)
+        builder.setPositiveButton("OK") { dialog: DialogInterface, which: Int ->
+            val enteredNumber = editText.text.toString().toFloatOrNull()
+            if (enteredNumber != null) {
+                val fileName = replaceExtension( replayFileString?:"", ".gpx")
+                this.logPlayer?.exportGPX(fileName, enteredNumber)
+                Toast.makeText(this, fileName + " saved", Toast.LENGTH_SHORT).show()
+            }
+            dialog.dismiss()
+        }
+        builder.setNegativeButton("Cancel") { dialog: DialogInterface, which: Int ->
+            dialog.dismiss()
+        }
+
+        val dialog = builder.create()
+        dialog.show()
+    }
+
+    fun showExportKMLDialog1() {
+        val option1 = "Clamp to ground";
+        val option2 = "Relative to ground";
+        val option3 = "MSL";
+        val options = arrayOf(option1, option2, option3)
+
+        val fileName = replaceExtension( replayFileString?:"", ".kml")
+
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Select altitude mode:")
+        builder.setItems(options) { dialog: DialogInterface, which: Int ->
+            val selectedOption = options[which]
+            when (selectedOption) {
+                option1 -> {
+                    this.logPlayer?.exportKML(fileName, 0.0f, "clampToGround" )
+                    Toast.makeText(this, fileName + " saved", Toast.LENGTH_SHORT).show()
+                }
+                option2 -> {
+                    this.showExportKMLDialog2(fileName, "relativeToGround","Adjust track altitude, m:", 0)
+                }
+                option3 -> {
+                    this.showExportKMLDialog2(fileName, "absolute","Enter launch point MSL altitude, m:", this.logPlayer?.launchPointMSLAltitude?:0)
+                }
+            }
+            dialog.dismiss()
+        }
+
+        val dialog = builder.create()
+        dialog.show()
+    }
+
+    fun showExportKMLDialog2(fileName: String, altitudeMode: String, requestText: String, defaultValue: Int) {
+        val editText = EditText(this)
+        editText.setText(defaultValue.toString())
+        editText.inputType = InputType.TYPE_CLASS_NUMBER
+        editText.filters = arrayOf(InputFilter.LengthFilter(10)) // Set maximum input length, if needed
+        editText.setSelection(editText.text.length)
+
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle(requestText)
+        builder.setView(editText)
+        builder.setPositiveButton("OK") { dialog: DialogInterface, which: Int ->
+            val enteredNumber = editText.text.toString().toFloatOrNull()
+            if (enteredNumber != null) {
+                this.logPlayer?.exportKML(fileName, enteredNumber,altitudeMode)
+                Toast.makeText(this, fileName + " saved", Toast.LENGTH_SHORT).show()
+            }
+            dialog.dismiss()
+        }
+        builder.setNegativeButton("Cancel") { dialog: DialogInterface, which: Int ->
+            dialog.dismiss()
+        }
+
+        val dialog = builder.create()
+        dialog.show()
+    }
+
+
+    fun showSetPlaybackDurationDialog() {
+        val options = resources.getStringArray(R.array.playback_durations)
+        val options_values = resources.getStringArray(R.array.playback_durations_values)
+
+        val fileName = replaceExtension( replayFileString?:"", ".kml")
+
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Set playback duration:")
+        builder.setItems(options) { dialog: DialogInterface, which: Int ->
+            val v = options_values[which].toInt();
+            preferenceManager.setPlaybackDuration(v)
+            if ( this.logPlayer?.isPlaying() ?: false ) {
+                this.logPlayer?.stop();
+                this.logPlayer?.startPlayback();
+            }
+            Toast.makeText(this, "Duration changed", Toast.LENGTH_SHORT).show()
+            dialog.dismiss()
+        }
+
+        val dialog = builder.create()
+        dialog.show()
+    }
+
 }
