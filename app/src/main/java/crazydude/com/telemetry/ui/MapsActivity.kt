@@ -335,9 +335,9 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             val option6 = "Set playback duration..."
             val options = arrayOf(option0, option1, option2, option3, option4, option5, option6)
 
-            val builder = AlertDialog.Builder(this)
-            builder.setTitle("Select an action")
-            builder.setItems(options) { dialog: DialogInterface, which: Int ->
+            this.showDialog( AlertDialog.Builder(this)
+            .setTitle("Select an action")
+            .setItems(options) { dialog: DialogInterface, which: Int ->
                 val selectedOption = options[which]
                 when (selectedOption) {
                     option0 -> {
@@ -363,10 +363,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                     }
                 }
                 dialog.dismiss()
-            }
-
-            val dialog = builder.create()
-            dialog.show()
+            }.create())
         }
 
         playButton.setOnClickListener {
@@ -2292,20 +2289,17 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         val editText = EditText(this)
         editText.setText(currentFileName)
 
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("Rename Log")
-        builder.setView(editText)
-        builder.setPositiveButton("Rename") { dialog: DialogInterface, which: Int ->
+        this.showDialog( AlertDialog.Builder(this)
+        .setTitle("Rename Log")
+        .setView(editText)
+        .setPositiveButton("Rename") { dialog: DialogInterface, which: Int ->
             val newFileName = editText.text.toString()
             renameLog(currentFileName, newFileName)
             dialog.dismiss()
         }
-        builder.setNegativeButton("Cancel") { dialog: DialogInterface, which: Int ->
+        .setNegativeButton("Cancel") { dialog: DialogInterface, which: Int ->
             dialog.dismiss()
-        }
-
-        val dialog = builder.create()
-        dialog.show()
+        }.create())
     }
 
     private fun renameLog(currentFileName: String, newFileName: String) {
@@ -2329,19 +2323,16 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
 
 
     fun showDeleteLogDialog() {
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("Delete Log")
-        builder.setMessage("Are you sure you want to delete this log?")
-        builder.setPositiveButton("Delete") { dialog: DialogInterface, which: Int ->
+        this.showDialog( AlertDialog.Builder(this)
+        .setTitle("Delete Log")
+        .setMessage("Are you sure you want to delete this log?")
+        .setPositiveButton("Delete") { dialog: DialogInterface, which: Int ->
             deleteLog(replayFileString ?: "")
             dialog.dismiss()
         }
-        builder.setNegativeButton("Cancel") { dialog: DialogInterface, which: Int ->
+        .setNegativeButton("Cancel") { dialog: DialogInterface, which: Int ->
             dialog.dismiss()
-        }
-
-        val dialog = builder.create()
-        dialog.show()
+        }.create())
     }
 
     fun deleteLog(fileName: String)
@@ -2378,10 +2369,10 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         editText.filters = arrayOf(InputFilter.LengthFilter(10)) // Set maximum input length, if needed
         editText.setSelection(editText.text.length)
 
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("Enter launch point MSL altitude, m:")
-        builder.setView(editText)
-        builder.setPositiveButton("OK") { dialog: DialogInterface, which: Int ->
+        this.showDialog(AlertDialog.Builder(this)
+        .setTitle("Enter launch point MSL altitude, m:")
+        .setView(editText)
+        .setPositiveButton("OK") { dialog: DialogInterface, which: Int ->
             val enteredNumber = editText.text.toString().toFloatOrNull()
             if (enteredNumber != null) {
                 val fileName = replaceExtension( replayFileString?:"", ".gpx")
@@ -2390,12 +2381,9 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             }
             dialog.dismiss()
         }
-        builder.setNegativeButton("Cancel") { dialog: DialogInterface, which: Int ->
+        .setNegativeButton("Cancel") { dialog: DialogInterface, which: Int ->
             dialog.dismiss()
-        }
-
-        val dialog = builder.create()
-        dialog.show()
+        }.create())
     }
 
     fun showExportKMLDialog1() {
@@ -2406,9 +2394,9 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
 
         val fileName = replaceExtension( replayFileString?:"", ".kml")
 
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("Select altitude mode:")
-        builder.setItems(options) { dialog: DialogInterface, which: Int ->
+        this.showDialog( AlertDialog.Builder(this)
+        .setTitle("Select altitude mode:")
+        .setItems(options) { dialog: DialogInterface, which: Int ->
             val selectedOption = options[which]
             when (selectedOption) {
                 option1 -> {
@@ -2423,10 +2411,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                 }
             }
             dialog.dismiss()
-        }
-
-        val dialog = builder.create()
-        dialog.show()
+        }.create())
     }
 
     fun showExportKMLDialog2(fileName: String, altitudeMode: String, requestText: String, defaultValue: Int) {
@@ -2436,10 +2421,10 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         editText.filters = arrayOf(InputFilter.LengthFilter(10)) // Set maximum input length, if needed
         editText.setSelection(editText.text.length)
 
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle(requestText)
-        builder.setView(editText)
-        builder.setPositiveButton("OK") { dialog: DialogInterface, which: Int ->
+        this.showDialog( AlertDialog.Builder(this)
+        .setTitle(requestText)
+        .setView(editText)
+        .setPositiveButton("OK") { dialog: DialogInterface, which: Int ->
             val enteredNumber = editText.text.toString().toFloatOrNull()
             if (enteredNumber != null) {
                 this.logPlayer?.exportKML(fileName, enteredNumber,altitudeMode)
@@ -2447,12 +2432,9 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             }
             dialog.dismiss()
         }
-        builder.setNegativeButton("Cancel") { dialog: DialogInterface, which: Int ->
+        .setNegativeButton("Cancel") { dialog: DialogInterface, which: Int ->
             dialog.dismiss()
-        }
-
-        val dialog = builder.create()
-        dialog.show()
+        }.create())
     }
 
 
@@ -2462,9 +2444,9 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
 
         val fileName = replaceExtension( replayFileString?:"", ".kml")
 
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("Set playback duration:")
-        builder.setItems(options) { dialog: DialogInterface, which: Int ->
+        this.showDialog( AlertDialog.Builder(this)
+        .setTitle("Set playback duration:")
+        .setItems(options) { dialog: DialogInterface, which: Int ->
             val v = options_values[which].toInt();
             preferenceManager.setPlaybackDuration(v)
             if ( this.logPlayer?.isPlaying() ?: false ) {
@@ -2473,10 +2455,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             }
             Toast.makeText(this, "Duration changed", Toast.LENGTH_SHORT).show()
             dialog.dismiss()
-        }
-
-        val dialog = builder.create()
-        dialog.show()
+        }.create())
     }
 
 }
