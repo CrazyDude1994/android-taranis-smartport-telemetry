@@ -2340,7 +2340,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         val currentFile = File(Environment.getExternalStoragePublicDirectory("TelemetryLogs"), fileName)
 
         if (currentFile.delete()) {
-            Toast.makeText(this, "Log renamed successfully.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Log deleted successfully.", Toast.LENGTH_SHORT).show()
 
             val csvFileName = replaceExtension( fileName, ".csv")
             val currentFileCSV = File(Environment.getExternalStoragePublicDirectory("TelemetryLogs"), csvFileName)
@@ -2349,7 +2349,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             switchToIdleState()
             replayFileString = null
         } else {
-            Toast.makeText(this, "Failed to rename log.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Failed to delete log.", Toast.LENGTH_SHORT).show()
         }
     }
 
