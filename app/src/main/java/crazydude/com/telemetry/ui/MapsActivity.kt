@@ -80,6 +80,10 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         )
     }
 
+    enum class RequestWritePermissionSequenceType {
+        NONE, CONNECT, RENAME, DELETE, EXPORT_GPX, EXPORT_KML
+    }
+
     private var map: MapWrapper? = null
 
     private var soundPool: SoundPool? = null
@@ -165,6 +169,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     private var gotHeading = false;
 
     private var logPlayer : LogPlayer? = null;
+
+    private var requestWritePermissionSequence = RequestWritePermissionSequenceType.NONE;
 
     private val serviceConnection: ServiceConnection = object : ServiceConnection {
         override fun onServiceDisconnected(p0: ComponentName?) {
@@ -1034,18 +1040,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             return
         }
         if (preferenceManager.isLoggingEnabled()) {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-                ) == PackageManager.PERMISSION_DENIED
-            ) {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE),
-                    REQUEST_WRITE_PERMISSION
-                )
-                return
-            }
+            if (!requestWritePermission(RequestWritePermissionSequenceType.CONNECT)) return;
         }
 
         val devices = ArrayList<BluetoothDevice>(adapter.bondedDevices)
@@ -1101,18 +1096,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             return
         }
         if (preferenceManager.isLoggingEnabled()) {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-                ) == PackageManager.PERMISSION_DENIED
-            ) {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE),
-                    REQUEST_WRITE_PERMISSION
-                )
-                return
-            }
+            if (!requestWritePermission(RequestWritePermissionSequenceType.CONNECT)) return;
         }
 
         val devices = ArrayList<BluetoothDevice>(adapter.bondedDevices)
@@ -1266,7 +1250,14 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                 }
             } else if (requestCode == REQUEST_WRITE_PERMISSION) {
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    connect()
+                    when (requestWritePermissionSequence) {
+                        RequestWritePermissionSequenceType.CONNECT -> connect()
+                        RequestWritePermissionSequenceType.DELETE -> showDeleteLogDialog()
+                        RequestWritePermissionSequenceType.RENAME -> showRenameLogDialog()
+                        RequestWritePermissionSequenceType.EXPORT_GPX -> showExportGPXDialog()
+                        RequestWritePermissionSequenceType.EXPORT_KML -> showExportKMLDialog1()
+                    }
+                    requestWritePermissionSequence = RequestWritePermissionSequenceType.NONE;
                 } else {
                     this.showDialog(
                         AlertDialog.Builder(this)
@@ -2285,6 +2276,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     }
 
     fun showRenameLogDialog() {
+        if (!requestWritePermission(RequestWritePermissionSequenceType.RENAME)) return;
+
         val currentFileName = replayFileString ?: "";
         val editText = EditText(this)
         editText.setText(currentFileName)
@@ -2323,6 +2316,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
 
 
     fun showDeleteLogDialog() {
+        if (!requestWritePermission(RequestWritePermissionSequenceType.DELETE)) return;
+
         this.showDialog( AlertDialog.Builder(this)
         .setTitle("Delete Log")
         .setMessage("Are you sure you want to delete this log?")
@@ -2363,6 +2358,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     }
 
     fun showExportGPXDialog() {
+        if (!requestWritePermission(RequestWritePermissionSequenceType.EXPORT_GPX)) return;
+
         val editText = EditText(this)
         editText.setText(this.logPlayer?.launchPointMSLAltitude.toString())
         editText.inputType = InputType.TYPE_CLASS_NUMBER
@@ -2387,6 +2384,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     }
 
     fun showExportKMLDialog1() {
+        if (!requestWritePermission(RequestWritePermissionSequenceType.EXPORT_KML)) return;
+
         val option1 = "Clamp to ground";
         val option2 = "Relative to ground";
         val option3 = "MSL";
@@ -2456,6 +2455,23 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             Toast.makeText(this, "Duration changed", Toast.LENGTH_SHORT).show()
             dialog.dismiss()
         }.create())
+    }
+
+    fun requestWritePermission(seq: RequestWritePermissionSequenceType): Boolean {
+        if (ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+            ) == PackageManager.PERMISSION_DENIED
+        ) {
+            requestWritePermissionSequence = seq;
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                REQUEST_WRITE_PERMISSION
+            )
+            return false;
+        }
+        return true;
     }
 
 }
