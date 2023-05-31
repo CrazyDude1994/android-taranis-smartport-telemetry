@@ -680,17 +680,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                             position: Int,
                             fromUser: Boolean
                         ) {
-                            var restartPlayback = false;
-                            if ( fromUser) {
-                                if ( logPlayer?.isPlaying() == true) {
-                                    logPlayer?.stop()
-                                    restartPlayback = true;
-                                }
-                            }
                             logPlayer?.seek(position)
-                            if ( restartPlayback) {
-                                logPlayer?.startPlayback()
-                            }
                         }
 
                         override fun onStartTrackingTouch(p0: SeekBar?) {
@@ -714,9 +704,11 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                     logPlayer?.seek(0);
                 }
 
-                override fun onPlaybackPositionChange(currentPosition: Int) {
+                override fun onPlaybackPositionChange(prevPosition: Int, nextPosition: Int) {
                     runOnUiThread {
-                        seekbar.progress = currentPosition;
+                        if ( (logPlayer?.currentPosition ?:0) == prevPosition ) {
+                            seekbar.progress = nextPosition
+                        }
                     }
                 }
 

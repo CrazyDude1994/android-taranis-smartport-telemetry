@@ -20,7 +20,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
     private var hasGPSFix = false
     private var satellites = 0;
     private var dataReadyListener: DataReadyListener? = null
-    private var currentPosition: Int = 0
+    public var currentPosition: Int = 0
     private var uniqueData = HashMap<Int, Int>()
     private var uniqueDataIndex = HashMap<Int, Int>()
     private lateinit var protocol: Protocol
@@ -300,11 +300,13 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
 
             this.mTimer?.scheduleAtFixedRate(object : TimerTask() {
                 override fun run() {
+                    val prevPosition = currentPosition;
+
                     if ( currentPosition == cachedData.size ) {
                         stop();
                     } else {
                         var nextPosition = Math.min(currentPosition + step, cachedData.size)
-                        dataReadyListener?.onPlaybackPositionChange( nextPosition );
+                        dataReadyListener?.onPlaybackPositionChange( prevPosition, nextPosition );
                     }
                 }
             }, 100, 50)
@@ -711,7 +713,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
     interface DataReadyListener {
         fun onUpdate(percent: Int)
         fun onDataReady(size: Int)
-        fun onPlaybackPositionChange(currentPosition: Int)
+        fun onPlaybackPositionChange(prevPosition: Int, nextPosition: Int)
         fun onPlaybackStateChange( isPlaying : Boolean)
         fun getTotalPlaybackDurationSec() : Int
         fun getPlaybackAutostart() : Boolean
