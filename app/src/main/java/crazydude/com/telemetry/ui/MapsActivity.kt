@@ -54,9 +54,9 @@ import crazydude.com.telemetry.protocol.pollers.LogPlayer
 import crazydude.com.telemetry.service.DataService
 import kotlinx.android.synthetic.main.top_layout.*
 import kotlinx.android.synthetic.main.view_map.*
+import uk.co.deanwild.materialshowcaseview.IShowcaseListener
 import uk.co.deanwild.materialshowcaseview.MaterialShowcaseView
 import java.io.File
-import java.lang.Exception
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.math.ceil
@@ -922,6 +922,14 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             .setMaskColour(Color.argb(230, 0, 0, 0))
             .setDismissText("GOT IT")
             .setContentText("You can replay your logged flights by clicking this button")
+            .setListener(
+                object : IShowcaseListener {
+                    override fun onShowcaseDismissed(showcaseView: MaterialShowcaseView?) {
+                        connect();
+                    }
+                    override fun onShowcaseDisplayed(showcaseView: MaterialShowcaseView?) {
+                    }
+                })
             .singleUse("replay_guide").build()
 
         if (showcaseView.hasFired()) {
