@@ -332,8 +332,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         }
 
         menuButton.setOnClickListener {
-            val option0 = "Copy plane location to clipboard";
-            val option1 = "Show route to plane";
+            val option0 = "Copy UAV location to clipboard";
+            val option1 = "Show route to UAV";
             val option2 = "Rename Log";
             val option3 = "Delete Log";
             val option4 = "Export GPX file...";
