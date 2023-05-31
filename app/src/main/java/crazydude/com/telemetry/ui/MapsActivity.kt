@@ -2378,6 +2378,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     }
 
     fun showExportGPXDialog() {
+        this.logPlayer?.stop();
         if (!requestWritePermission(RequestWritePermissionSequenceType.EXPORT_GPX)) return;
 
         val editText = EditText(this)
@@ -2404,6 +2405,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     }
 
     fun showExportKMLDialog1() {
+        this.logPlayer?.stop();
         if (!requestWritePermission(RequestWritePermissionSequenceType.EXPORT_KML)) return;
 
         val option1 = "Clamp to ground";
