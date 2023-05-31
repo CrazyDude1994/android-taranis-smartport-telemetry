@@ -118,7 +118,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     private lateinit var mapTypeButton: FloatingActionButton
     private lateinit var fullscreenButton: ImageView
     private lateinit var layoutButton: ImageView
-    private lateinit var replayMenuButton: FloatingActionButton
+    private lateinit var menuButton: FloatingActionButton
     private lateinit var settingsButton: ImageView
     private lateinit var topLayout: RelativeLayout
     private lateinit var bottomLayout: RelativeLayout
@@ -236,7 +236,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         horizonView = findViewById(R.id.horizon_view)
         fullscreenButton = findViewById(R.id.fullscreen_button)
         layoutButton = findViewById(R.id.layout_button)
-        replayMenuButton = findViewById(R.id.replay_menu_button)
+        menuButton = findViewById(R.id.replay_menu_button)
         topList = findViewById(R.id.top_list)
         bottomList = findViewById(R.id.bottom_list)
         mapHolder = findViewById(R.id.map_holder)
@@ -331,7 +331,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             showMapTypeSelectorDialog()
         }
 
-        replayMenuButton.setOnClickListener {
+        menuButton.setOnClickListener {
             val option0 = "Copy plane location to clipboard";
             val option1 = "Show route to plane";
             val option2 = "Rename Log";
@@ -339,7 +339,11 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             val option4 = "Export GPX file...";
             val option5 = "Export KML file...";
             val option6 = "Set playback duration..."
-            val options = arrayOf(option0, option1, option2, option3, option4, option5, option6)
+
+            var options = arrayOf(option0, option1, option2, option3, option4, option5, option6)
+            if ( this.logPlayer == null) {
+                options = arrayOf(option0, option1)
+            }
 
             this.showDialog( AlertDialog.Builder(this)
             .setTitle("Select an action")
@@ -532,6 +536,9 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                 Toast.LENGTH_LONG
             ).show()
         }
+        if ( marker == null ) {
+            Toast.makeText(this, "Location is unknown", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun showDirectionsToCurrentLocation() {
@@ -546,6 +553,9 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             } catch (e: ActivityNotFoundException) {
                 Toast.makeText(this, "Cannot build directions", Toast.LENGTH_LONG).show()
             }
+        }
+        if ( marker == null ) {
+            Toast.makeText(this, "Location is unknown", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -1821,7 +1831,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         setFollowMode(true);
         seekBar.setOnSeekBarChangeListener(null)
         seekBar.progress = 0
-        replayMenuButton.show()
+        menuButton.show()
         connectButton.visibility = View.GONE
         replayButton.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_close))
         replayButton.setOnClickListener {
@@ -1839,8 +1849,9 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
 
     private fun switchToIdleState() {
         this.logPlayer?.stop();
+        this.logPlayer = null;
         resetUI()
-        replayMenuButton.hide()
+        menuButton.hide()
         seekBar.visibility = View.GONE
         playButton.visibility = View.GONE
         connectButton.visibility = View.VISIBLE
@@ -1865,6 +1876,7 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
 
     private fun switchToConnectedState() {
         replayButton.visibility = View.GONE
+        menuButton.show()
         connectButton.text = getString(R.string.disconnect)
         connectButton.isEnabled = true
         mode.text = "Connected"
