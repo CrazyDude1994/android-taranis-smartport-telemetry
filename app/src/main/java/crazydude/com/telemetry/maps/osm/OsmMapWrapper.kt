@@ -9,13 +9,18 @@ import crazydude.com.telemetry.maps.MapWrapper
 import crazydude.com.telemetry.maps.Position
 import org.osmdroid.api.IMapController
 import org.osmdroid.config.Configuration
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.tileprovider.tilesource.OnlineTileSourceBase
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 
 
-class OsmMapWrapper(private val context: Context, private val mapView: MapView, private val callback: () -> Unit) : MapWrapper {
+class OsmMapWrapper(private val context: Context, private val mapView: MapView, tileSource: OnlineTileSourceBase, private val callback: () -> Unit) : MapWrapper {
+
+    companion object {
+        public const val MAP_TYPE_DEFAULT = 5
+        public const val MAP_TYPE_TOPO = 6
+    }
 
     private val myLocationNewOverlay = MyLocationNewOverlay(mapView)
 
@@ -27,7 +32,7 @@ class OsmMapWrapper(private val context: Context, private val mapView: MapView, 
         )
         mapView.zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
         mapView.setMultiTouchControls(true)
-        mapView.setTileSource(TileSourceFactory.DEFAULT_TILE_SOURCE)
+        mapView.setTileSource(tileSource)
         mapView.overlayManager.add(myLocationNewOverlay)
         val mapController: IMapController = mapView.controller
         mapController.setZoom(4.toDouble())

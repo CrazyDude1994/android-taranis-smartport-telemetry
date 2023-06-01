@@ -54,6 +54,8 @@ import crazydude.com.telemetry.protocol.pollers.LogPlayer
 import crazydude.com.telemetry.service.DataService
 import kotlinx.android.synthetic.main.top_layout.*
 import kotlinx.android.synthetic.main.view_map.*
+import org.osmdroid.tileprovider.tilesource.OnlineTileSourceBase
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import uk.co.deanwild.materialshowcaseview.IShowcaseListener
 import uk.co.deanwild.materialshowcaseview.MaterialShowcaseView
 import java.io.File
@@ -76,7 +78,8 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
             "Satellite (Google)",
             "Terrain (Google)",
             "Hybrid (Google)",
-            "OpenStreetMap (can be cached)"
+            "OpenStreetMap (can be cached)",
+            "OpenTopoMap (can be cached)"
         )
     }
 
@@ -441,15 +444,17 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
 
         if (mapType in GoogleMap.MAP_TYPE_NORMAL..GoogleMap.MAP_TYPE_HYBRID) {
             initGoogleMap(simulateLifecycle)
+        } else if (mapType == OsmMapWrapper.MAP_TYPE_DEFAULT) {
+            initOSMMap(TileSourceFactory.DEFAULT_TILE_SOURCE)
         } else {
-            initOSMMap()
+            initOSMMap(TileSourceFactory.OpenTopo)
         }
     }
 
-    private fun initOSMMap() {
+    private fun initOSMMap(tileSource: OnlineTileSourceBase) {
         val mapView = org.osmdroid.views.MapView(this)
         mapHolder.addView(mapView)
-        map = OsmMapWrapper(applicationContext, mapView) {
+        map = OsmMapWrapper(applicationContext, mapView, tileSource) {
             initHeadingLine()
         }
         map?.setOnCameraMoveStartedListener {
