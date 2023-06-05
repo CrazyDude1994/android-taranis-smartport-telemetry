@@ -127,6 +127,10 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
 
             if (tempProtocol == null) {
                 publishProgress(100)
+                //just assign dummy protocol
+                protocol = CrsfProtocol(
+                    this@LogPlayer
+                )
             } else {
                 //now when protocol is detected and tempProtocol is assigned,
                 //feed tempProtocol to decode all packets into arrayList
