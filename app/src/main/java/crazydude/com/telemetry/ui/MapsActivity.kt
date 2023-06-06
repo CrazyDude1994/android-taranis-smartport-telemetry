@@ -10,6 +10,7 @@ import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Color
+import android.graphics.Typeface
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbDeviceConnection
 import android.hardware.usb.UsbManager
@@ -20,7 +21,9 @@ import android.os.*
 import android.text.Html
 import android.text.InputFilter
 import android.text.InputType
+import android.text.SpannableString
 import android.text.method.LinkMovementMethod
+import android.text.style.StyleSpan
 import android.util.TypedValue
 import android.view.View
 import android.view.WindowManager
@@ -174,6 +177,9 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
     private var logPlayer : LogPlayer? = null;
 
     private var requestWritePermissionSequence = RequestWritePermissionSequenceType.NONE;
+
+    private var lastFileDialogSelectionIndex = -1;
+    private var lastFileDialogSelection = "";
 
     private val serviceConnection: ServiceConnection = object : ServiceConnection {
         override fun onServiceDisconnected(p0: ComponentName?) {
@@ -616,17 +622,43 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                         dir.listFiles { file -> file.extension == "log" && file.length() > 0 }
                             .sorted()
                             .reversed()
-                    this.showDialog(AlertDialog.Builder(this)
+
+                    if ( lastFileDialogSelectionIndex >= files.size) {
+                        lastFileDialogSelectionIndex = files.size-1;
+                    }
+
+                    val dialog = AlertDialog.Builder(this)
                         .setAdapter(
                             ArrayAdapter(
                                 this,
                                 android.R.layout.simple_list_item_1,
-                                files.map { i -> "${i.nameWithoutExtension} (${ceil(i.length() / 102.4) / 10} Kb)" })
+                                files.map { i ->
+                                    if ( i.name == lastFileDialogSelection ) {
+                                        val b = "${i.nameWithoutExtension} (${ceil(i.length() / 102.4) / 10} Kb)"
+                                        val boldOption = SpannableString(b)
+                                        boldOption.setSpan(StyleSpan(Typeface.BOLD), 0, b.length, 0)
+                                        boldOption
+                                    } else {
+                                        "${i.nameWithoutExtension} (${ceil(i.length() / 102.4) / 10} Kb)"
+                                    }
+                                })
                         ) { _, i ->
                             updateWindowFullscreenDecoration()
+                            lastFileDialogSelectionIndex = i;
+                            lastFileDialogSelection = files[i].name
                             startReplay(files[i])
                         }
-                        .create());
+                        .create();
+
+                    dialog.setOnShowListener {
+                        val alertDialog = it as AlertDialog
+                        if ( lastFileDialogSelectionIndex != -1) {
+                            val centerY = alertDialog.listView.height / 2 // Calculate the center position vertically
+                            alertDialog.listView.smoothScrollToPositionFromTop(lastFileDialogSelectionIndex, centerY)
+                        }
+                    }
+
+                    this.showDialog(dialog);
                 }
             }
         } else {
