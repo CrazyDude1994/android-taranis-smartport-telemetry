@@ -2,6 +2,7 @@ package crazydude.com.telemetry.protocol.pollers
 import android.annotation.SuppressLint
 import android.os.AsyncTask
 import android.os.Environment
+import android.widget.Toast
 import crazydude.com.telemetry.maps.Position
 import crazydude.com.telemetry.protocol.*
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
@@ -68,6 +69,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
                                     FrSkySportProtocol(
                                         this@LogPlayer
                                     )
+                                dataReadyListener?.onProtocolDetected("FrSky")
                             }
 
                             is CrsfProtocol -> {
@@ -79,6 +81,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
                                     CrsfProtocol(
                                         this@LogPlayer
                                     )
+                                dataReadyListener?.onProtocolDetected("CRSF")
                             }
 
                             is LTMProtocol -> {
@@ -90,6 +93,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
                                     LTMProtocol(
                                         this@LogPlayer
                                     )
+                                dataReadyListener?.onProtocolDetected("LTM")
                             }
 
                             is MAVLinkProtocol -> {
@@ -101,11 +105,13 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
                                     MAVLinkProtocol(
                                         this@LogPlayer
                                     )
+                                dataReadyListener?.onProtocolDetected("Mavlink v1")
                             }
 
                             is MAVLink2Protocol -> {
                                 tempProtocol = MAVLink2Protocol(tempDecoder)
                                 protocol = MAVLink2Protocol(this@LogPlayer)
+                                dataReadyListener?.onProtocolDetected("Mavlink v2")
                             }
                         }
                     }
@@ -131,6 +137,7 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
                 protocol = CrsfProtocol(
                     this@LogPlayer
                 )
+                dataReadyListener?.onProtocolDetected("Unknown")
             } else {
                 //now when protocol is detected and tempProtocol is assigned,
                 //feed tempProtocol to decode all packets into arrayList
@@ -159,7 +166,6 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
         override fun onPostExecute(result: ArrayList<Protocol.Companion.TelemetryData>) {
             cachedData = result
             dataReadyListener?.onDataReady(result.size)
-            //exportGPX();
 
             if (dataReadyListener?.getPlaybackAutostart() == true ){
                 startPlayback();
@@ -721,5 +727,6 @@ class LogPlayer(val originalListener: DataDecoder.Listener) : DataDecoder.Listen
         fun onPlaybackStateChange( isPlaying : Boolean)
         fun getTotalPlaybackDurationSec() : Int
         fun getPlaybackAutostart() : Boolean
+        fun onProtocolDetected( protocolName: String)
     }
 }

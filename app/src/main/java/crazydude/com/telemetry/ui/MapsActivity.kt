@@ -769,6 +769,12 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
                     return preferenceManager.getPlaybackAutostart()
                 }
 
+                override fun onProtocolDetected(protocolName: String) {
+                    runOnUiThread {
+                        Toast.makeText(context, "Protocol: $protocolName", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
             })
         }
     }
