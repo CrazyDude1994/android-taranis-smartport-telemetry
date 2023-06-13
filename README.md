@@ -21,7 +21,7 @@ I am contributing most bugsfixes and enchancements to Crasydude's repository. Bu
 - topological map
 - GPX export
 - KML export
-- contex menu for deleting and renaming logs
+- context menu for deleting and renaming logs
 -  UI interface enchancements
 - improved stability and bug fixes
 
