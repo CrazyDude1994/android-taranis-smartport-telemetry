@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<crazydude.com.telemetry.ui.AspectFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent" android:layout_height="0dp"
+        android:background="#606060"
+        >
+
+    <fragment
+            android:id="@+id/cameraFragment"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:name="com.serenegiant.usbcameratest4.CameraFragment"/>
+
+</crazydude.com.telemetry.ui.AspectFrameLayout>

@@ -1,1 +1,4 @@
 include ':app', ':bt_debug'
+include ':libuvccamera'
+include ':usbCameraCommon'
+include ':usbCameraTest4'

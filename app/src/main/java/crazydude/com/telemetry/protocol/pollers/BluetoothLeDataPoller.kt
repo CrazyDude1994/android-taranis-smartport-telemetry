@@ -9,9 +9,8 @@ import android.os.Looper
 import androidx.annotation.RequiresApi
 import crazydude.com.telemetry.protocol.*
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
-import crazydude.com.telemetry.utils.FileLogger
+import java.io.FileOutputStream
 import java.io.IOException
-import java.io.OutputStream
 import java.util.*
 import kotlin.collections.HashMap
 
@@ -20,13 +19,13 @@ class BluetoothLeDataPoller(
     context: Context,
     device: BluetoothDevice,
     private val listener: DataDecoder.Listener,
-    private val outputStream: OutputStream?
+    private val outputStream: FileOutputStream?
 ) : DataPoller {
 
     private lateinit var selectedProtocol: Protocol
-    private var connected = false
+    private var connectedOnce = false
+    private var failed = false;
     private var bluetoothGatt: BluetoothGatt?
-    private var fileLogger : FileLogger = FileLogger(context)
 
     init {
         bluetoothGatt = device.connectGatt(context, false,
@@ -45,13 +44,14 @@ class BluetoothLeDataPoller(
                             characteristic.value?.let { bytes ->
                                 outputStream?.write(bytes)
                                 bytes.forEach {
+                                    listener?.onTelemetryByte();
                                     selectedProtocol.process(it.toUByte().toInt())
                                 }
                             }
                         } else {
                             characteristic.value?.let { bytes ->
-                                fileLogger.log("BLE data ${bytes.map { Integer.toHexString(it.toInt()) }.joinToString(" ")}")
                                 bytes.forEach {
+                                    listener?.onTelemetryByte();
                                     protocolDetectors[characteristic.uuid]?.feedData(
                                         it.toUByte().toInt()
                                     )
@@ -68,25 +68,40 @@ class BluetoothLeDataPoller(
                 ) {
                     super.onConnectionStateChange(gatt, status, newState)
                     if (newState == BluetoothProfile.STATE_CONNECTED) {
-                        fileLogger.log("BLE state STATE_CONNECTED")
-                        connected = true
+                        connectedOnce = true
                         serviceSelected = false
                         protocolDetectors.clear()
-                        gatt?.discoverServices()
-                    } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                        fileLogger.log("BLE state STATE_DISCONNECTED")
-                        if (connected) {
-                            runOnMainThread(Runnable {
-                                listener.onDisconnected()
-                            })
-                        } else {
-                            runOnMainThread(Runnable {
-                                listener.onConnectionFailed()
-                            })
+
+                        //change MTU to max crsf packet length + 3 to be abe to receive biggest CRSF packet from ELRS without need of fragmentation.
+                        // Should be set on both ends (smaller from two is used).
+                        //BTW HM-10 module always use MTU=23
+                        try{
+                            gatt?.requestMtu(64+3);
                         }
-                        connected = false
+                        catch(e: NoSuchMethodError ) {
+                            gatt?.discoverServices();
+                        }
+
+                    } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                        if ( !failed)
+                        {
+                            if (connectedOnce) {
+                                runOnMainThread(Runnable {
+                                    listener.onDisconnected()
+                                })
+                            } else {
+                                runOnMainThread(Runnable {
+                                    listener.onConnectionFailed()
+                                })
+                            }
+                        }
+                        connectedOnce = false
                         closeConnection()
                     }
+                }
+
+                override fun onMtuChanged(gatt: BluetoothGatt, mtu:Int, status:Int) {
+                    gatt?.discoverServices()
                 }
 
                 override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
@@ -102,7 +117,6 @@ class BluetoothLeDataPoller(
                                     object :
                                         ProtocolDetector.Callback {
                                         override fun onProtocolDetected(protocol: Protocol?) {
-                                            fileLogger.log("Protocol detected $protocol")
                                             if (protocol != null) {
                                                 notifyCharacteristicList.filter { it.uuid != characteristic.uuid }
                                                     .forEach {
@@ -176,6 +190,7 @@ class BluetoothLeDataPoller(
                             AsyncTask.execute {
                                 Thread.sleep(10000)
                                 if (!serviceSelected) {
+                                    failed = true
                                     notifyCharacteristicList.forEach {
                                         val reg = gatt.setCharacteristicNotification(it, false)
                                         if (reg) {
@@ -186,17 +201,16 @@ class BluetoothLeDataPoller(
                                             }
                                         }
                                         protocolDetectors.clear()
-                                        runOnMainThread(Runnable {
-                                            fileLogger.log("No protocol detected")
-                                            listener.onConnectionFailed()
-                                        })
                                     }
+                                    gatt?.disconnect()
+                                    runOnMainThread(Runnable {
+                                        listener.onConnectionFailed()
+                                    })
                                 }
                             }
                         }
                     } else {
                         runOnMainThread(Runnable {
-                            fileLogger.log("BLE characteristic list is empty")
                             listener.onConnectionFailed()
                         })
                     }
@@ -205,13 +219,12 @@ class BluetoothLeDataPoller(
     }
 
     fun closeConnection() {
-        fileLogger.log("BLE close connection")
         bluetoothGatt?.close()
 
         try {
             outputStream?.close()
         } catch (e: IOException) {
-            fileLogger.log("BLE close connection exception: " + e.message)
+
         }
     }
 

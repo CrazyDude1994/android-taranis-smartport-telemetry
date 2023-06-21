@@ -9,13 +9,18 @@ import crazydude.com.telemetry.maps.MapWrapper
 import crazydude.com.telemetry.maps.Position
 import org.osmdroid.api.IMapController
 import org.osmdroid.config.Configuration
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.tileprovider.tilesource.OnlineTileSourceBase
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 
 
-class OsmMapWrapper(private val context: Context, private val mapView: MapView, private val callback: () -> Unit) : MapWrapper {
+class OsmMapWrapper(private val context: Context, private val mapView: MapView, tileSource: OnlineTileSourceBase, private val callback: () -> Unit) : MapWrapper {
+
+    companion object {
+        public const val MAP_TYPE_DEFAULT = 5
+        public const val MAP_TYPE_TOPO = 6
+    }
 
     private val myLocationNewOverlay = MyLocationNewOverlay(mapView)
 
@@ -27,11 +32,15 @@ class OsmMapWrapper(private val context: Context, private val mapView: MapView, 
         )
         mapView.zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
         mapView.setMultiTouchControls(true)
-        mapView.setTileSource(TileSourceFactory.DEFAULT_TILE_SOURCE)
+        mapView.setTileSource(tileSource)
         mapView.overlayManager.add(myLocationNewOverlay)
         val mapController: IMapController = mapView.controller
         mapController.setZoom(4.toDouble())
         callback()
+    }
+
+    override fun initialized() : Boolean {
+        return true;
     }
 
     override var mapType: Int
@@ -52,8 +61,8 @@ class OsmMapWrapper(private val context: Context, private val mapView: MapView, 
     }
 
     override fun moveCamera(position: Position, zoom: Float) {
+        mapView.controller.setZoom(zoom.toDouble())  //set zoom first, center second
         mapView.controller.setCenter(position.toGeoPoint())
-        mapView.controller.setZoom(zoom.toDouble())
     }
 
     override fun addMarker(icon: Int, color: Int, position: Position): MapMarker {
@@ -63,7 +72,7 @@ class OsmMapWrapper(private val context: Context, private val mapView: MapView, 
     override fun addPolyline(width: Float, color: Int, vararg points: Position): MapLine {
         val osmLine = OsmLine(mapView)
         osmLine.addPoints(points.toList())
-        osmLine.color = color
+        osmLine.color = color;
         return osmLine
     }
 
@@ -75,7 +84,9 @@ class OsmMapWrapper(private val context: Context, private val mapView: MapView, 
     }
 
     override fun addPolyline(color: Int): MapLine {
-        return OsmLine(mapView)
+        val res = OsmLine(mapView)
+        res.color = color;
+        return res;
     }
 
     override fun onCreate(bundle: Bundle?) {
@@ -106,4 +117,9 @@ class OsmMapWrapper(private val context: Context, private val mapView: MapView, 
 
     override fun setPadding(left: Int, top: Int, right: Int, bottom: Int) {
     }
+
+    override fun invalidate() {
+        this.mapView.invalidate()
+    }
+
 }
