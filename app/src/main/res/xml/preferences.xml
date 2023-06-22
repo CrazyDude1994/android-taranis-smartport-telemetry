@@ -177,7 +177,7 @@
 
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="UAV Radar">
+    <PreferenceCategory android:title="Diagnostics">
         <Preference android:title="Copy debug info"
                 android:key="copy_debug_info">
         </Preference>
