@@ -1116,11 +1116,92 @@ class MapsActivity : com.serenegiant.common.BaseActivity(), DataDecoder.Listener
         }
 
         this.showDialog(AlertDialog.Builder(this).setOnDismissListener {
+        } .setNeutralButton(R.string.pair_new_device) { dialog, which ->
+            showPairDeviceDialog()
         }.setAdapter(deviceAdapter) { _, i ->
             runOnUiThread {
                 connectToBluetoothDevice(devices[i], false)
             }
         }.create())
+    }
+
+    private fun showPairDeviceDialog() {
+        val devices = ArrayList<BluetoothDevice>()
+        val deviceNames = ArrayList<String>()
+        val deviceAdapter =
+            ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, deviceNames)
+        AlertDialog.Builder(this)
+            .setAdapter(deviceAdapter) { _, i ->
+                BluetoothAdapter.getDefaultAdapter().cancelDiscovery()
+                pairDevice(devices[i])
+            }.show()
+        val listener = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                when (intent?.action) {
+                    BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
+                        unregisterReceiver(this)
+                    }
+                    BluetoothDevice.ACTION_FOUND -> {
+                        val device =
+                            intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)!!
+                        val name = intent.getStringExtra(BluetoothDevice.EXTRA_NAME)
+                            ?: device.address
+                        if (!deviceNames.contains(name) && device.bondState == BluetoothDevice.BOND_NONE) {
+                            devices.add(device)
+                            deviceNames.add(name)
+                            deviceAdapter.notifyDataSetChanged()
+                        }
+                    }
+                    BluetoothAdapter.ACTION_DISCOVERY_STARTED -> {
+
+                    }
+                }
+            }
+        }
+        registerReceiver(listener, IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_STARTED).apply {
+            addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
+            addAction(BluetoothDevice.ACTION_FOUND)
+        })
+        BluetoothAdapter.getDefaultAdapter().startDiscovery()
+    }
+
+    private fun pairDevice(bluetoothDevice: BluetoothDevice) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            if (!bluetoothDevice.createBond()) {
+                Toast.makeText(this, "Failed to pair bluetooth device", Toast.LENGTH_LONG).show()
+            } else {
+                val receiver = object : BroadcastReceiver() {
+                    override fun onReceive(context: Context?, intent: Intent?) {
+                        if (intent?.action == BluetoothDevice.ACTION_BOND_STATE_CHANGED) {
+                            val device =
+                                intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
+                            val newBondState: Int =
+                                intent.getIntExtra(
+                                    BluetoothDevice.EXTRA_BOND_STATE,
+                                    BluetoothDevice.BOND_NONE
+                                )
+                            if (newBondState == BluetoothDevice.BOND_BONDED) {
+                                device?.let { connectToBluetoothDevice(it, false) }
+                                unregisterReceiver(this)
+                            } else if (newBondState == BluetoothDevice.BOND_NONE) {
+                                Toast.makeText(
+                                    this@MapsActivity,
+                                    "Failed to pair new device",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                                unregisterReceiver(this)
+                            }
+                        }
+                    }
+                }
+
+                registerReceiver(receiver, IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED))
+            }
+        } else {
+            AlertDialog.Builder(this)
+                .setMessage(getString(R.string.pair_not_supported_message))
+                .show()
+        }
     }
 
     private fun connectBluetoothLE() {

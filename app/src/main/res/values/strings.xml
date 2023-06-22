@@ -7,7 +7,7 @@
     <string name="disconnecting">Disconnecting…</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
-    <string name="pair_new_device">Pair</string>
+    <string name="pair_new_device">My device is not in list - Pair...</string>
     <string name="pair_not_supported_message">Please pair your device manually from the android bluetooth settings menu</string>
 
     <string-array name="BatteryUnits">
