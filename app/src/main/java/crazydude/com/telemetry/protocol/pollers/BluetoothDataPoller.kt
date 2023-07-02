@@ -7,24 +7,25 @@ import crazydude.com.telemetry.protocol.*
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import java.io.FileOutputStream
 import java.io.IOException
-import java.io.OutputStream
-import java.io.OutputStreamWriter
 
 class BluetoothDataPoller(
     private val bluetoothSocket: BluetoothSocket,
     private val listener: DataDecoder.Listener,
-    outputStream: OutputStream?
+    outputStream: FileOutputStream?
 ) : DataPoller {
 
     private var selectedProtocol: Protocol? = null
     private lateinit var thread: Thread
-    private var outputStreamWriter: OutputStreamWriter? = null
+
+    private var connectedOnce : Boolean = false;
 
     init {
+        connectedOnce = false;
         thread = Thread(Runnable {
             try {
                 bluetoothSocket.connect()
                 if (bluetoothSocket.isConnected) {
+                    connectedOnce = true
                     runOnMainThread(Runnable {
                         listener.onConnected()
                     })
@@ -80,8 +81,10 @@ class BluetoothDataPoller(
                     outputStream?.write(buffer, 0, size)
                     for (i in 0 until size) {
                         if (selectedProtocol == null) {
+                            listener?.onTelemetryByte();
                             protocolDetector.feedData(buffer[i].toUByte().toInt())
                         } else {
+                            listener?.onTelemetryByte();
                             selectedProtocol?.process(buffer[i].toUByte().toInt())
                         }
                     }
@@ -92,35 +95,22 @@ class BluetoothDataPoller(
                 } catch (e: IOException) {
                     // ignore
                 }
+
                 try {
-                    outputStreamWriter?.close()
+                    bluetoothSocket.close()
                 } catch (e: IOException) {
                     // ignore
                 }
+
                 runOnMainThread(Runnable {
-                    listener.onConnectionFailed()
+                    if (connectedOnce) {
+                        listener.onDisconnected()
+                    }
+                    else {
+                        listener.onConnectionFailed()
+                    }
                 })
                 return@Runnable
-            }
-            try {
-                outputStream?.close()
-            } catch (e: IOException) {
-                // ignore
-            }
-            try {
-                outputStreamWriter?.close()
-            } catch (e: IOException) {
-                // ignore
-            }
-            try {
-                bluetoothSocket.close()
-                runOnMainThread(Runnable {
-                    listener.onDisconnected()
-                })
-            } catch (e: IOException) {
-                runOnMainThread(Runnable {
-                    listener.onDisconnected()
-                })
             }
         })
 
@@ -137,5 +127,10 @@ class BluetoothDataPoller(
 
     override fun disconnect() {
         thread.interrupt()
+        try{
+            this.bluetoothSocket.close();
+        } catch (e: IOException) {
+        // ignore
+        }
     }
 }

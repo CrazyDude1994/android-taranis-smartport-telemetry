@@ -185,7 +185,7 @@ class FrskyDataDecoder(listener: Listener) : DataDecoder(listener) {
                 this.gotRollPitch = true;
                 //Log.d(TAG, "Decoded roll $value")
             }
-            Protocol.GALT -> {
+            Protocol.GPS_ALTITUDE -> {
                 val value = data.data / 100f
                 listener.onGPSAltitudeData(value)
 //                Log.d(TAG, "Decoded gps altitude $value")
@@ -198,7 +198,7 @@ class FrskyDataDecoder(listener: Listener) : DataDecoder(listener) {
             }
             Protocol.ASPEED -> {
                 val speed = Float.fromBits(Integer.parseInt(Integer.toBinaryString(data.data)))
-                listener.onAirSpeed(speed * 1.852f)
+                listener.onAirSpeedData(speed * 1.852f)
             }
             Protocol.GPS_LONGITUDE -> {
 

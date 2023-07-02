@@ -7,7 +7,6 @@ import crazydude.com.telemetry.protocol.*
 import crazydude.com.telemetry.protocol.decoder.DataDecoder
 import java.io.FileOutputStream
 import java.io.IOException
-import java.io.OutputStream
 import java.util.concurrent.Executors
 
 class UsbDataPoller(
@@ -15,24 +14,32 @@ class UsbDataPoller(
     private val serialPort: UsbSerialPort,
     private val baudrate: Int,
     private val connection: UsbDeviceConnection,
-    private val logFile: OutputStream?
+    private val logFile: FileOutputStream?
 ) : DataPoller {
     private var outputManager: SerialInputOutputManager? = null
     private var selectedProtocol: Protocol? = null
+    private var connectedOnce = false
+    private var isDisconnected = true
 
     init {
+        connectedOnce = false
         try {
             serialPort.open(connection)
+            connectedOnce = true;
+            isDisconnected = false;
         } catch (e: IOException) {
             listener.onConnectionFailed()
             logFile?.close()
         }
-            serialPort.setParameters(
-                baudrate,
-                8,
-                UsbSerialPort.STOPBITS_1,
-                UsbSerialPort.PARITY_NONE
-            )
+
+        serialPort.setParameters(
+            baudrate,
+            8,
+            UsbSerialPort.STOPBITS_1,
+            UsbSerialPort.PARITY_NONE
+        )
+
+        listener.onConnected()
 
         val protocolDetector =
             ProtocolDetector(object :
@@ -66,16 +73,23 @@ class UsbDataPoller(
                             return
                         }
                     }
-
-                    listener.onConnected()
                 }
             })
 
         outputManager =
             SerialInputOutputManager(serialPort, object : SerialInputOutputManager.Listener {
                 override fun onRunError(e: Exception?) {
-                    listener.onDisconnected()
-                    logFile?.close()
+                    if ( isDisconnected == false )
+                    {
+                        isDisconnected == true;
+                        if (connectedOnce)
+                        {
+                            listener.onDisconnected()
+                        } else {
+                            listener.onConnectionFailed()
+                        }
+                        logFile?.close()
+                    }
                 }
 
                 override fun onNewData(data: ByteArray?) {
@@ -83,10 +97,12 @@ class UsbDataPoller(
                         logFile?.write(data)
                         if (selectedProtocol != null) {
                             data.forEach {
+                                listener?.onTelemetryByte();
                                 selectedProtocol?.process(it.toUByte().toInt())
                             }
                         } else {
                             data.forEach {
+                                listener?.onTelemetryByte();
                                 protocolDetector.feedData(it.toUByte().toInt())
                             }
                         }
@@ -98,8 +114,12 @@ class UsbDataPoller(
 
 
     override fun disconnect() {
-        outputManager?.stop()
-        logFile?.close()
-        listener.onDisconnected()
+        if ( isDisconnected == false )
+        {
+            isDisconnected = true;
+            outputManager?.stop()
+            logFile?.close()
+            listener.onDisconnected()
+        }
     }
 }

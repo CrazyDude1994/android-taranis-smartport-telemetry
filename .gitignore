@@ -12,3 +12,10 @@
 /captures
 .externalNativeBuild
 keystore.properties
+libuvccamera/build
+usbCameraTest4Common/build
+usbCamera/build
+/libuvccamera/src/main/libs
+/libuvccamera/src/main/obj
+/usbCameraCommon/build
+/usbCameraTest4/build

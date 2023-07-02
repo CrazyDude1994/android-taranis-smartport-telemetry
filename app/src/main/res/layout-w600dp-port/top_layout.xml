@@ -1,0 +1,387 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <RelativeLayout
+            android:id="@+id/top_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#AA000000">
+
+        <Button
+                android:id="@+id/connect_button"
+                style="@style/Base.Widget.AppCompat.Button.Borderless"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:text="@string/connect"
+                android:textColor="@android:color/white" />
+
+        <com.nex3z.flowlayout.FlowLayout
+                android:id="@+id/top_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_toStartOf="@+id/replay_button"
+                android:layout_toEndOf="@id/connect_button">
+
+            <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/rssi"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="6dp"
+                    android:layout_marginRight="6dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="2dp"
+                    android:drawableTop="@drawable/ic_rssi_5"
+                    android:drawablePadding="0dp"
+                    android:gravity="center_horizontal"
+                    android:text="-"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="00"/>
+
+            <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/satellites"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="6dp"
+                    android:layout_marginRight="6dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="2dp"
+                    android:drawableTop="@drawable/ic_satellite"
+                    android:drawablePadding="0dp"
+                    android:gravity="center_horizontal"
+                    android:text="-"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="00"/>
+
+
+            <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/fuel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="6dp"
+                    android:layout_marginRight="6dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="2dp"
+                    android:drawableTop="@drawable/ic_battery_unknown"
+                    android:drawablePadding="0dp"
+                    android:gravity="center_horizontal"
+                    android:text="-"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="100%"/>
+
+            <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/current"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="6dp"
+                    android:layout_marginRight="6dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="2dp"
+                    android:drawableTop="@drawable/ic_current"
+                    android:drawablePadding="0dp"
+                    android:gravity="center_horizontal"
+                    android:text="-"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="0,00 A"/>
+
+            <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/voltage"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="6dp"
+                    android:layout_marginRight="6dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="2dp"
+                    android:drawableTop="@drawable/ic_voltage"
+                    android:drawablePadding="0dp"
+                    android:gravity="center_horizontal"
+                    android:text="-"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="0,00 V"/>
+
+            <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/phone_battery"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="6dp"
+                    android:layout_marginRight="6dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="2dp"
+                    android:drawableTop="@drawable/ic_phone_battery"
+                    android:drawablePadding="0dp"
+                    android:gravity="center_horizontal"
+                    android:text="-"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="100%"/>
+
+            <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/up_snr"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="6dp"
+                    android:layout_marginRight="6dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="2dp"
+                    android:drawableTop="@drawable/ic_up_snr"
+                    android:drawablePadding="0dp"
+                    android:gravity="center_horizontal"
+                    android:text="10"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="10"/>
+
+            <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/dn_snr"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="6dp"
+                    android:layout_marginRight="6dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="2dp"
+                    android:drawableTop="@drawable/ic_dn_snr"
+                    android:drawablePadding="0dp"
+                    android:gravity="center_horizontal"
+                    android:text="10"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="10"/>
+
+            <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/up_lq"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="6dp"
+                    android:layout_marginRight="6dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="2dp"
+                    android:drawableTop="@drawable/ic_up_lq_5"
+                    android:drawablePadding="0dp"
+                    android:gravity="center_horizontal"
+                    android:text="-"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="00"/>
+
+            <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/dn_lq"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="6dp"
+                    android:layout_marginRight="6dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="2dp"
+                    android:drawableTop="@drawable/ic_dn_lq_5"
+                    android:drawablePadding="0dp"
+                    android:gravity="center_horizontal"
+                    android:text="-"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="00"/>
+
+            <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/elrs_rate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="6dp"
+                    android:layout_marginRight="6dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="2dp"
+                    android:drawableTop="@drawable/ic_elrs_rate"
+                    android:drawablePadding="0dp"
+                    android:gravity="center_horizontal"
+                    android:text="10"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="W100"/>
+
+            <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/ant"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="6dp"
+                    android:layout_marginRight="6dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="2dp"
+                    android:drawableTop="@drawable/ic_ant"
+                    android:drawablePadding="0dp"
+                    android:gravity="center_horizontal"
+                    android:text="10"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="1"/>
+
+            <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/power"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="6dp"
+                    android:layout_marginRight="6dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="2dp"
+                    android:drawableTop="@drawable/ic_pwr"
+                    android:drawablePadding="0dp"
+                    android:gravity="center_horizontal"
+                    android:text="10"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="10mW"/>
+
+            <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/up_rssi_dbm1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="6dp"
+                    android:layout_marginRight="6dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="2dp"
+                    android:drawableTop="@drawable/ic_rssi_dbm1_5"
+                    android:drawablePadding="0dp"
+                    android:gravity="center_horizontal"
+                    android:text="-"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="-00"/>
+
+            <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/up_rssi_dbm2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="6dp"
+                    android:layout_marginRight="6dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="2dp"
+                    android:drawableTop="@drawable/ic_rssi_dbm2_5"
+                    android:drawablePadding="0dp"
+                    android:gravity="center_horizontal"
+                    android:text="-"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="-00"/>
+
+            <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/dn_rssi_dbm"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="6dp"
+                    android:layout_marginRight="6dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="2dp"
+                    android:drawableTop="@drawable/ic_rssi_dbmd_5"
+                    android:drawablePadding="0dp"
+                    android:gravity="center_horizontal"
+                    android:text="-"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="-00"/>
+
+            <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/cell_voltage"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="6dp"
+                    android:layout_marginRight="6dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="2dp"
+                    android:drawableTop="@drawable/ic_cell_voltage"
+                    android:drawablePadding="0dp"
+                    android:gravity="center_horizontal"
+                    android:text="-"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="0,0 V"/>
+
+            <crazydude.com.telemetry.ui.TextViewStableSize
+                    android:id="@+id/tlm_rate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="6dp"
+                    android:layout_marginRight="6dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="2dp"
+                    android:drawableTop="@drawable/ic_tlm_rate"
+                    android:drawablePadding="0dp"
+                    android:gravity="center_horizontal"
+                    android:text="-"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    app:minText="300 b/s"/>
+
+        </com.nex3z.flowlayout.FlowLayout>
+
+
+        <ImageView
+                android:id="@id/replay_button"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_centerVertical="true"
+                android:layout_marginEnd="8dp"
+                android:layout_marginRight="8dp"
+                android:layout_toStartOf="@+id/fullscreen_button"
+                android:layout_toLeftOf="@+id/fullscreen_button"
+                android:background="?selectableItemBackground"
+                android:src="@drawable/ic_replay" />
+
+        <ImageView
+                android:id="@id/fullscreen_button"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_centerVertical="true"
+                android:layout_marginEnd="8dp"
+                android:layout_marginRight="8dp"
+                android:layout_toStartOf="@+id/layout_button"
+                android:layout_toLeftOf="@+id/layout_button"
+                android:background="?selectableItemBackground"
+                android:src="@drawable/ic_fullscreen" />
+
+        <ImageView
+                android:id="@id/layout_button"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_centerVertical="true"
+                android:layout_marginEnd="8dp"
+                android:layout_marginRight="8dp"
+                android:layout_toStartOf="@+id/settings_button"
+                android:layout_toLeftOf="@+id/settings_button"
+                android:background="?selectableItemBackground"
+                android:src="@drawable/ic_layout" />
+
+        <ImageView
+                android:id="@id/settings_button"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                android:layout_marginEnd="8dp"
+                android:layout_marginRight="8dp"
+                android:background="?selectableItemBackground"
+                android:src="@drawable/ic_settings" />
+
+    </RelativeLayout>
+
+</merge>

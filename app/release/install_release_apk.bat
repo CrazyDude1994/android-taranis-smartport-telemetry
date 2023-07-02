@@ -1,0 +1,1 @@
+%LOCALAPPDATA%\Android\sdk\platform-tools\adb install -r app-release.apk 

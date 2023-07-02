@@ -7,7 +7,7 @@
     <string name="disconnecting">Disconnecting…</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
-    <string name="pair_new_device">Pair</string>
+    <string name="pair_new_device">My device is not in list - Pair...</string>
     <string name="pair_not_supported_message">Please pair your device manually from the android bluetooth settings menu</string>
 
     <string-array name="BatteryUnits">
@@ -15,4 +15,55 @@
         <item>mAh</item>
         <item>mWh</item>
     </string-array>
+
+    <string-array name="ReportVoltage">
+        <item>Battery</item>
+        <item>Cell</item>
+    </string-array>
+
+    <string-array name="ScreenOrientationLock">
+        <item>No lock</item>
+        <item>Portrait</item>
+        <item>Landscape</item>
+    </string-array>
+
+    <string-array name="CompressionQuality">
+        <item>Low</item>
+        <item>Normal</item>
+        <item>High</item>
+    </string-array>
+
+    <string-array name="RouteLinePoints">
+        <item>50</item>
+        <item>100</item>
+        <item>500</item>
+        <item>1000</item>
+        <item>No limit</item>
+    </string-array>
+
+    <string-array name="RouteLinePointsValue">
+        <item>50</item>
+        <item>100</item>
+        <item>500</item>
+        <item>1000</item>
+        <item>-1</item>
+    </string-array>
+
+    <string-array name="playback_durations">
+        <item>15 seconds</item>
+        <item>30 seconds</item>
+        <item>1 minute</item>
+        <item>2 minutes</item>
+        <item>5 minutes</item>
+    </string-array>
+
+    <string-array name="playback_durations_values">
+        <item>15</item>
+        <item>30</item>
+        <item>60</item>
+        <item>120</item>
+        <item>300</item>
+    </string-array>
+
+
 </resources>

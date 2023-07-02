@@ -21,7 +21,7 @@ abstract class Protocol(val dataDecoder: DataDecoder) {
         const val ROLL = 13
         const val PITCH = 14
         const val YAW = 15
-        const val GALT = 16
+        const val GPS_ALTITUDE = 16
         const val ASPEED = 17
         const val GPS_LATITUDE = 18
         const val GPS_LONGITUDE = 19
@@ -62,8 +62,19 @@ abstract class Protocol(val dataDecoder: DataDecoder) {
         const val ARDU_BATT_2 = 52
         const val ARDU_BATT_1 = 53
         const val ARDU_PARAM = 54
-        const val CRSF_LQ = 55
-        const val CRSF_RF = 56
+        const val CRSF_UP_LQ = 55
+        const val CRSF_DN_LQ = 56
+        const val ELRS_RF_MODE = 57
+        const val DN_SNR = 58
+        const val UP_SNR = 59
+        const val ANT = 60
+        const val POWER = 61
+        const val RSSI_DBM_1 = 62
+        const val RSSI_DBM_2 = 63
+        const val RSSI_DBM_D = 64
+        const val VBAT_OR_CELL = 65
+        const val THROTTLE = 66
+        const val ORIGIN = 67
 
         const val RC_CHANNEL_0 = 100
         const val RC_CHANNEL_1 = 101
@@ -81,6 +92,10 @@ abstract class Protocol(val dataDecoder: DataDecoder) {
         const val RC_CHANNEL_13 = 113
         const val RC_CHANNEL_14 = 114
         const val RC_CHANNEL_15 = 115
+        const val RC_CHANNEL_16 = 116
+        const val RC_CHANNEL_17 = 117
+
+        const val STATUSTEXT = 120
 
         class TelemetryData(val telemetryType: Int, val data: Int, val rawData: ByteArray? = null) {
             override fun equals(other: Any?): Boolean {
@@ -110,4 +125,9 @@ abstract class Protocol(val dataDecoder: DataDecoder) {
     }
 
     abstract fun process(data: Int)
+
+    fun onTelemetryByte(){
+        dataDecoder.onTelemetryByte()
+    }
+
 }

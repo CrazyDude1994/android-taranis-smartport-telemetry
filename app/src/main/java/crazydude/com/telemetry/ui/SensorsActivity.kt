@@ -105,9 +105,11 @@ class SensorsActivity : AppCompatActivity(), SensorsAdapterListener {
             //GlobalLayout event is also fired when user is trying to move sensor.
             //At this point a list might be scrolled far to bottom, and upper list item views can be deleted (because they are out of screen).
             //As ShowcaseView should has been shown already, just test for target !=null
+
             if ( target !== null)
             {
                 MaterialShowcaseView.Builder(this)
+                    .renderOverNavigationBar()
                     .setTarget(target)
                     .setMaskColour(Color.argb(180, 0, 0, 0))
                     .setDismissText("GOT IT")

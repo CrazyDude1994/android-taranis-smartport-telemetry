@@ -1,5 +1,6 @@
 package crazydude.com.telemetry.protocol.decoder
 
+import com.google.android.gms.maps.model.LatLng
 import crazydude.com.telemetry.maps.Position
 import crazydude.com.telemetry.protocol.Protocol
 
@@ -7,38 +8,13 @@ abstract class DataDecoder(protected val listener: Listener) {
 
     companion object {
 
-        enum class FlyMode(var modeName: String) {
-            ACRO("Acro"), HORIZON("Horizon"), ANGLE("Angle"), FAILSAFE("Failsafe"), RTH("RTH"), WAYPOINT(
-                "WP"
-            ),
-            MANUAL(
-                "Manual"
-            ),
-            CRUISE("Cruise"), HOLD("Hold"), HOME_RESET("Home reset"), CRUISE3D("Cruise 3D"), ALTHOLD(
-                "ALT Hold"
-            ),
-            ERROR(
-                "!ERROR!"
-            ),
-            WAIT("GPS wait"), AUTONOMOUS("Autonomous"), CIRCLE("Circle"), STABILIZE("Stabilize"), TRAINING(
-                "Training"
-            ),
-            FBWA(
-                "FBWA"
-            ),
-            FBWB("FBWB"), AUTOTUNE("Autotune"), LOITER("Loiter"), TAKEOFF("Takeoff"), AVOID_ADSB("AVOID_ADSB"), GUIDED(
-                "Guided"
-            ),
-            INITIALISING("Initializing"), LANDING("Landing"), MISSION("Mission"), QSTABILIZE("QSTABILIZE"), QHOVER(
-                "QHOVER"
-            ),
-            QLOITER(
-                "QLOITER"
-            ),
-            QLAND("QLAND"), QRTL("QRTL"), QAUTOTUNE("QAUTOTUNE"), QACRO("QACRO");
+        enum class FlyMode {
+            ACRO, HORIZON, ANGLE, FAILSAFE, RTH, WAYPOINT, MANUAL, CRUISE, HOLD, HOME_RESET, CRUISE3D, ALTHOLD, ERROR,
+            WAIT, AUTONOMOUS, CIRCLE, STABILIZE, TRAINING, FBWA, FBWB, AUTOTUNE, LOITER, TAKEOFF, AVOID_ADSB, GUIDED,
+            INITIALISING, LANDING, MISSION, QSTABILIZE, QHOVER, QLOITER, QLAND, QRTL, QAUTOTUNE, QACRO, RATE
         }
 
-        open class DefaultDecodeListener : Listener {
+        open class DefaultDecodeListener: Listener {
             override fun onConnectionFailed() {
 
             }
@@ -61,6 +37,9 @@ abstract class DataDecoder(protected val listener: Listener) {
             override fun onCellVoltageData(voltage: Float) {
             }
 
+            override fun onVBATOrCellData(voltage: Float) {
+            }
+
             override fun onCurrentData(current: Float) {
             }
 
@@ -70,10 +49,13 @@ abstract class DataDecoder(protected val listener: Listener) {
             override fun onRSSIData(rssi: Int) {
             }
 
-            override fun onCrsfLqData(lq: Int) {
+            override fun onUpLqData(lq: Int) {
             }
 
-            override fun onCrsfRfData(rf: Int) {
+            override fun onDnLqData(lq: Int) {
+            }
+
+            override fun onElrsModeModeData(mode: Int) {
             }
 
             override fun onDisconnected() {
@@ -83,6 +65,9 @@ abstract class DataDecoder(protected val listener: Listener) {
             }
 
             override fun onVSpeedData(vspeed: Float) {
+            }
+
+            override fun onThrottleData(throttle: Int) {
             }
 
             override fun onAltitudeData(altitude: Float) {
@@ -111,16 +96,60 @@ abstract class DataDecoder(protected val listener: Listener) {
             ) {
             }
 
-            override fun onAirSpeed(speed: Float) {
+            override fun onRCChannels(rcChannels:IntArray){
+
+            }
+
+
+            override fun onAirSpeedData(speed: Float) {
+            }
+
+            override fun onStatusText(message:String) {
+            }
+
+            override fun onDNSNRData(snr: Int) {
+            }
+
+            override fun onUPSNRData(snr: Int) {
+            }
+
+            override fun onAntData(activeAntena: Int) {
+            }
+
+            override fun onPowerData(power: Int) {
+            }
+
+            override fun onRssiDbm1Data(rssi: Int) {
+            }
+
+            override fun onRssiDbm2Data(rssi: Int) {
+            }
+
+            override fun onRssiDbmdData(rssi: Int) {
+            }
+
+            override fun onTelemetryByte() {
             }
 
             override fun onSuccessDecode() {
             }
+
+            override fun onDecoderRestart() {
+            }
+
         }
 
     }
 
+    open fun restart() {
+        this.listener.onDecoderRestart()
+    }
+
     abstract fun decodeData(data: Protocol.Companion.TelemetryData)
+
+    fun onTelemetryByte() {
+        this.listener.onTelemetryByte();
+    }
 
     interface Listener {
         fun onConnectionFailed()
@@ -133,11 +162,13 @@ abstract class DataDecoder(protected val listener: Listener) {
         fun onCurrentData(current: Float)
         fun onHeadingData(heading: Float)
         fun onRSSIData(rssi: Int) //-1 - unknown/invalid, or device-dependent value
-        fun onCrsfLqData(lq: Int)
-        fun onCrsfRfData(rf: Int)
+        fun onUpLqData(lq: Int)
+        fun onDnLqData(lq: Int)
+        fun onElrsModeModeData(mode: Int)
         fun onDisconnected()
         fun onGPSState(satellites: Int, gpsFix: Boolean)
         fun onVSpeedData(vspeed: Float)
+        fun onThrottleData(throttle: Int)
         fun onAltitudeData(altitude: Float)
         fun onGPSAltitudeData(altitude: Float)
         fun onDistanceData(distance: Int)
@@ -151,8 +182,32 @@ abstract class DataDecoder(protected val listener: Listener) {
             secondFlightMode: FlyMode? = null
         )
 
-        fun onAirSpeed(speed: Float)
+        fun onAirSpeedData(speed: Float)
+        fun onRCChannels(rcChannels:IntArray)
+        fun onStatusText(message: String)
+        fun onDNSNRData(snr: Int)
+        fun onUPSNRData(snr: Int)
+        fun onAntData(activeAntena: Int)
+        fun onPowerData(power: Int)
+        fun onRssiDbm1Data(rssi: Int)
+        fun onRssiDbm2Data(rssi: Int)
+        fun onRssiDbmdData(rssi: Int)
+        fun onVBATOrCellData(voltage: Float)
+        fun onTelemetryByte()
         fun onSuccessDecode()
+        fun onDecoderRestart()
+    }
+
+    fun isGPSData( telemetryType : Int ) : Boolean {
+        return telemetryType == Protocol.GPS ||
+            telemetryType == Protocol.GPS_STATE ||
+            telemetryType == Protocol.GPS_STATE_ARDU ||
+            telemetryType == Protocol.GPS_LATITUDE ||
+            telemetryType == Protocol.GPS_LONGITUDE ||
+            telemetryType == Protocol.GPS_ORIGIN_LATITUDE ||
+            telemetryType == Protocol.GPS_ORIGIN_LONGITUDE ||
+            telemetryType == Protocol.GPS_HOME_LATITUDE ||
+            telemetryType == Protocol.GPS_HOME_LONGITUDE;
     }
 
 }

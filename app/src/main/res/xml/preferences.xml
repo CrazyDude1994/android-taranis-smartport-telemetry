@@ -1,44 +1,68 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto">
+                  xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <SwitchPreference
-            android:defaultValue="true"
-            android:key="logging_enabled"
-            android:summary="Save telemetry data to sdcard. They are saved to TelemetryLog at external storage (sdcard)"
+            android:title="Telemetry logging RAW"
+            android:summary="Save telemetry RAW data to sdcard. They are saved to TelemetryLog at external storage (sdcard) and can be replayed in this application"
             android:text="Logging enabled"
-            android:title="Telemetry logging" />
+            android:defaultValue="true"
+            android:key="logging_enabled"/>
 
-    <Preference
-            android:key="log_folder"
-            android:title="Logs directory" />
+    <SwitchPreference
+            android:title="Telemetry logging to CSV"
+            android:summary="Save telemetry data to sdcard in OpenTX CSV format."
+            android:text="Logging enabled"
+            android:defaultValue="true"
+            android:key="csv_logging_enabled"/>
 
+    <ListPreference
+            android:title="Lock screen orientation"
+            android:summary="%s"
+            android:entries="@array/ScreenOrientationLock"
+            android:entryValues="@array/ScreenOrientationLock"
+            android:defaultValue="No lock"
+            android:key="screen_orientation_lock"/>
 
-    <com.jaredrummler.android.colorpicker.ColorPreferenceCompat
-            android:defaultValue="@color/colorPlane"
-            android:key="plane_color"
-            android:summary="Color of the plane icon on the map"
-            android:title="Plane color"
-            app:cpv_allowCustom="true"
-            app:cpv_allowPresets="false"
-            app:cpv_showAlphaSlider="false" />
+    <ListPreference
+            android:title="Video compression quality"
+            android:summary="%s"
+            android:entries="@array/CompressionQuality"
+            android:entryValues="@array/CompressionQuality"
+            android:defaultValue="Normal"
+            android:key="compression_quality"/>
 
-    <PreferenceCategory android:title="Heading line">
+    <SwitchPreference
+            android:title="Voice messages on conection status changes"
+            android:summary="Play voice messages when connection status chages."
+            android:defaultValue="true"
+            android:key="connection_voice_messages"/>
+
+    <PreferenceCategory android:title="Map markers">
+
+        <com.jaredrummler.android.colorpicker.ColorPreferenceCompat
+                android:defaultValue="@color/colorPlane"
+                android:key="plane_color"
+                app:cpv_showAlphaSlider="false"
+                app:cpv_allowPresets="false"
+                app:cpv_allowCustom="true"
+                android:summary="Color of the plane icon on the map"
+                android:title="Plane color"/>
 
         <SwitchPreference
-                android:defaultValue="true"
-                android:key="show_heading_line"
+                android:title="Show heading line"
                 android:summary="Shows heading line on the map"
-                android:title="Show heading line" />
+                android:defaultValue="true"
+                android:key="show_heading_line"/>
 
         <com.jaredrummler.android.colorpicker.ColorPreferenceCompat
                 android:defaultValue="@color/colorHeadline"
                 android:key="headline_color"
-                android:summary="Color of the heading line on the map"
-                android:title="Heading line color"
-                app:cpv_allowCustom="true"
+                app:cpv_showAlphaSlider="false"
                 app:cpv_allowPresets="false"
-                app:cpv_showAlphaSlider="false" />
+                app:cpv_allowCustom="true"
+                android:summary="Color of the heading line on the map"
+                android:title="Heading line color"/>
 
     </PreferenceCategory>
 
@@ -47,11 +71,19 @@
         <com.jaredrummler.android.colorpicker.ColorPreferenceCompat
                 android:defaultValue="@color/colorRoute"
                 android:key="route_color"
-                android:summary="Color of the route line on the map"
-                android:title="Route line color"
-                app:cpv_allowCustom="true"
+                app:cpv_showAlphaSlider="false"
                 app:cpv_allowPresets="false"
-                app:cpv_showAlphaSlider="false" />
+                app:cpv_allowCustom="true"
+                android:summary="Color of the route line on the map"
+                android:title="Route line color"/>
+
+        <ListPreference
+                android:title="Limit number of points"
+                android:summary="%s"
+                android:entries="@array/RouteLinePoints"
+                android:entryValues="@array/RouteLinePointsValue"
+                android:defaultValue="-1"
+                android:key="route_max_points"/>
 
     </PreferenceCategory>
 
@@ -59,85 +91,99 @@
         <ListPreference
             android:title="Baudrate"
             android:key="usb_serial_baudrate"
-            android:summary="Adjust baudrate"
+            android:summary="%s"
             android:entries="@array/baudrates"
             android:entryValues="@array/baudrates"
             android:defaultValue="57600"
             />
     </PreferenceCategory>
 
+    <PreferenceCategory android:title="Playback">
+
+        <SwitchPreference
+                android:title="Automatic playback start"
+                android:summary="Start playback after loading log file"
+                android:defaultValue="true"
+                android:key="playback_autostart"/>
+
+        <ListPreference
+                android:title="Playback duration"
+                android:key="playback_duration"
+                android:summary="Total duration of log playback\n%s"
+                android:entries="@array/playback_durations"
+                android:entryValues="@array/playback_durations_values"
+                android:defaultValue="30"
+                />
+
+    </PreferenceCategory>
+
+
     <PreferenceCategory android:title="Sensors">
 
         <Preference
-                android:summary="Changes which data is shown and changes data format"
-                android:title="Sensor display settings">
-            <intent
-                    android:action="android.intent.action.VIEW"
-                    android:targetClass="crazydude.com.telemetry.ui.SensorsActivity"
-                    android:targetPackage="crazydude.com.telemetry" />
+                android:title="Sensor display settings"
+                android:summary="Click to edit sensor widgets placement on the main screen">
+            <intent android:targetClass="crazydude.com.telemetry.ui.SensorsActivity"
+                    android:targetPackage="crazydude.com.telemetry"
+                    android:action="android.intent.action.VIEW"/>
         </Preference>
 
         <ListPreference
-                android:defaultValue="mAh"
+                android:title="Battery units"
+                android:summary="(CLI smartport_fuel_unit)\n%s"
                 android:entries="@array/BatteryUnits"
                 android:entryValues="@array/BatteryUnits"
-                android:key="battery_units"
-                android:summary="%s"
-                android:title="Battery units (CLI smartport_fuel_unit)" />
+                android:defaultValue="mAh"
+                android:key="battery_units"/>
+
+        <ListPreference
+                android:title="Voltage reported by telemetry"
+                android:summary="(CRSF, FrSky)\n(CLI report_cell_voltage)\n%s"
+                android:entries="@array/ReportVoltage"
+                android:entryValues="@array/ReportVoltage"
+                android:defaultValue="Battery"
+                android:key="report_voltage"/>
 
         <SwitchPreference
-                android:defaultValue="false"
-                android:key="use_pitot_tube"
-                android:summary="Uses pitot tube sensor as air speed source"
-                android:title="Use pitot tube" />
-
-        <SwitchPreference
-                android:defaultValue="true"
-                android:key="show_artificial_horizon"
+                android:title="Show artificial horizon view"
                 android:summary="Shows attitude. Please set frsky_pitch_roll = ON in CLI for Inav 2.0.+."
-                android:title="Show artificial horizon view" />
-        <SwitchPreference
-            android:title="Crossfire RF/LQ"
-            android:key="use_crsf_lq"
-            android:defaultValue="false"
-            android:summary="Show RF/LQ instead of RSSI for Crossfire"
-            />
+                android:defaultValue="true"
+                android:key="show_artificial_horizon"/>
 
     </PreferenceCategory>
 
     <PreferenceCategory android:title="UAV Radar">
         <SwitchPreference
-                android:defaultValue="false"
-                android:key="send_telemetry_data"
+                android:title="Send data to uavradar server"
                 android:summary="Sends telemetry data to uavradar server. It allows other users to see your aircraft at the https://uavradar.org/ Data is sent when acquired valid GPS fix and aircraft is armed"
-                android:title="Send data to uavradar server" />
+                android:defaultValue="false"
+                android:key="send_telemetry_data"/>
 
         <EditTextPreference
+                android:title="Callsign"
                 android:dependency="send_telemetry_data"
-                android:key="callsign"
-                android:title="Callsign" />
+                android:key="callsign"/>
 
         <EditTextPreference
+                android:title="Model"
                 android:dependency="send_telemetry_data"
-                android:key="model"
-                android:title="Model" />
+                android:key="model"/>
 
         <Preference android:title="Go to UAV radar">
             <intent
                     android:action="android.intent.action.VIEW"
-                    android:data="https://uavradar.org" />
+                    android:data="https://uavradar.org"/>
         </Preference>
 
     </PreferenceCategory>
-    <PreferenceCategory android:title="UAV Radar">
+
+    <PreferenceCategory android:title="Diagnostics">
         <Preference android:title="Copy debug info"
                 android:key="copy_debug_info">
         </Preference>
         <Preference android:title="Clear debug info"
                 android:key="clear_debug_info">
         </Preference>
-
     </PreferenceCategory>
-
 
 </PreferenceScreen>

@@ -30,6 +30,10 @@ class GoogleMapWrapper(val context: Context, val mapView: MapView, private val c
         mapView.getMapAsync(this)
     }
 
+    override fun initialized() : Boolean {
+        return ::googleMap.isInitialized;
+    }
+
     override var mapType: Int
         get() = googleMap.mapType
         set(value) {googleMap.mapType = value}
@@ -155,5 +159,9 @@ class GoogleMapWrapper(val context: Context, val mapView: MapView, private val c
 
     override fun onSaveInstanceState(outState: Bundle?) {
         mapView.onSaveInstanceState(outState)
+    }
+
+    override fun invalidate() {
+        this.mapView.invalidate()
     }
 }
